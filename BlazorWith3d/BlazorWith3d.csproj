@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\BlazorWith3d.Client\BlazorWith3d.Client.csproj"/>
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.0.0-rc.1.24452.1"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <_ContentIncludedByDefault Remove="wwwroot\Unity\TemplateData\favicon.ico" />
+      <_ContentIncludedByDefault Remove="wwwroot\Unity\TemplateData\fullscreen-button.png" />
+      <_ContentIncludedByDefault Remove="wwwroot\Unity\TemplateData\MemoryProfiler.png" />
+      <_ContentIncludedByDefault Remove="wwwroot\Unity\TemplateData\progress-bar-empty-dark.png" />
+      <_ContentIncludedByDefault Remove="wwwroot\Unity\TemplateData\progress-bar-empty-light.png" />
+      <_ContentIncludedByDefault Remove="wwwroot\Unity\TemplateData\progress-bar-full-dark.png" />
+      <_ContentIncludedByDefault Remove="wwwroot\Unity\TemplateData\progress-bar-full-light.png" />
+      <_ContentIncludedByDefault Remove="wwwroot\Unity\TemplateData\style.css" />
+      <_ContentIncludedByDefault Remove="wwwroot\Unity\TemplateData\unity-logo-dark.png" />
+      <_ContentIncludedByDefault Remove="wwwroot\Unity\TemplateData\unity-logo-light.png" />
+      <_ContentIncludedByDefault Remove="wwwroot\Unity\TemplateData\unity-logo-title-footer.png" />
+      <_ContentIncludedByDefault Remove="wwwroot\Unity\TemplateData\webmemd-icon.png" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="wwwroot\Unity\" />
+    </ItemGroup>
+
+</Project>

@@ -1,8 +1,10 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d", "BlazorWith3d\BlazorWith3d\BlazorWith3d.csproj", "{950A34BA-A271-435A-9161-28891E4082BB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d", "BlazorWith3d\BlazorWith3d.csproj", "{950A34BA-A271-435A-9161-28891E4082BB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d.Client", "BlazorWith3d\BlazorWith3d.Client\BlazorWith3d.Client.csproj", "{386015FC-3AD7-4D4B-99B5-590B111D82BF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d.Client", "BlazorWith3d.Client\BlazorWith3d.Client.csproj", "{386015FC-3AD7-4D4B-99B5-590B111D82BF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d.Unity", "BlazorWith3d.Unity\BlazorWith3d.Unity.csproj", "{E881D744-002F-40ED-8DFD-C839300890B5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -18,5 +20,9 @@ Global
 		{386015FC-3AD7-4D4B-99B5-590B111D82BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{386015FC-3AD7-4D4B-99B5-590B111D82BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{386015FC-3AD7-4D4B-99B5-590B111D82BF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E881D744-002F-40ED-8DFD-C839300890B5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E881D744-002F-40ED-8DFD-C839300890B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E881D744-002F-40ED-8DFD-C839300890B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E881D744-002F-40ED-8DFD-C839300890B5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
