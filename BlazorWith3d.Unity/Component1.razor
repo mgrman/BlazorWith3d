@@ -23,10 +23,21 @@
     private readonly string ContainerId = $"unity-container-{Guid.NewGuid():N}";
     private IJSObjectReference unityApi;
 
+    protected override void OnInitialized()
+    {
+        
+        
+        objRef = DotNetObjectReference.Create(this);
+        base.OnInitialized();
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if(objRef==null)
-            objRef = DotNetObjectReference.Create(this);
+        // TODO somehow the initial start via Rider does not start Unity, it gets stuck after OnBlazorApiInitialized!!! message, but reloading the page fixes the issue
+        // Maybe as this is used in auto mode? it starts first with server mode, and then all async calls need to be Async!
+
+        
+        // TODO use ElementReference aaa; instead of ID with guid
         
         var moduleTask = new Lazy<Task<IJSObjectReference>>(() => jsRuntime.InvokeAsync<IJSObjectReference>("import", "./_content/BlazorWith3d.Unity/exampleJsInterop.js").AsTask());
 
@@ -46,8 +57,9 @@
     [JSInvokable]
     public async void OnUnityInitialized()
     {
-        var response =await unityApi.InvokeAsync<string>("sendMessage", "test123");
-        Console.WriteLine("response:"+response);
+        var response = await unityApi.InvokeAsync<string>("sendMessage", "test123");
+
+        Console.WriteLine("response:" + response);
     }
 
     public void Dispose() => objRef?.Dispose();
