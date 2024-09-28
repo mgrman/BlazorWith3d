@@ -23,10 +23,10 @@ public static class BlazorApiUnity
     {
         return $"ACK for {arg}";
     }
-
+    
     [DllImport("__Internal")]
     private static extern string SendMessageFromUnity(string message);
-
+    
     [DllImport("__Internal")]
     private static extern string InitializeApi(Func<string,string> onMessageReceived);
 

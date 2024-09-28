@@ -1,11 +1,12 @@
 var BlazorApiUnity = {
     InitializeApi: function (onMessageReceivedCallback) {
+        
         Module["BlazorApi_SendMessageToUnity"]=function (message){
 
             var buffer = stringToNewUTF8(message);
             var response={{{ makeDynCall('ii', 'onMessageReceivedCallback') }}}(buffer);
             _free(buffer);
-
+            
             var _response = UTF8ToString(response);
             _free(response);
             return _response;

@@ -1,3 +1,54 @@
-﻿<div class="my-component">
-    This component is defined in the <strong>BlazorWith3d.Unity</strong> library.
+﻿@using Microsoft.JSInterop
+@inject IJSRuntime jsRuntime
+@implements IDisposable
+
+<div id="@ContainerId" class="unity-desktop">
+    <canvas id="unity-canvas" width=960 height=600 tabindex="-1"></canvas>
+    <div id="unity-loading-bar">
+        <div id="unity-logo"></div>
+        <div id="unity-progress-bar-empty">
+            <div id="unity-progress-bar-full"></div>
+        </div>
+    </div>
+    <div id="unity-warning"> </div>
+    <div id="unity-footer">
+        <div id="unity-logo-title-footer"></div>
+        <div id="unity-fullscreen-button"></div>
+        <div id="unity-build-title">UnityForBlazor</div>
+    </div>
 </div>
+
+
+@code {
+    private readonly string ContainerId = $"unity-container-{Guid.NewGuid():N}";
+    private IJSObjectReference unityApi;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if(objRef==null)
+            objRef = DotNetObjectReference.Create(this);
+        
+        var moduleTask = new Lazy<Task<IJSObjectReference>>(() => jsRuntime.InvokeAsync<IJSObjectReference>("import", "./_content/BlazorWith3d.Unity/exampleJsInterop.js").AsTask());
+
+        var module = await moduleTask.Value;
+        unityApi=await module.InvokeAsync<IJSObjectReference>("showUnity", ContainerId, objRef, nameof(OnMessageReceived), nameof(OnUnityInitialized));
+
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    public DotNetObjectReference<Component1> objRef { get; set; }
+
+    [JSInvokable]
+    public string OnMessageReceived(string mesg)
+    {
+        return "ACK";
+    }
+    [JSInvokable]
+    public async void OnUnityInitialized()
+    {
+        var response =await unityApi.InvokeAsync<string>("sendMessage", "test123");
+        Console.WriteLine("response:"+response);
+    }
+
+    public void Dispose() => objRef?.Dispose();
+}
