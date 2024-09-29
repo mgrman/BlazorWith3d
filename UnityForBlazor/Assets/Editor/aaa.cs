@@ -1,0 +1,22 @@
+﻿// C# example:
+
+using System.IO;
+using UnityEngine;
+using UnityEditor;
+using UnityEditor.Callbacks;
+
+public class BlazorWith3dBuildPostprocessor {
+    
+    [PostProcessBuildAttribute(1)]
+    public static void OnPostprocessBuild(BuildTarget target, string pathToBuiltProject)
+    {
+
+        var buildFilesFolder =Path.GetFullPath( Path.Combine(pathToBuiltProject, "Build"));
+        var backendWwwrootFolder = Path.GetFullPath(Path.Combine("..", "BlazorWith3d.Client","wwwroot"));
+
+        foreach (var file in Directory.GetFiles(buildFilesFolder))
+        {
+            File.Copy(file,Path.Combine(backendWwwrootFolder,Path.GetFileName(file)),true);
+        }
+    }
+}

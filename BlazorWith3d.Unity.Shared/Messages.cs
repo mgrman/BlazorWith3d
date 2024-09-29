@@ -28,18 +28,19 @@ namespace BlazorWith3d.Unity.Shared
     {
     }
     
-    [MessageType]
-    public sealed class Message1 : IMessageToUnity<Message1,MessageResponse1>
-    {
-    }
-
-    public sealed class MessageResponse1
-    {
-    }
-
-    
 #if COMMON_DOTNET
 #endif
+    //
+    // [MessageType]
+    // public sealed class Message1 : IMessageToUnity<Message1,MessageResponse1>
+    // {
+    // }
+    //
+    // public sealed class MessageResponse1
+    // {
+    // }
+
+    
 
 #if COMMON_UNITY
 #endif

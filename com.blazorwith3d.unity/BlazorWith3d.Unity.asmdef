@@ -1,0 +1,16 @@
+{
+    "name": "BlazorWith3d.Unity",
+    "rootNamespace": "BlazorWith3d.Unity",
+    "references": [
+        "GUID:f163fe17560e40a8ba1f360c16bd7561"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

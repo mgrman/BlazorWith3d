@@ -1,0 +1,8 @@
+{
+  "name": "com.blazorwith3d.unity",
+  "version": "1.2.3",
+  "displayName": "BlazorWith3d Unity",
+  "dependencies": {
+    "com.blazorwith3d.unity.shared": "1.2.3"
+  }
+}
