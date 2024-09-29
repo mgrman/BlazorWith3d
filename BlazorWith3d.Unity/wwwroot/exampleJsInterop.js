@@ -88,6 +88,8 @@ export function showUnity(containerId, dotnetObject,onMessageReceivedMethodName,
       unityApi.unityInstance=unityInstance;
       
       unityInstance.Module["BlazorApi_OnMessageFromUnityHandler"]=function (msg){
+        
+        // TODO investigate https://react-unity-webgl.dev/docs/api/event-system
         return dotnetObject.invokeMethod(onMessageReceivedMethodName, msg);
       }
 
