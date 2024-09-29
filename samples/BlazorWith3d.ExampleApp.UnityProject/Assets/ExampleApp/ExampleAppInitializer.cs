@@ -24,6 +24,8 @@ namespace ExampleApp
             TypedMessageBlazorApi.AddMessageProcessCallback<AddBlockInstanceMessage,NoResponse>(OnAddBlockInstanceMessage);
             TypedMessageBlazorApi.AddMessageProcessCallback<RemoveBlockMessage,NoResponse>(OnRemoveBlockMessage);
 
+
+            TypedMessageBlazorApi.SendMessage<AppInitialized, NoResponse>(new AppInitialized());
             
             #if UNITY_EDITOR
             OnAddBlockTemplateMessage(new AddBlockTemplateMessage()

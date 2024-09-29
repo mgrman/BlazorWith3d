@@ -12,6 +12,9 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
 // - void SubscribeToBlockPoseChanged(Action<int blockId, float positionX, float positionY, float rotationZ> onPoseChanged)
 // - void StartDraggingBlock(int blockId, int templateId)
 
+    public sealed class AppInitialized : IMessageFromUnity<AppInitialized, NoResponse>
+    {
+    }
     public sealed class AddBlockTemplateMessage : IMessageToUnity<AddBlockTemplateMessage, NoResponse>
     {
         public int TemplateId;

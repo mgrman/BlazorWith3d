@@ -41,6 +41,7 @@ namespace BlazorWith3d.Unity.Shared
 
         public static (Type? type, string typeName, string objectJson)? DecodeMessageJson(string messageString)
         {
+            
             var separatorIndex = messageString.IndexOf(';');
             if (separatorIndex == -1)
             {
