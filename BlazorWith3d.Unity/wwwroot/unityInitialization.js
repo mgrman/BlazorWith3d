@@ -48,7 +48,8 @@ export function showUnity(container, dotnetObject,onMessageReceivedMethodName,on
     productName: "UnityForBlazor",
     productVersion: "0.1.0",
     showBanner: unityShowBanner,
-    matchWebGLToCanvasSize: true
+    matchWebGLToCanvasSize: true,
+    devicePixelRatio:1
   };
 
   // If you would like all file writes inside Unity Application.persistentDataPath
@@ -92,8 +93,6 @@ export function showUnity(container, dotnetObject,onMessageReceivedMethodName,on
         
         // TODO investigate https://react-unity-webgl.dev/docs/api/event-system
         
-        
-        
         return dotnetObject.invokeMethodAsync(onMessageReceivedMethodName, msg);
       }
 
@@ -107,16 +106,13 @@ export function showUnity(container, dotnetObject,onMessageReceivedMethodName,on
               var response=sendMessageFunc("JS_INITIALIZED");
               console.log("JS_INITIALIZED:"+response);
             });
-        
-
-
       }
 
 
       container.querySelector("#unity-loading-bar").style.display = "none";
-      container.querySelector("#unity-fullscreen-button").onclick = () => {
-        unityInstance.SetFullscreen(1);
-      };
+      // container.querySelector("#unity-fullscreen-button").onclick = () => {
+      //   unityInstance.SetFullscreen(1);
+      // };
 
       // Unloading web content from DOM so that browser GC can run can be tricky to get right.
       // This code snippet shows how to correctly implement a Unity content Unload mechanism to a web page.
