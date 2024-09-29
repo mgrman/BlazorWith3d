@@ -1,9 +1,9 @@
-﻿// C# example:
-
+﻿#if UNITY_EDITOR
 using System.IO;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.Callbacks;
+
 
 public class BlazorWith3dBuildPostprocessor {
     
@@ -12,7 +12,7 @@ public class BlazorWith3dBuildPostprocessor {
     {
 
         var buildFilesFolder =Path.GetFullPath( Path.Combine(pathToBuiltProject, "Build"));
-        var backendWwwrootFolder = Path.GetFullPath(Path.Combine("..", "BlazorWith3d.Client","wwwroot"));
+        var backendWwwrootFolder = Path.GetFullPath(Path.Combine("..", "BlazorWith3d.ExampleApp.Client","wwwroot"));
 
         foreach (var file in Directory.GetFiles(buildFilesFolder))
         {
@@ -20,3 +20,5 @@ public class BlazorWith3dBuildPostprocessor {
         }
     }
 }
+
+#endif

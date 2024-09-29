@@ -5,12 +5,11 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <LangVersion>preview</LangVersion>
+        <RootNamespace>BlazorWith3d</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\BlazorWith3d.Client\BlazorWith3d.Client.csproj"/>
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.0.0-rc.1.24452.1"/>
-        <ProjectReference Include="..\BlazorWith3d.Unity\BlazorWith3d.Unity.csproj" />
     </ItemGroup>
 
     <ItemGroup>
@@ -26,6 +25,10 @@
       <_ContentIncludedByDefault Remove="wwwroot\Unity\TemplateData\unity-logo-light.png" />
       <_ContentIncludedByDefault Remove="wwwroot\Unity\TemplateData\unity-logo-title-footer.png" />
       <_ContentIncludedByDefault Remove="wwwroot\Unity\TemplateData\webmemd-icon.png" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\BlazorWith3d.ExampleApp.Client\BlazorWith3d.ExampleApp.Client.csproj" />
     </ItemGroup>
 
 </Project>
