@@ -6,9 +6,7 @@ export function showPrompt(message) {
 }
 
 
-export function showUnity(containerId, dotnetObject,onMessageReceivedMethodName,onInitializedMethodName ){
-
-  var container=document.querySelector("#"+containerId);
+export function showUnity(container, dotnetObject,onMessageReceivedMethodName,onInitializedMethodName ){
 
   var canvas = container.querySelector("#unity-canvas");
 

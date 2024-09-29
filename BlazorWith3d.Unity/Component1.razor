@@ -2,7 +2,7 @@
 @inject IJSRuntime jsRuntime
 @implements IDisposable
 
-<div id="@ContainerId" class="unity-desktop">
+<div  @ref=ContainerElementReference class="unity-desktop">
     <canvas id="unity-canvas" width=960 height=600 tabindex="-1"></canvas>
     <div id="unity-loading-bar">
         <div id="unity-logo"></div>
@@ -20,14 +20,17 @@
 
 
 @code {
-    private readonly string ContainerId = $"unity-container-{Guid.NewGuid():N}";
-    private IJSObjectReference unityApi;
+    private IJSObjectReference? _unityApi;
+
+    private DotNetObjectReference<JsMessageProxy> _messageProxyReference = null!;
+    
+    protected ElementReference ContainerElementReference;
 
     protected override void OnInitialized()
     {
         
         
-        objRef = DotNetObjectReference.Create(this);
+        _messageProxyReference = DotNetObjectReference.Create(new JsMessageProxy(OnMessageReceived, OnUnityInitialized));
         base.OnInitialized();
     }
 
@@ -35,32 +38,42 @@
     {
         // TODO somehow the initial start via Rider does not start Unity, it gets stuck after OnBlazorApiInitialized!!! message, but reloading the page fixes the issue
         // Maybe as this is used in auto mode? it starts first with server mode, and then all async calls need to be Async!
-
-        
-        // TODO use ElementReference aaa; instead of ID with guid
+       
         
         var moduleTask = new Lazy<Task<IJSObjectReference>>(() => jsRuntime.InvokeAsync<IJSObjectReference>("import", "./_content/BlazorWith3d.Unity/exampleJsInterop.js").AsTask());
 
         var module = await moduleTask.Value;
-        unityApi=await module.InvokeAsync<IJSObjectReference>("showUnity", ContainerId, objRef, nameof(OnMessageReceived), nameof(OnUnityInitialized));
+        _unityApi=await module.InvokeAsync<IJSObjectReference>("showUnity", ContainerElementReference, _messageProxyReference, nameof(JsMessageProxy.OnMessageReceived), nameof(JsMessageProxy.OnUnityInitialized));
 
         await base.OnAfterRenderAsync(firstRender);
     }
-
-    public DotNetObjectReference<Component1> objRef { get; set; }
-
-    [JSInvokable]
-    public string OnMessageReceived(string mesg)
+    
+    protected virtual string OnMessageReceived(string msg)
     {
         return "ACK";
     }
-    [JSInvokable]
-    public async void OnUnityInitialized()
+
+    protected virtual async void OnUnityInitialized()
     {
-        var response = await unityApi.InvokeAsync<string>("sendMessage", "test123");
+        if (_unityApi == null)
+        {
+            throw new InvalidOperationException("CRITICAL FAILURE, OnUnityInitialized called without _unityApi reference!");
+        }
+        
+        var response = await _unityApi.InvokeAsync<string>("sendMessage", "test123");
 
         Console.WriteLine("response:" + response);
     }
 
-    public void Dispose() => objRef?.Dispose();
+
+    protected class JsMessageProxy(Func<string, string> onMessageReceived, Action onInitialized)
+    {
+        [JSInvokable]
+        public string OnMessageReceived(string mesg) => onMessageReceived(mesg);
+
+        [JSInvokable]
+        public void OnUnityInitialized() => onInitialized();
+    }
+
+    public void Dispose() => _messageProxyReference?.Dispose();
 }
