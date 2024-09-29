@@ -16,12 +16,14 @@ namespace BlazorWith3d.Unity
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSplashScreen)]
         static async void OnBeforeSplashScreen()
         {
+#if UNITY_WEBGL && !UNITY_EDITOR
             Debug.Log($"On before BlazorApiUnity.InitializeApi");
             InitializeApi(OnMessageReceived);
 
             Debug.Log($"On after BlazorApiUnity.InitializeApi");
             var response = await SendMessageFromUnity("UNITY_INITIALIZED");
             Debug.Log($"UNITY_INITIALIZED:{response}");
+#endif
         }
 
         [MonoPInvokeCallback(typeof(Func<string, string>))]
@@ -49,6 +51,7 @@ namespace BlazorWith3d.Unity
 
         internal static Awaitable<string> SendMessageFromUnity(string message)
         {
+#if UNITY_WEBGL && !UNITY_EDITOR
             int msgId;
             unchecked
             {
@@ -60,6 +63,9 @@ namespace BlazorWith3d.Unity
             _responseAwaitables[msgId] = awaitableTcs;
             SendMessageFromUnity(msgId, message, OnResponseReceived);
             return awaitableTcs.Awaitable;
+#else
+            throw new NotImplementedException();
+#endif
         }
 
         //public static Func<string, string> ProcessReceivedMessage { get; set; } not overridable for now, unnecessary complexity to support

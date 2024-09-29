@@ -1,7 +1,136 @@
 ﻿@rendermode InteractiveAuto
+@using BlazorWith3d.ExampleApp.Client.Unity.Shared
 @using BlazorWith3d.Unity
+@using BlazorWith3d.Unity.Shared
 
 <InputCheckbox @bind-Value="Is3DVisible" ></InputCheckbox>
+
+<table>
+    <thead>
+    <tr>
+        <td>
+            Template id
+        </td>
+        <td>
+            sizeX
+        </td>
+        <td>
+            sizeY
+        </td>
+        <td>
+            sizeZ
+        </td>
+        <td>
+        </td>
+    </tr>
+    </thead>
+    @foreach (var template in _templates)
+    {
+        <tr>
+            <td>
+                @template.id
+            </td>
+            <td>
+                @template.sizeX
+            </td>
+            <td>
+                @template.sizeY
+            </td>
+            <td>
+                @template.sizeZ
+            </td>
+            <td>
+                <button @onclick="() => RemoveTemplate(template.id)">Remove</button>
+            </td>
+        </tr>
+    }
+
+    <tr>
+        <td>
+
+        </td>
+        <td>
+            <InputNumber @bind-Value="newTemplateSizeX"></InputNumber>
+        </td>
+        <td>
+            <InputNumber @bind-Value="newTemplateSizeY"></InputNumber>
+        </td>
+        <td>
+            <InputNumber @bind-Value="newTemplateSizeZ"></InputNumber>
+        </td>
+        <td>
+            <button @onclick="AddTemplate">Add</button>
+        </td>
+    </tr>
+</table>
+
+
+<table>
+    <tr>
+        <td>
+            Block id
+        </td>
+        <td>
+            positionX
+        </td>
+        <td>
+            positionY
+        </td>
+        <td>
+            rotationZ
+        </td>
+        <td>
+            templateId
+        </td>
+        <td>
+        </td>
+    </tr>
+    @foreach (var block in _blocks)
+    {
+    <tr>
+        <td>
+            @block.blockId
+        </td>
+        <td>
+            @block.positionX
+        </td>
+        <td>
+            @block.positionY
+        </td>
+        <td>
+            @block.rotationZ
+        </td>
+        <td>
+            @block.templateId
+        </td>
+        <td>
+            <button @onclick="()=> RemoveBlock(block.blockId)">Remove</button>
+        </td>
+    </tr>
+    }
+
+    <tr>
+        <td>
+
+        </td>
+        <td>
+            <InputNumber @bind-Value="newBlockPositionX"></InputNumber>
+        </td>
+        <td>
+            <InputNumber @bind-Value="newBlockPositionY"></InputNumber>
+        </td>
+        <td>
+            <InputNumber @bind-Value="newBlockRotationZ"></InputNumber>
+        </td>
+        <td>
+            <InputNumber @bind-Value="newBlockTemplateId"></InputNumber>
+        </td>
+        <td>
+            <button @onclick="AddBlock">Add</button>
+        </td>
+    </tr>
+</table>
+
 
 @if (Is3DVisible)
 {
@@ -11,7 +140,20 @@
 @code {
     
     private TypedMessageUnityComponent? _unityComponent;
+
+    int newIdCounter;
     
+    float newTemplateSizeX;
+    float newTemplateSizeY;
+    float newTemplateSizeZ;
+    
+    float newBlockPositionX;
+    float newBlockPositionY;
+    float newBlockRotationZ;
+    int newBlockTemplateId;
+
+    private List<(int id,float sizeX, float sizeY, float sizeZ)> _templates = new ();
+    private List<(int blockId, float positionX, float positionY, float rotationZ, int templateId)> _blocks = new ();
     
     private bool _is3DVisible=true;
     public bool Is3DVisible
@@ -23,4 +165,36 @@
             
         } 
     }
+
+    protected override Task OnInitializedAsync()
+    {
+        return base.OnInitializedAsync();
+    }
+
+    private async Task AddTemplate()
+    {
+        var msg = new AddBlockTemplateMessage() { TemplateId = newIdCounter++, SizeX = newTemplateSizeX, SizeY = newTemplateSizeY, SizeZ = newTemplateSizeZ };
+        await _unityComponent.SendMessage<AddBlockTemplateMessage, NoResponse>(msg);
+        _templates.Add((msg.TemplateId, msg.SizeX, msg.SizeY, msg.SizeZ));
+    }
+
+    private async Task RemoveTemplate(int id)
+    {
+        await _unityComponent.SendMessage<RemoveBlockTemplateMessage, NoResponse>(new RemoveBlockTemplateMessage(){ TemplateId = id});
+        _templates.RemoveAll(o => o.id == id);
+    }
+
+    private async Task AddBlock()
+    {
+        var msg = new AddBlockInstanceMessage() { BlockId = newIdCounter++, PositionX = newBlockPositionX, PositionY = newBlockPositionY, RotationZ = newBlockRotationZ, TemplateId = newBlockTemplateId};
+        await _unityComponent.SendMessage<AddBlockInstanceMessage, NoResponse>(msg);
+        _blocks.Add((msg.BlockId, msg.PositionX,msg.PositionY,msg.RotationZ, msg.TemplateId));
+    }
+
+    private async Task RemoveBlock(int id)
+    {
+        await _unityComponent.SendMessage<RemoveBlockMessage, NoResponse>(new RemoveBlockMessage(){ BlockId = id});
+        _blocks.RemoveAll(o => o.blockId == id);
+    }
+
 }

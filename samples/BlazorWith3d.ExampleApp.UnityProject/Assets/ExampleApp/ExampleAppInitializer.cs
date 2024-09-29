@@ -1,0 +1,91 @@
+﻿using System;
+using System.Collections.Generic;
+using BlazorWith3d.ExampleApp.Client.Unity.Shared;
+using BlazorWith3d.Unity;
+using BlazorWith3d.Unity.Shared;
+using UnityEngine;
+
+namespace ExampleApp
+{
+    public class ExampleAppInitializer :MonoBehaviour
+    {
+        private readonly Dictionary<int, (GameObject template, Vector3 size)> _templates=new ();
+        private readonly Dictionary<int, GameObject > _blocks=new ();
+        private GameObject _templateRoot;
+
+        public void Start()
+        {
+            _templateRoot=new GameObject($"BlockTemplateRoot");
+            _templateRoot.SetActive(false);
+            _templateRoot.transform.parent = transform;
+            
+            TypedMessageBlazorApi.AddMessageProcessCallback<AddBlockTemplateMessage,NoResponse>(OnAddBlockTemplateMessage);
+            TypedMessageBlazorApi.AddMessageProcessCallback<RemoveBlockTemplateMessage,NoResponse>(OnRemoveBlockTemplateMessage);
+            TypedMessageBlazorApi.AddMessageProcessCallback<AddBlockInstanceMessage,NoResponse>(OnAddBlockInstanceMessage);
+            TypedMessageBlazorApi.AddMessageProcessCallback<RemoveBlockMessage,NoResponse>(OnRemoveBlockMessage);
+
+            //
+            // OnAddBlockTemplateMessage(new AddBlockTemplateMessage()
+            // {
+            //     TemplateId = 0,
+            //     SizeX = 0, SizeY = 0, SizeZ = 0, VisualsUri = null
+            // });
+            // OnAddBlockTemplateMessage(new AddBlockTemplateMessage()
+            // {
+            //     TemplateId = 1,
+            //     SizeX = 0, SizeY = 0, SizeZ = 0, VisualsUri = null
+            // });
+
+            // TypedMessageBlazorApi.SimulateMessage(
+            //     @"AddBlockTemplateMessage;{""TemplateId"":0,""SizeX"":1.0,""SizeY"":2.0,""SizeZ"":3.0}");
+            // TypedMessageBlazorApi.SimulateMessage(
+            //     @"AddBlockTemplateMessage;{""TemplateId"":0,""SizeX"":1.0,""SizeY"":2.0,""SizeZ"":3.0}");
+        }
+
+        private NoResponse OnAddBlockTemplateMessage(AddBlockTemplateMessage msg)
+        {
+            Debug.Log($"Adding block template: {JsonUtility.ToJson(msg)}");
+            var templateGo=new GameObject($"BlockTemplate_{msg.TemplateId}");
+            templateGo.transform.SetParent(_templateRoot.transform);
+            
+            
+            var meshGo = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            meshGo.transform.SetParent(templateGo.transform);
+            meshGo.transform.localScale=new Vector3(msg.SizeX, msg.SizeY, msg.SizeZ);
+            meshGo.transform.localPosition=new Vector3(0, msg.SizeY/2,0);
+            
+            
+            _templates.Add(msg.TemplateId, (meshGo,meshGo.transform.localScale));
+
+            Debug.Log($"Added block template: {msg.TemplateId}");
+            
+            return NoResponse.Instance;
+        }
+
+        private NoResponse OnRemoveBlockTemplateMessage(RemoveBlockTemplateMessage msg)
+        {
+            _templates.Remove(msg.TemplateId);
+            Debug.Log($"Removed block template: {msg.TemplateId}");
+            return NoResponse.Instance;
+        }
+
+        private NoResponse OnAddBlockInstanceMessage(AddBlockInstanceMessage msg)
+        {
+            var template=_templates[msg.TemplateId];    
+            
+             var blockGo=GameObject.Instantiate(template.template, new Vector3(msg.PositionX, msg.PositionY,0), Quaternion.Euler(0,0,msg.RotationZ),  transform  );
+            
+             _blocks.Add(msg.BlockId,blockGo );
+            return NoResponse.Instance;
+        }
+
+        private NoResponse OnRemoveBlockMessage(RemoveBlockMessage msg)
+        {
+            var blockGo=_blocks[msg.BlockId];
+            GameObject.Destroy(blockGo);
+            _blocks.Remove(msg.BlockId);
+            
+            return NoResponse.Instance;
+        }
+    }
+}

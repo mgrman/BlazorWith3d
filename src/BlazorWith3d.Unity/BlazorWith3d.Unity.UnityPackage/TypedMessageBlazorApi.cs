@@ -45,6 +45,11 @@ namespace BlazorWith3d.Unity
             return response;
         }
 
+        public static string SimulateMessage(string message)
+        {
+            return HandleReceivedMessages(message);
+        }
+
         public static void AddMessageProcessCallback<TMessage, TResponse>(Func<TMessage, TResponse> messageHandler)
             where TMessage : IMessageToUnity<TMessage, TResponse>
         {

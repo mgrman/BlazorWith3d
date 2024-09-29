@@ -1,16 +1,14 @@
 ﻿#if UNITY_EDITOR
 using System.IO;
-using UnityEngine;
 using UnityEditor;
 using UnityEditor.Callbacks;
-
+using UnityEngine;
 
 public class BlazorWith3dBuildPostprocessor {
     
-    [PostProcessBuildAttribute(1)]
+    [PostProcessBuild(1)]
     public static void OnPostprocessBuild(BuildTarget target, string pathToBuiltProject)
     {
-
         var buildFilesFolder =Path.GetFullPath( Path.Combine(pathToBuiltProject, "Build"));
         var backendWwwrootFolder = Path.GetFullPath(Path.Combine("..", "BlazorWith3d.ExampleApp.Client","wwwroot"));
 
@@ -18,6 +16,7 @@ public class BlazorWith3dBuildPostprocessor {
         {
             File.Copy(file,Path.Combine(backendWwwrootFolder,Path.GetFileName(file)),true);
         }
+        Debug.Log("BlazorWith3d.ExampleApp.Client updated with fresh build!");
     }
 }
 

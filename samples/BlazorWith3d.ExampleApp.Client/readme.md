@@ -19,11 +19,11 @@
 
 
 
-## Methods.v2
+~~## Methods.v2
 - void AddBlockTemplate(int templateId, float sizeX, float sizeY,float sizeZ, string visualsUri)
 - void AddBlockInstance(int blockId, float positionX, float positionY, float rotationZ, string template)
 - void RemoveBlock(int blockId)
 - void RemoveBlockTemplate(int templateId)
 - void SubscribeToBlockPoseChanging(Func<int blockId, float positionX, float positionY, float rotationZ, (float positionX, float positionY, float rotationZ)> onPoseValidation)
 - void SubscribeToBlockPoseChanged(Action<int blockId, float positionX, float positionY, float rotationZ> onPoseChanged)
-- void StartDraggingBlock(int blockId, int templateId)
+- void StartDraggingBlock(int blockId, int templateId)~~

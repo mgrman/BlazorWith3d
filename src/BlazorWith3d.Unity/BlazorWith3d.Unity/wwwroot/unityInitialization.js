@@ -70,7 +70,12 @@ export function showUnity(buildUrl,container, dotnetObject,onMessageReceivedMeth
     if(unityApi.unityInstance){
       
       // string BlazorApi_SendMessageToUnity(string message)
-     return unityApi.unityInstance.Module["BlazorApi_SendMessageToUnity"](message); 
+      try {
+        return unityApi.unityInstance.Module["BlazorApi_SendMessageToUnity"](message);
+      }
+      catch(err){
+        console.error(err);
+      }
     }
     else{
       throw new Error('sending message before api is initialized');

@@ -28,17 +28,15 @@ namespace BlazorWith3d.Unity.Shared
     {
     }
     
+    public sealed class NoResponse
+    {
+        // TODO add explictly not waiting for response if Expected response is NoResponse
+
+        public static readonly NoResponse Instance = new NoResponse();
+    }
+    
 #if COMMON_DOTNET
 #endif
-    //
-    // [MessageType]
-    // public sealed class Message1 : IMessageToUnity<Message1,MessageResponse1>
-    // {
-    // }
-    //
-    // public sealed class MessageResponse1
-    // {
-    // }
 
     
 

@@ -8,6 +8,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d.Unity", "src\B
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d.Unity.Shared", "src\BlazorWith3d.Unity\BlazorWith3d.Unity.Shared\BlazorWith3d.Unity.Shared.csproj", "{5DE1CF85-C4B0-4B38-8804-3DC41F6355B4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d.ExampleApp.Client.Unity.Shared", "samples\BlazorWith3d.ExampleApp.Client.Unity.Shared\BlazorWith3d.ExampleApp.Client.Unity.Shared.csproj", "{28BF01DB-5A24-497C-957B-6FAB7F1A2B07}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +32,9 @@ Global
 		{5DE1CF85-C4B0-4B38-8804-3DC41F6355B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5DE1CF85-C4B0-4B38-8804-3DC41F6355B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5DE1CF85-C4B0-4B38-8804-3DC41F6355B4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{28BF01DB-5A24-497C-957B-6FAB7F1A2B07}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{28BF01DB-5A24-497C-957B-6FAB7F1A2B07}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{28BF01DB-5A24-497C-957B-6FAB7F1A2B07}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{28BF01DB-5A24-497C-957B-6FAB7F1A2B07}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

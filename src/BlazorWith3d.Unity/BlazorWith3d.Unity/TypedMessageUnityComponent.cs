@@ -20,27 +20,41 @@ public class TypedMessageUnityComponent:BaseUnityComponent
         var messageString = JsonSerializer.Serialize(message);
         var encodedMessage = MessageTypeCache.EncodeMessageJson<TMessage>(messageString);
 
-        var responseString = await SendMessageToUnity(encodedMessage);
-
-        var decoded = MessageTypeCache.DecodeMessageJson(responseString);
-
-        if (decoded== null)
+        try
         {
-            throw new InvalidOperationException($"Response for {typeof(TMessage).Name} was not encoded correctly! {responseString}");
-        }
-        
-        if (decoded.Value.type != typeof(TResponse))
-        {
-            throw new InvalidOperationException($"Unexpected response type! Expected {typeof(TResponse).Name} and received '{decoded.Value.typeName}'!");
-        }
 
-        var response = JsonSerializer.Deserialize<TResponse>(decoded.Value.objectJson);
-        if (response == null)
-        {
-            throw new InvalidOperationException($"Response for {typeof(TMessage).Name} was not deserializable into {typeof(TResponse).Name}");
-        }
+            var responseString = await SendMessageToUnity(encodedMessage);
 
-        return response;
+
+
+
+            var decoded = MessageTypeCache.DecodeMessageJson(responseString);
+
+            if (decoded == null)
+            {
+                throw new InvalidOperationException(
+                    $"Response for {typeof(TMessage).Name} was not encoded correctly! {responseString}");
+            }
+
+            if (decoded.Value.type != typeof(TResponse))
+            {
+                throw new InvalidOperationException(
+                    $"Unexpected response type! Expected {typeof(TResponse).Name} and received '{decoded.Value.typeName}'!");
+            }
+
+            var response = JsonSerializer.Deserialize<TResponse>(decoded.Value.objectJson);
+            if (response == null)
+            {
+                throw new InvalidOperationException(
+                    $"Response for {typeof(TMessage).Name} was not deserializable into {typeof(TResponse).Name}");
+            }
+
+            return response;
+        }
+        catch (Exception ex)
+        {
+            throw;
+        }
     }
 
     public void AddMessageProcessCallback<TMessage, TResponse>(Func<TMessage, ValueTask<TResponse>> messageHandler) where TMessage : IMessageFromUnity<TMessage, TResponse>
