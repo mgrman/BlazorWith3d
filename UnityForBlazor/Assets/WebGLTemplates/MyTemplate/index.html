@@ -136,7 +136,7 @@
           document.querySelector("#unity-progress-bar-full").style.width = 100 * progress + "%";
               }).then((unityInstance) => {
 
-                unityInstance.Module["BlazorApi_OnMessageFromUnityHandler"]=function (msg){
+                unityInstance.Module["BlazorApi_OnMessageFromUnityHandler"]=async function (msg){
                     return "ACK for "+msg;
                 }
             

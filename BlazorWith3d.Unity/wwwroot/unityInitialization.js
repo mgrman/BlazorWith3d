@@ -67,7 +67,9 @@ export function showUnity(container, dotnetObject,onMessageReceivedMethodName,on
   var sendMessageFunc=function(message){
     
     if(unityApi.unityInstance){
-     return unityApi.unityInstance.Module["BlazorApi_SendMessageToUnity"](message);
+      
+      // string BlazorApi_SendMessageToUnity(string message)
+     return unityApi.unityInstance.Module["BlazorApi_SendMessageToUnity"](message); 
     }
     else{
       throw new Error('sending message before api is initialized');
@@ -84,21 +86,18 @@ export function showUnity(container, dotnetObject,onMessageReceivedMethodName,on
     }).then((unityInstance) => {
 
       unityApi.unityInstance=unityInstance;
-      
-      unityInstance.Module["BlazorApi_OnMessageFromUnityHandler"]=function (msg){
+
+      // Task<string> BlazorApi_OnMessageFromUnityHandler(string message)
+      unityInstance.Module["BlazorApi_OnMessageFromUnityHandler"]= async function (msg){
         
         // TODO investigate https://react-unity-webgl.dev/docs/api/event-system
         
         
         
-        return dotnetObject.invokeMethodAsync(onMessageReceivedMethodName, msg)
-            .then(() => {
-
-              var response=sendMessageFunc("JS_INITIALIZED");
-              console.log("JS_INITIALIZED:"+response);
-            });
+        return dotnetObject.invokeMethodAsync(onMessageReceivedMethodName, msg);
       }
 
+      // void BlazorApi_Initialized()
       unityInstance.Module["BlazorApi_Initialized"]=function (){
         console.log("OnBlazorApiInitialized!!!");
 

@@ -1,7 +1,8 @@
 var BlazorApiUnity = {
-    InitializeApi: function (onMessageReceivedCallback) {
+    InitializeApi: async function (onMessageReceivedCallback) {
         
-        Module["BlazorApi_SendMessageToUnity"]=function (message){
+        // string BlazorApi_SendMessageToUnity(string message)
+        Module["BlazorApi_SendMessageToUnity"]=function (message){ 
 
             var buffer = stringToNewUTF8(message);
             var response={{{ makeDynCall('ii', 'onMessageReceivedCallback') }}}(buffer);
@@ -12,19 +13,23 @@ var BlazorApiUnity = {
             return _response;
         };
 
+        // void BlazorApi_Initialized()
         var onInitializeFunc=Module["BlazorApi_Initialized"];
         if(onInitializeFunc) {
             onInitializeFunc();
         }
     },
-    SendMessageFromUnity: function (message) {
+    SendMessageFromUnity: function (msgId,message, responseCallback) {
 
         var _message = UTF8ToString(message);
 
-        var returnStr = Module["BlazorApi_OnMessageFromUnityHandler"](_message);
+        // Task<string> BlazorApi_OnMessageFromUnityHandler(string message)
+        Module["BlazorApi_OnMessageFromUnityHandler"](_message) // returns promise
+            .then(response => {
+                var buffer = stringToNewUTF8(response);
 
-        var buffer = stringToNewUTF8(returnStr);
-        return buffer;
+                {{{ makeDynCall('vii', 'responseCallback') }}}(msgId,buffer);
+            });
     },
 };
 

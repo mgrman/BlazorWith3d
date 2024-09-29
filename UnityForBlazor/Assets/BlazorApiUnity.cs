@@ -14,8 +14,7 @@ public static class BlazorApiUnity
         
         Debug.LogWarning($"On after InitializeApi");
         
-        var response=SendMessageFromUnity("UNITY_INITIALIZED");
-        Debug.LogWarning($"UNITY_INITIALIZED:"+response);
+        SendMessageFromUnity(0,"UNITY_INITIALIZED",OnResponseReceived);
     }
 
     [MonoPInvokeCallback(typeof(Func<string,string>))]
@@ -23,9 +22,15 @@ public static class BlazorApiUnity
     {
         return $"ACK for {arg}";
     }
+
+    [MonoPInvokeCallback(typeof(Action<int,string>))]
+    private static void OnResponseReceived(int msgId, string response)
+    {
+        Debug.LogWarning($"UNITY_INITIALIZED:"+response);
+    }
     
     [DllImport("__Internal")]
-    private static extern string SendMessageFromUnity(string message);
+    private static extern string SendMessageFromUnity(int msgId,string message,Action<int,string> onResponseReceived);
     
     [DllImport("__Internal")]
     private static extern string InitializeApi(Func<string,string> onMessageReceived);
