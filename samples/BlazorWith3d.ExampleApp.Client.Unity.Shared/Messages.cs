@@ -14,197 +14,67 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
 
     public sealed class AddBlockTemplateMessage : IMessageToUnity<AddBlockTemplateMessage, NoResponse>
     {
-        public int TemplateId 
-#if COMMON_UNITY
-;
-#elif COMMON_DOTNET
-{get;set;}
-#endif
-        public float SizeX
-#if COMMON_UNITY
-;
-#elif COMMON_DOTNET
-        {get;set;}
-#endif
-        public float SizeY
-#if COMMON_UNITY
-;
-#elif COMMON_DOTNET
-        {get;set;}
-#endif
-        public float SizeZ
-#if COMMON_UNITY
-;
-#elif COMMON_DOTNET
-        {get;set;}
-#endif
-        public string? VisualsUri
-#if COMMON_UNITY
-;
-#elif COMMON_DOTNET
-        {get;set;}
-#endif
+        public int TemplateId;
+        public float SizeX;
+        public float SizeY;
+        public float SizeZ;
+        public string? VisualsUri;
     }
 
     
     public sealed class AddBlockInstanceMessage : IMessageToUnity<AddBlockInstanceMessage, NoResponse>
     {
-        public int BlockId
-#if COMMON_UNITY
-;
-#elif COMMON_DOTNET
-        {get;set;}
-#endif
-        public float PositionX
-#if COMMON_UNITY
-;
-#elif COMMON_DOTNET
-        {get;set;}
-#endif
-        public float PositionY
-#if COMMON_UNITY
-;
-#elif COMMON_DOTNET
-        {get;set;}
-#endif
-        public float RotationZ
-#if COMMON_UNITY
-;
-#elif COMMON_DOTNET
-        {get;set;}
-#endif
-        public int TemplateId
-#if COMMON_UNITY
-;
-#elif COMMON_DOTNET
-        {get;set;}
-#endif
+        public int BlockId;
+        public float PositionX;
+        public float PositionY;
+        public float RotationZ;
+        public int TemplateId;
     }
 
     
     public sealed class RemoveBlockMessage : IMessageToUnity<RemoveBlockMessage, NoResponse>
     {
-        public int BlockId
-#if COMMON_UNITY
-;
-#elif COMMON_DOTNET
-        {get;set;}
-#endif
+        public int BlockId;
     }
 
     
     public sealed class RemoveBlockTemplateMessage : IMessageToUnity<RemoveBlockTemplateMessage, NoResponse>
     {
-        public int TemplateId
-#if COMMON_UNITY
-;
-#elif COMMON_DOTNET
-        {get;set;}
-#endif
+        public int TemplateId;
     }
 
     
     public sealed class StartDraggingBlockMessage : IMessageToUnity<StartDraggingBlockMessage, NoResponse>
     {
-        public int TemplateId
-#if COMMON_UNITY
-;
-#elif COMMON_DOTNET
-        {get;set;}
-#endif
-        public int BlockId
-#if COMMON_UNITY
-;
-#elif COMMON_DOTNET
-        {get;set;}
-#endif
+        public int TemplateId;
+        public int BlockId;
     }
 
     
     public sealed class PoseChangeResponse
     {
-        public bool IsValid
-#if COMMON_UNITY
-;
-#elif COMMON_DOTNET
-        {get;set;}
-#endif
-        public float? NewPositionX
-#if COMMON_UNITY
-;
-#elif COMMON_DOTNET
-        {get;set;}
-#endif
-        public float? NewPositionY
-#if COMMON_UNITY
-;
-#elif COMMON_DOTNET
-        {get;set;}
-#endif
-        public float? NewRotationZ
-#if COMMON_UNITY
-;
-#elif COMMON_DOTNET
-        {get;set;}
-#endif
+        public bool IsValid;
+        public float? NewPositionX;
+        public float? NewPositionY;
+        public float? NewRotationZ;
     }
 
     
     public sealed class BlockPoseChangingMessage : IMessageFromUnity<BlockPoseChangingMessage, PoseChangeResponse>
     {
-        public int BlockId
-#if COMMON_UNITY
-;
-#elif COMMON_DOTNET
-        {get;set;}
-#endif
-        public float PositionX
-#if COMMON_UNITY
-;
-#elif COMMON_DOTNET
-        {get;set;}
-#endif
-        public float PositionY
-#if COMMON_UNITY
-;
-#elif COMMON_DOTNET
-        {get;set;}
-#endif
-        public float RotationZ
-#if COMMON_UNITY
-;
-#elif COMMON_DOTNET
-        {get;set;}
-#endif
+        public int BlockId;
+        public float PositionX;
+        public float PositionY;
+        public float RotationZ;
     }
 
     
     public sealed class BlockPoseChangedMessage : IMessageFromUnity<BlockPoseChangedMessage, NoResponse>
     {
-        public int BlockId
-#if COMMON_UNITY
-;
-#elif COMMON_DOTNET
-        {get;set;}
-#endif
-        public float PositionX
-#if COMMON_UNITY
-;
-#elif COMMON_DOTNET
-        {get;set;}
-#endif
-        public float PositionY
-#if COMMON_UNITY
-;
-#elif COMMON_DOTNET
-        {get;set;}
-#endif
-        public float RotationZ
-#if COMMON_UNITY
-;
-#elif COMMON_DOTNET
-        {get;set;}
-#endif
+        public int BlockId;
+        public float PositionX;
+        public float PositionY;
+        public float RotationZ;
     }
 
 

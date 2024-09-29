@@ -1,9 +1,11 @@
-﻿using System.Text.Json;
-using BlazorWith3d.Unity.Shared;
+﻿using BlazorWith3d.Unity.Shared;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 
 namespace BlazorWith3d.Unity;
+
+// remark: using Newtonsoft.Json only as Unity needs fields for serialization, which are not supported in System.Text.Json
 
 public class TypedMessageUnityComponent:BaseUnityComponent
 {
@@ -17,7 +19,7 @@ public class TypedMessageUnityComponent:BaseUnityComponent
         MessageTypeCache.AddTypeToCache<TMessage>();
         MessageTypeCache.AddTypeToCache<TResponse>();
 
-        var messageString = JsonSerializer.Serialize(message);
+        var messageString = JsonConvert.SerializeObject(message);
         var encodedMessage = MessageTypeCache.EncodeMessageJson<TMessage>(messageString);
 
         try
@@ -37,7 +39,7 @@ public class TypedMessageUnityComponent:BaseUnityComponent
                     $"Unexpected response type! Expected {typeof(TResponse).Name} and received '{decoded.Value.typeName}'!");
             }
 
-            var response = JsonSerializer.Deserialize<TResponse>(decoded.Value.objectJson);
+            var response = JsonConvert.DeserializeObject<TResponse>(decoded.Value.objectJson);
             if (response == null)
             {
                 throw new InvalidOperationException(
@@ -58,7 +60,7 @@ public class TypedMessageUnityComponent:BaseUnityComponent
         MessageTypeCache.AddTypeToCache<TResponse>();
         _handlers[typeof(TMessage)] = async objectJson =>
         {
-            var messageObject = JsonSerializer.Deserialize<TMessage>(objectJson);
+            var messageObject = JsonConvert.DeserializeObject<TMessage>(objectJson);
             if (messageObject == null)
             {
                 throw new InvalidOperationException($"Response for {typeof(TMessage).Name} was not deserializable into {typeof(TResponse).Name}");
@@ -66,7 +68,7 @@ public class TypedMessageUnityComponent:BaseUnityComponent
 
             var responseObject = await messageHandler(messageObject);
 
-            var response = JsonSerializer.Serialize(responseObject);
+            var response = JsonConvert.SerializeObject(responseObject);
             return MessageTypeCache.EncodeMessageJson<TResponse>(response);
         };
     }
