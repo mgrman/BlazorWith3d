@@ -17,6 +17,8 @@ namespace BlazorWith3d.Unity
         static async void OnBeforeSplashScreen()
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
+            WebGLInput.captureAllKeyboardInput = false;
+
             Debug.Log($"On before BlazorApiUnity.InitializeApi");
             InitializeApi(OnMessageReceived);
 

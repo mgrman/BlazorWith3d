@@ -4,6 +4,7 @@ using BlazorWith3d.ExampleApp.Client.Unity.Shared;
 using BlazorWith3d.Unity;
 using BlazorWith3d.Unity.Shared;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace ExampleApp
 {
@@ -15,6 +16,7 @@ namespace ExampleApp
 
         public void Start()
         {
+
             _templateRoot=new GameObject($"BlockTemplateRoot");
             _templateRoot.SetActive(false);
             _templateRoot.transform.parent = transform;
@@ -23,7 +25,6 @@ namespace ExampleApp
             TypedMessageBlazorApi.AddMessageProcessCallback<RemoveBlockTemplateMessage,NoResponse>(OnRemoveBlockTemplateMessage);
             TypedMessageBlazorApi.AddMessageProcessCallback<AddBlockInstanceMessage,NoResponse>(OnAddBlockInstanceMessage);
             TypedMessageBlazorApi.AddMessageProcessCallback<RemoveBlockMessage,NoResponse>(OnRemoveBlockMessage);
-
 
             TypedMessageBlazorApi.SendMessage<AppInitialized, NoResponse>(new AppInitialized());
             
@@ -48,7 +49,7 @@ namespace ExampleApp
             //     @"AddBlockTemplateMessage;{""TemplateId"":0,""SizeX"":1.0,""SizeY"":2.0,""SizeZ"":3.0}");
             #endif
         }
-
+        
         private NoResponse OnAddBlockTemplateMessage(AddBlockTemplateMessage msg)
         {
             Debug.Log($"Adding block template: {JsonUtility.ToJson(msg)}");
