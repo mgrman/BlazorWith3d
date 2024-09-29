@@ -14,7 +14,7 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
 
     public sealed class AddBlockTemplateMessage : IMessageToUnity<AddBlockTemplateMessage, NoResponse>
     {
-        public int TemplateId
+        public int TemplateId 
 #if COMMON_UNITY
 ;
 #elif COMMON_DOTNET
@@ -84,47 +84,127 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
     
     public sealed class RemoveBlockMessage : IMessageToUnity<RemoveBlockMessage, NoResponse>
     {
-        public int BlockId;
+        public int BlockId
+#if COMMON_UNITY
+;
+#elif COMMON_DOTNET
+        {get;set;}
+#endif
     }
 
     
     public sealed class RemoveBlockTemplateMessage : IMessageToUnity<RemoveBlockTemplateMessage, NoResponse>
     {
-        public int TemplateId;
+        public int TemplateId
+#if COMMON_UNITY
+;
+#elif COMMON_DOTNET
+        {get;set;}
+#endif
     }
 
     
     public sealed class StartDraggingBlockMessage : IMessageToUnity<StartDraggingBlockMessage, NoResponse>
     {
-        public int TemplateId;
-        public int BlockId;
+        public int TemplateId
+#if COMMON_UNITY
+;
+#elif COMMON_DOTNET
+        {get;set;}
+#endif
+        public int BlockId
+#if COMMON_UNITY
+;
+#elif COMMON_DOTNET
+        {get;set;}
+#endif
     }
 
     
     public sealed class PoseChangeResponse
     {
-        public bool IsValid;
-        public float? NewPositionX;
-        public float? NewPositionY;
-        public float? NewRotationZ;
+        public bool IsValid
+#if COMMON_UNITY
+;
+#elif COMMON_DOTNET
+        {get;set;}
+#endif
+        public float? NewPositionX
+#if COMMON_UNITY
+;
+#elif COMMON_DOTNET
+        {get;set;}
+#endif
+        public float? NewPositionY
+#if COMMON_UNITY
+;
+#elif COMMON_DOTNET
+        {get;set;}
+#endif
+        public float? NewRotationZ
+#if COMMON_UNITY
+;
+#elif COMMON_DOTNET
+        {get;set;}
+#endif
     }
 
     
     public sealed class BlockPoseChangingMessage : IMessageFromUnity<BlockPoseChangingMessage, PoseChangeResponse>
     {
-        public int BlockId;
-        public float PositionX;
-        public float PositionY;
-        public float RotationZ;
+        public int BlockId
+#if COMMON_UNITY
+;
+#elif COMMON_DOTNET
+        {get;set;}
+#endif
+        public float PositionX
+#if COMMON_UNITY
+;
+#elif COMMON_DOTNET
+        {get;set;}
+#endif
+        public float PositionY
+#if COMMON_UNITY
+;
+#elif COMMON_DOTNET
+        {get;set;}
+#endif
+        public float RotationZ
+#if COMMON_UNITY
+;
+#elif COMMON_DOTNET
+        {get;set;}
+#endif
     }
 
     
     public sealed class BlockPoseChangedMessage : IMessageFromUnity<BlockPoseChangedMessage, NoResponse>
     {
-        public int BlockId;
-        public float PositionX;
-        public float PositionY;
-        public float RotationZ;
+        public int BlockId
+#if COMMON_UNITY
+;
+#elif COMMON_DOTNET
+        {get;set;}
+#endif
+        public float PositionX
+#if COMMON_UNITY
+;
+#elif COMMON_DOTNET
+        {get;set;}
+#endif
+        public float PositionY
+#if COMMON_UNITY
+;
+#elif COMMON_DOTNET
+        {get;set;}
+#endif
+        public float RotationZ
+#if COMMON_UNITY
+;
+#elif COMMON_DOTNET
+        {get;set;}
+#endif
     }
 
 

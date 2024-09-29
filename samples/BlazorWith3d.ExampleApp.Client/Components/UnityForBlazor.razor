@@ -126,7 +126,7 @@
             <InputNumber @bind-Value="newBlockTemplateId"></InputNumber>
         </td>
         <td>
-            <button @onclick="AddBlock">Add</button>
+            <button @onclick="AddBlock" disabled="@(!_templates.Any(o=>o.id==newBlockTemplateId))">Add</button>
         </td>
     </tr>
 </table>

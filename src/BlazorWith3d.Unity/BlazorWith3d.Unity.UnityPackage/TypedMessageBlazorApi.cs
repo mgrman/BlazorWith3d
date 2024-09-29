@@ -64,10 +64,18 @@ namespace BlazorWith3d.Unity
                         $"Response for {typeof(TMessage).Name} was not deserializable into {typeof(TResponse).Name}");
                 }
 
-                var responseObject = messageHandler(messageObject);
+                try
+                {
+                    var responseObject = messageHandler(messageObject);
 
-                var response = JsonUtility.ToJson(responseObject);
-                return MessageTypeCache.EncodeMessageJson<TResponse>(response);
+                    var response = JsonUtility.ToJson(responseObject);
+                    return MessageTypeCache.EncodeMessageJson<TResponse>(response);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogException(ex);
+                    throw;
+                }
             };
         }
 

@@ -24,12 +24,16 @@ namespace ExampleApp
             TypedMessageBlazorApi.AddMessageProcessCallback<AddBlockInstanceMessage,NoResponse>(OnAddBlockInstanceMessage);
             TypedMessageBlazorApi.AddMessageProcessCallback<RemoveBlockMessage,NoResponse>(OnRemoveBlockMessage);
 
+            
+            #if UNITY_EDITOR
+            OnAddBlockTemplateMessage(new AddBlockTemplateMessage()
+            {
+                TemplateId = 0,
+                SizeX = 0, SizeY = 0, SizeZ = 0, VisualsUri = null
+            });
+            OnAddBlockInstanceMessage(new AddBlockInstanceMessage(){ BlockId = 0, TemplateId = 0});
+            OnRemoveBlockMessage(new RemoveBlockMessage() { BlockId = 0 });
             //
-            // OnAddBlockTemplateMessage(new AddBlockTemplateMessage()
-            // {
-            //     TemplateId = 0,
-            //     SizeX = 0, SizeY = 0, SizeZ = 0, VisualsUri = null
-            // });
             // OnAddBlockTemplateMessage(new AddBlockTemplateMessage()
             // {
             //     TemplateId = 1,
@@ -40,6 +44,7 @@ namespace ExampleApp
             //     @"AddBlockTemplateMessage;{""TemplateId"":0,""SizeX"":1.0,""SizeY"":2.0,""SizeZ"":3.0}");
             // TypedMessageBlazorApi.SimulateMessage(
             //     @"AddBlockTemplateMessage;{""TemplateId"":0,""SizeX"":1.0,""SizeY"":2.0,""SizeZ"":3.0}");
+            #endif
         }
 
         private NoResponse OnAddBlockTemplateMessage(AddBlockTemplateMessage msg)
@@ -57,34 +62,39 @@ namespace ExampleApp
             
             _templates.Add(msg.TemplateId, (meshGo,meshGo.transform.localScale));
 
-            Debug.Log($"Added block template: {msg.TemplateId}");
+            Debug.Log($"Added block template: {JsonUtility.ToJson(msg)}");
             
             return NoResponse.Instance;
         }
 
         private NoResponse OnRemoveBlockTemplateMessage(RemoveBlockTemplateMessage msg)
         {
+            Debug.Log($"Removing block template: {JsonUtility.ToJson(msg)}");
             _templates.Remove(msg.TemplateId);
-            Debug.Log($"Removed block template: {msg.TemplateId}");
+            Debug.Log($"Removed block template: {JsonUtility.ToJson(msg)}");
             return NoResponse.Instance;
         }
 
         private NoResponse OnAddBlockInstanceMessage(AddBlockInstanceMessage msg)
         {
+            Debug.Log($"Adding block : {JsonUtility.ToJson(msg)}");
             var template=_templates[msg.TemplateId];    
             
              var blockGo=GameObject.Instantiate(template.template, new Vector3(msg.PositionX, msg.PositionY,0), Quaternion.Euler(0,0,msg.RotationZ),  transform  );
             
              _blocks.Add(msg.BlockId,blockGo );
+             Debug.Log($"Added block : {JsonUtility.ToJson(msg)}");
             return NoResponse.Instance;
         }
 
         private NoResponse OnRemoveBlockMessage(RemoveBlockMessage msg)
         {
+            Debug.Log($"Removing block template: {JsonUtility.ToJson(msg)}");
             var blockGo=_blocks[msg.BlockId];
             GameObject.Destroy(blockGo);
             _blocks.Remove(msg.BlockId);
             
+            Debug.Log($"Removed block template: {JsonUtility.ToJson(msg)}");
             return NoResponse.Instance;
         }
     }

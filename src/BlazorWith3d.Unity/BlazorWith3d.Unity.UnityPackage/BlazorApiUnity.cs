@@ -33,8 +33,9 @@ namespace BlazorWith3d.Unity
         }
 
         [MonoPInvokeCallback(typeof(Action<int, string>))]
-        private static void OnResponseReceived(int msgId, string response)
+        private static async void OnResponseReceived(int msgId, string response)
         {
+            await Awaitable.MainThreadAsync();
             if (_responseAwaitables.TryGetValue(msgId, out var tcs))
             {
                 tcs.TrySetResult(response);

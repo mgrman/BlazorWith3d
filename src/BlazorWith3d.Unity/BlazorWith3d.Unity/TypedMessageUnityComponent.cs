@@ -22,12 +22,7 @@ public class TypedMessageUnityComponent:BaseUnityComponent
 
         try
         {
-
             var responseString = await SendMessageToUnity(encodedMessage);
-
-
-
-
             var decoded = MessageTypeCache.DecodeMessageJson(responseString);
 
             if (decoded == null)
