@@ -38,22 +38,22 @@
     {
         // TODO somehow the initial start via Rider does not start Unity, it gets stuck after OnBlazorApiInitialized!!! message, but reloading the page fixes the issue
         // Maybe as this is used in auto mode? it starts first with server mode, and then all async calls need to be Async!
-       
-        
-        var moduleTask = new Lazy<Task<IJSObjectReference>>(() => jsRuntime.InvokeAsync<IJSObjectReference>("import", "./_content/BlazorWith3d.Unity/exampleJsInterop.js").AsTask());
+
+
+        var moduleTask = new Lazy<Task<IJSObjectReference>>(() => jsRuntime.InvokeAsync<IJSObjectReference>("import", "./_content/BlazorWith3d.Unity/unityInitialization.js").AsTask());
 
         var module = await moduleTask.Value;
-        _unityApi=await module.InvokeAsync<IJSObjectReference>("showUnity", ContainerElementReference, _messageProxyReference, nameof(JsMessageProxy.OnMessageReceived), nameof(JsMessageProxy.OnUnityInitialized));
+        _unityApi = await module.InvokeAsync<IJSObjectReference>("showUnity", ContainerElementReference, _messageProxyReference, nameof(JsMessageProxy.OnMessageReceived), nameof(JsMessageProxy.OnUnityInitialized));
 
         await base.OnAfterRenderAsync(firstRender);
     }
-    
-    protected virtual string OnMessageReceived(string msg)
+
+    protected virtual ValueTask<string> OnMessageReceived(string msg)
     {
-        return "ACK";
+        return ValueTask.FromResult("ACK");
     }
 
-    protected virtual async void OnUnityInitialized()
+    protected virtual async ValueTask OnUnityInitialized()
     {
         if (_unityApi == null)
         {
@@ -66,13 +66,13 @@
     }
 
 
-    protected class JsMessageProxy(Func<string, string> onMessageReceived, Action onInitialized)
+    protected class JsMessageProxy(Func<string,ValueTask<string>> onMessageReceived, Func<ValueTask> onInitialized)
     {
         [JSInvokable]
-        public string OnMessageReceived(string mesg) => onMessageReceived(mesg);
+        public ValueTask<string> OnMessageReceived(string mesg) => onMessageReceived(mesg);
 
         [JSInvokable]
-        public void OnUnityInitialized() => onInitialized();
+        public ValueTask OnUnityInitialized() => onInitialized();
     }
 
     public void Dispose() => _messageProxyReference?.Dispose();

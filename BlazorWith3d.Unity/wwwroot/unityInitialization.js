@@ -88,16 +88,27 @@ export function showUnity(container, dotnetObject,onMessageReceivedMethodName,on
       unityInstance.Module["BlazorApi_OnMessageFromUnityHandler"]=function (msg){
         
         // TODO investigate https://react-unity-webgl.dev/docs/api/event-system
-        return dotnetObject.invokeMethod(onMessageReceivedMethodName, msg);
+        
+        
+        
+        return dotnetObject.invokeMethodAsync(onMessageReceivedMethodName, msg)
+            .then(() => {
+
+              var response=sendMessageFunc("JS_INITIALIZED");
+              console.log("JS_INITIALIZED:"+response);
+            });
       }
 
       unityInstance.Module["BlazorApi_Initialized"]=function (){
         console.log("OnBlazorApiInitialized!!!");
 
-        dotnetObject.invokeMethod(onInitializedMethodName);
+        dotnetObject.invokeMethodAsync(onInitializedMethodName)
+            .then(() => {
+
+              var response=sendMessageFunc("JS_INITIALIZED");
+              console.log("JS_INITIALIZED:"+response);
+            });
         
-        var response=sendMessageFunc("JS_INITIALIZED");
-        console.log("JS_INITIALIZED:"+response);
 
 
       }
