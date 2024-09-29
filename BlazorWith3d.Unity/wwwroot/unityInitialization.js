@@ -6,7 +6,7 @@ export function showPrompt(message) {
 }
 
 
-export function showUnity(container, dotnetObject,onMessageReceivedMethodName,onInitializedMethodName ){
+export function showUnity(buildUrl,container, dotnetObject,onMessageReceivedMethodName,onInitializedMethodName ){
 
   var canvas = container.querySelector("#unity-canvas");
 
@@ -35,7 +35,7 @@ export function showUnity(container, dotnetObject,onMessageReceivedMethodName,on
     updateBannerVisibility();
   }
 
-  var buildUrl = "./_content/BlazorWith3d.Unity";
+  //var buildUrl = "./_content/BlazorWith3d.Unity";
   var loaderUrl = buildUrl + "/Build.loader.js";
   var config = {
     arguments: [],

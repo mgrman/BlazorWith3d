@@ -1,0 +1,26 @@
+﻿@rendermode InteractiveAuto
+@using BlazorWith3d.Unity
+
+<InputCheckbox @bind-Value="Is3DVisible" ></InputCheckbox>
+
+@if (Is3DVisible)
+{
+    <TypedMessageUnityComponent @ref="_unityComponent" UnityBuildFilePath="@Assets[""]"></TypedMessageUnityComponent>
+}
+
+@code {
+    
+    private TypedMessageUnityComponent? _unityComponent;
+    
+    
+    private bool _is3DVisible=true;
+    public bool Is3DVisible
+    {
+        get => _is3DVisible;
+        set
+        {
+            _is3DVisible = value;
+            
+        } 
+    }
+}

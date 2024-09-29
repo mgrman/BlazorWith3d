@@ -1,4 +1,3 @@
-using BlazorWith3d.Client.Pages;
 using BlazorWith3d.Components;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -30,9 +29,9 @@ app.UseAntiforgery();
 
 app.Use(async (context, next) =>
 {
-    context.Response.Headers.Add("Cross-Origin-Opener-Policy", "same-origin");
-    context.Response.Headers.Add("Cross-Origin-Embedder-Policy", "require-corp");
-    context.Response.Headers.Add("Cross-Origin-Resource-Policy", "cross-origin");
+    context.Response.Headers.Append("Cross-Origin-Opener-Policy", "same-origin");
+    context.Response.Headers.Append("Cross-Origin-Embedder-Policy", "require-corp");
+    context.Response.Headers.Append("Cross-Origin-Resource-Policy", "cross-origin");
     await next();
 });
 

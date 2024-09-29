@@ -1,0 +1,52 @@
+﻿.my-component {
+    border: 2px dashed red;
+    padding: 1em;
+    margin: 1em 0;
+}
+
+.unity-container {
+    position: absolute
+}
+
+#unity-canvas {
+    background: white
+}
+
+#unity-loading-bar {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    display: none
+}
+
+#unity-logo {
+    width: 154px;
+    height: 130px;
+    background: black no-repeat center
+}
+
+#unity-progress-bar-empty {
+    width: 141px;
+    height: 18px;
+    margin-top: 10px;
+    margin-left: 6.5px;
+    background: red no-repeat center
+}
+
+#unity-progress-bar-full {
+    width: 0%;
+    height: 18px;
+    margin-top: 10px;
+    background: green no-repeat center
+}
+
+#unity-warning {
+    position: absolute;
+    left: 50%;
+    top: 5%;
+    transform: translate(-50%);
+    background: white;
+    padding: 10px;
+    display: none
+}

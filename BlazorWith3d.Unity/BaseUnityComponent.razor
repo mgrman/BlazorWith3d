@@ -1,9 +1,9 @@
-﻿@using Microsoft.JSInterop
-@inject IJSRuntime jsRuntime
+﻿@inject IJSRuntime JsRuntime
+@using Microsoft.JSInterop
 @implements IDisposable
 
-<div  @ref=_containerElementReference class="unity-container">
-    <canvas id="unity-canvas" width=960 height=600 tabindex="-1"></canvas>
+<div @ref="_containerElementReference" class="unity-container">
+    <canvas id="unity-canvas" width="960" height="600" tabindex="-1"></canvas>
     <div id="unity-loading-bar">
         <div id="unity-logo"></div>
         <div id="unity-progress-bar-empty">
@@ -13,19 +13,25 @@
     <div id="unity-warning"> </div>
 </div>
 
-@code 
+@code
 {
     private IJSObjectReference? _unityApi;
 
-    private DotNetObjectReference<JsMessageReceiverProxy> _messageReceiverProxyReference = null!;
-    
-    private ElementReference _containerElementReference;
+    private DotNetObjectReference<JsMessageReceiverProxy>? _messageReceiverProxyReference;
 
+    private ElementReference _containerElementReference;
+    private readonly TaskCompletionSource<object> _unityInitializedTcs = new ();
+
+    [Parameter, EditorRequired] 
+    public string UnityBuildFilePath { get; set; } = "";
+
+    public void Dispose()
+    {
+        _messageReceiverProxyReference?.Dispose();
+    }
+    
     protected override void OnInitialized()
     {
-        // TODO add CSS for this component
-        
-        
         _messageReceiverProxyReference = DotNetObjectReference.Create(new JsMessageReceiverProxy(OnMessageReceived, OnUnityInitialized));
         base.OnInitialized();
     }
@@ -37,11 +43,11 @@
             await base.OnAfterRenderAsync(firstRender);
             return;
         }
-        
-        var moduleTask = new Lazy<Task<IJSObjectReference>>(() => jsRuntime.InvokeAsync<IJSObjectReference>("import", "./_content/BlazorWith3d.Unity/unityInitialization.js").AsTask());
+
+        var moduleTask = new Lazy<Task<IJSObjectReference>>(() => JsRuntime.InvokeAsync<IJSObjectReference>("import", "./_content/BlazorWith3d.Unity/unityInitialization.js").AsTask());
         var module = await moduleTask.Value;
-        
-        _unityApi = await module.InvokeAsync<IJSObjectReference>("showUnity", _containerElementReference, _messageReceiverProxyReference, nameof(JsMessageReceiverProxy.OnMessageReceived), nameof(JsMessageReceiverProxy.OnUnityInitialized));
+
+        _unityApi = await module.InvokeAsync<IJSObjectReference>("showUnity",UnityBuildFilePath, _containerElementReference, _messageReceiverProxyReference, nameof(JsMessageReceiverProxy.OnMessageReceived), nameof(JsMessageReceiverProxy.OnUnityInitialized));
 
         await base.OnAfterRenderAsync(firstRender);
     }
@@ -50,40 +56,43 @@
     {
         return ValueTask.FromResult("ACK");
     }
-    
-    protected virtual ValueTask<string> SendMessageToUnity(string msg)
+
+    protected virtual async ValueTask<string> SendMessageToUnity(string msg)
     {
+        await _unityInitializedTcs.Task;
+
         if (_unityApi == null)
         {
             throw new InvalidOperationException("CRITICAL FAILURE, SendMessageToUnity called without _unityApi reference!");
         }
 
-        return _unityApi.InvokeAsync<string>("sendMessage", msg);
+        return await _unityApi.InvokeAsync<string>("sendMessage", msg);
     }
 
-    protected virtual async ValueTask OnUnityInitialized()
+    protected virtual ValueTask OnUnityInitialized()
     {
         if (_unityApi == null)
         {
             throw new InvalidOperationException("CRITICAL FAILURE, OnUnityInitialized called without _unityApi reference!");
         }
-        
-        var response = await SendMessageToUnity("test123");
 
-        Console.WriteLine("response:" + response);
+        _unityInitializedTcs.SetResult(null!);
+        return ValueTask.CompletedTask;
     }
 
     private class JsMessageReceiverProxy(Func<string, ValueTask<string>> onMessageReceived, Func<ValueTask> onInitialized)
     {
-        public Func<string, ValueTask<string>> OnMessageReceivedHandler{ get; set; } = onMessageReceived;
-        public Func<ValueTask> OnInitializedHandler { get; set; } = onInitialized;
+        [JSInvokable]
+        public ValueTask<string> OnMessageReceived(string msg)
+        {
+            return onMessageReceived(msg);
+        }
 
         [JSInvokable]
-        public ValueTask<string> OnMessageReceived(string msg) => OnMessageReceivedHandler(msg);
-
-        [JSInvokable]
-        public ValueTask OnUnityInitialized() => OnInitializedHandler();
+        public ValueTask OnUnityInitialized()
+        {
+            return onInitialized();
+        }
     }
 
-    public void Dispose() => _messageReceiverProxyReference?.Dispose();
 }

@@ -16,4 +16,8 @@
         <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="9.0.0-rc.1.24452.1"/>
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\BlazorWith3d.Unity.Shared\BlazorWith3d.Unity.Shared.csproj" />
+    </ItemGroup>
+
 </Project>
