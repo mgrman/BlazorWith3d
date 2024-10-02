@@ -36,19 +36,18 @@ export function InitializeUnityApi ( ){
     }
   };
 
-  unityApi.InitializeDotnetInterop=function(dotnetObject,onMessageReceivedWithResponseMethodName,onMessageReceivedMethodName,onInitializedMethodName){
-    unityApi.dotnetObject=dotnetObject;
-    unityApi.onMessageReceivedHandler = function(msg){
-      unityApi.dotnetObject.invokeMethodAsync(onMessageReceivedMethodName, msg);
+  unityApi.InitializeDotnetInterop=function(dotnetObject,onMessageReceivedMethodName,onMessageReceivedWithResponseMethodName,onInitializedMethodName){
+    unityApi.onMessageReceivedHandler = function(message){
+      unityApi.dotnetObject.invokeMethodAsync(unityApi.onMessageReceivedMethodName, msg);
     };
-    unityApi.onMessageReceivedWithResponseHandler= function(msg){
-      return unityApi.dotnetObject.invokeMethodAsync(onMessageReceivedWithResponseMethodName, msg);
+    unityApi.onMessageReceivedWithResponseHandler=function(message){
+      return unityApi.dotnetObject.invokeMethodAsync(unityApi.onMessageReceivedWithResponseMethodName, msg);
     };
     unityApi.onInitializedHandler=function(){
-      unityApi.dotnetObject.invokeMethodAsync(onInitializedMethodName)
+      unityApi.dotnetObject.invokeMethodAsync(unityApi.onInitializedMethodName)
           .then(() => {
 
-            var response=unityApi.SendMessageWithResponse("JS_INITIALIZED");
+            var response=sendMessageFunc("JS_INITIALIZED");
             console.log("JS_INITIALIZED:"+response);
           });
     };
@@ -60,7 +59,7 @@ export function InitializeUnityApi ( ){
     unityApi.unityInstance=unityInstance;
 
     // Task<string> BlazorApi_OnMessageFromUnityWithResponseHandler(string message)
-    unityInstance.Module["BlazorApi_OnMessageFromUnityWithResponseHandler"]= function (msg){
+    unityInstance.Module["BlazorApi_OnMessageFromUnityWithResponseHandler"]=async function (msg){
 
       // TODO investigate https://react-unity-webgl.dev/docs/api/event-system
 
@@ -92,7 +91,7 @@ export function InitializeUnityApi ( ){
 
 
 
-export function showUnity(buildUrl,container, dotnetObject,onMessageWithResponseReceivedMethodName,onMessageReceivedMethodName,onInitializedMethodName ){
+export function showUnity(buildUrl,container, dotnetObject,onMessageReceivedMethodName,onInitializedMethodName ){
 
   var canvas = container.querySelector("#unity-canvas");
 
@@ -150,7 +149,7 @@ export function showUnity(buildUrl,container, dotnetObject,onMessageWithResponse
   container.querySelector("#unity-loading-bar").style.display = "block";
 
   var unityApi=InitializeUnityApi();
-  unityApi.InitializeDotnetInterop( dotnetObject,onMessageWithResponseReceivedMethodName,onMessageReceivedMethodName,onInitializedMethodName )
+  unityApi.InitializeDotnetInterop()
 
   var script = document.createElement("script");
   script.src = loaderUrl;

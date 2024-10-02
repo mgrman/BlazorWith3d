@@ -8,8 +8,9 @@
     <link rel="stylesheet" href="TemplateData/style.css">
 #if SHOW_DIAGNOSTICS
     <link rel="stylesheet" href="<<<TemplateData/diagnostics.css>>>">
-    <script src="<<<TemplateData/diagnostics.js>>>"></script>
+      <script src="<<<TemplateData/diagnostics.js>>>"></script>
 #endif
+      <script src="BlazorData/unityInitialization.js" type="module"></script>
   </head>
   <body>
     <div id="unity-container" class="unity-desktop">
@@ -30,7 +31,7 @@
         <div id="unity-build-title">{{{ PRODUCT_NAME }}}</div>
       </div>
     </div>
-    <script>
+    <script  type="module">
       var canvas = document.querySelector("#unity-canvas");
 
       // Shows a temporary message banner/ribbon for a few seconds, or
@@ -129,25 +130,31 @@
 #endif
       document.querySelector("#unity-loading-bar").style.display = "block";
 
+
+      import { InitializeUnityApi } from './BlazorData/unityInitialization.js'
+      var unityApi=InitializeUnityApi();
+      
       var script = document.createElement("script");
       script.src = loaderUrl;
       script.onload = () => {
         createUnityInstance(canvas, config, (progress) => {
           document.querySelector("#unity-progress-bar-full").style.width = 100 * progress + "%";
-              }).then((unityInstance) => {
+            }).then((unityInstance) => {
 
-                unityInstance.Module["BlazorApi_OnMessageFromUnityHandler"]=async function (msg){
-                    return "ACK for "+msg;
+                unityApi.onMessageReceivedHandler = function(message){
+                   
+                    console.log("received message: "+message)
+                };
+                unityApi.onMessageReceivedWithResponseHandler=async function(message){
+                    console.log("received message with response: "+message)
+                    return "ACK for "+message;
+                };
+                unityApi.onInitializedHandler=function() {
+    
+                    var response=unityApi.SendMessageWithResponse("JS_INITIALIZED");
+                    console.log("JS_INITIALIZED:"+response);
                 }
-            
-                  unityInstance.Module["BlazorApi_Initialized"]=function (){
-                      console.log("OnBlazorApiInitialized!!!");
-
-
-                      var response=unityInstance.Module["BlazorApi_SendMessageToUnity"]("JS_INITIALIZED");
-                      console.log("JS_INITIALIZED:"+response);
-                      
-                  }
+                unityApi.setUnityInstance(unityInstance);
                   
                   
                 document.querySelector("#unity-loading-bar").style.display = "none";

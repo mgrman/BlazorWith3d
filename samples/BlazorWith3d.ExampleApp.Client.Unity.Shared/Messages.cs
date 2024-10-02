@@ -12,10 +12,10 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
 // - void SubscribeToBlockPoseChanged(Action<int blockId, float positionX, float positionY, float rotationZ> onPoseChanged)
 // - void StartDraggingBlock(int blockId, int templateId)
 
-    public sealed class AppInitialized : IMessageFromUnity<AppInitialized, NoResponse>
+    public sealed class AppInitialized : IMessageFromUnity<AppInitialized>
     {
     }
-    public sealed class AddBlockTemplateMessage : IMessageToUnity<AddBlockTemplateMessage, NoResponse>
+    public sealed class AddBlockTemplateMessage : IMessageToUnity<AddBlockTemplateMessage>
     {
         public int TemplateId;
         public float SizeX;
@@ -25,7 +25,7 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
     }
 
     
-    public sealed class AddBlockInstanceMessage : IMessageToUnity<AddBlockInstanceMessage, NoResponse>
+    public sealed class AddBlockInstanceMessage : IMessageToUnity<AddBlockInstanceMessage>
     {
         public int BlockId;
         public float PositionX;
@@ -35,19 +35,19 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
     }
 
     
-    public sealed class RemoveBlockMessage : IMessageToUnity<RemoveBlockMessage, NoResponse>
+    public sealed class RemoveBlockMessage : IMessageToUnity<RemoveBlockMessage>
     {
         public int BlockId;
     }
 
     
-    public sealed class RemoveBlockTemplateMessage : IMessageToUnity<RemoveBlockTemplateMessage, NoResponse>
+    public sealed class RemoveBlockTemplateMessage : IMessageToUnity<RemoveBlockTemplateMessage>
     {
         public int TemplateId;
     }
 
     
-    public sealed class StartDraggingBlockMessage : IMessageToUnity<StartDraggingBlockMessage, NoResponse>
+    public sealed class StartDraggingBlockMessage : IMessageToUnity<StartDraggingBlockMessage>
     {
         public int TemplateId;
         public int BlockId;
@@ -72,7 +72,7 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
     }
 
     
-    public sealed class BlockPoseChangedMessage : IMessageFromUnity<BlockPoseChangedMessage, NoResponse>
+    public sealed class BlockPoseChangedMessage : IMessageFromUnity<BlockPoseChangedMessage>
     {
         public int BlockId;
         public float PositionX;

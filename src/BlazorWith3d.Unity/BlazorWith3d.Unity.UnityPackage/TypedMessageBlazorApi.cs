@@ -7,8 +7,21 @@ namespace BlazorWith3d.Unity
 {
     public static class TypedMessageBlazorApi
     {
-        private static readonly IDictionary<Type, Func<string, string>> Handlers =
+        private static readonly IDictionary<Type, Func<string, string>> HandlersWithResponse =
             new Dictionary<Type, Func<string, string>>();
+        private static readonly IDictionary<Type, Action<string>> Handlers =
+            new Dictionary<Type, Action<string>>();
+
+        public static void SendMessage<TMessage>(TMessage message)
+            where TMessage : IMessageFromUnity<TMessage>
+        {
+            MessageTypeCache.AddTypeToCache<TMessage>();
+
+            var messageString = JsonUtility.ToJson(message);
+            var encodedMessage = MessageTypeCache.EncodeMessageJson<TMessage>(messageString);
+
+            BlazorApi.SendMessageFromUnity(encodedMessage);
+        }
 
         public static async Awaitable<TResponse> SendMessage<TMessage, TResponse>(TMessage message)
             where TMessage : IMessageFromUnity<TMessage, TResponse>
@@ -18,8 +31,8 @@ namespace BlazorWith3d.Unity
 
             var messageString = JsonUtility.ToJson(message);
             var encodedMessage = MessageTypeCache.EncodeMessageJson<TMessage>(messageString);
-
-            var responseString = await BlazorApi.SendMessageFromUnity(encodedMessage);
+            
+            var responseString = await BlazorApi.SendMessageWithResponseFromUnityAsync(encodedMessage);
 
             var decoded = MessageTypeCache.DecodeMessageJson(responseString);
 
@@ -45,23 +58,28 @@ namespace BlazorWith3d.Unity
             return response;
         }
 
-        public static string SimulateMessage(string message)
+        public static void SimulateMessage(string message)
         {
-            return HandleReceivedMessages(message);
+            HandleReceivedMessages(message);
         }
 
-        public static void AddMessageProcessCallback<TMessage, TResponse>(Func<TMessage, TResponse> messageHandler)
+        public static string SimulateMessageWithResponse(string message)
+        {
+            return HandleReceivedMessagesWithResponse(message);
+        }
+
+        public static void AddMessageWithResponseProcessCallback<TMessage, TResponse>(Func<TMessage, TResponse> messageHandler)
             where TMessage : IMessageToUnity<TMessage, TResponse>
         {
             MessageTypeCache.AddTypeToCache<TMessage>();
             MessageTypeCache.AddTypeToCache<TResponse>();
-            Handlers[typeof(TMessage)] = objectJson =>
+            HandlersWithResponse[typeof(TMessage)] = objectJson =>
             {
                 var messageObject = JsonUtility.FromJson<TMessage>(objectJson);
                 if (messageObject == null)
                 {
                     throw new InvalidOperationException(
-                        $"Response for {typeof(TMessage).Name} was not deserializable into {typeof(TResponse).Name}");
+                        $"Message for {typeof(TMessage).Name} was not deserializable into {typeof(TMessage).Name}");
                 }
 
                 try
@@ -70,6 +88,31 @@ namespace BlazorWith3d.Unity
 
                     var response = JsonUtility.ToJson(responseObject);
                     return MessageTypeCache.EncodeMessageJson<TResponse>(response);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogException(ex);
+                    throw;
+                }
+            };
+        }
+
+        public static void AddMessageProcessCallback<TMessage>(Action<TMessage> messageHandler)
+            where TMessage : IMessageToUnity<TMessage>
+        {
+            MessageTypeCache.AddTypeToCache<TMessage>();
+            Handlers[typeof(TMessage)] = objectJson =>
+            {
+                var messageObject = JsonUtility.FromJson<TMessage>(objectJson);
+                if (messageObject == null)
+                {
+                    throw new InvalidOperationException(
+                        $"Message for {typeof(TMessage).Name} was not deserializable into {typeof(TMessage).Name}");
+                }
+
+                try
+                {
+                    messageHandler(messageObject);
                 }
                 catch (Exception ex)
                 {
@@ -93,7 +136,36 @@ namespace BlazorWith3d.Unity
             }
         }
 
-        internal static string HandleReceivedMessages(string msg)
+        internal static void HandleReceivedMessages(string msg)
+        {
+            var decoded = MessageTypeCache.DecodeMessageJson(msg);
+
+            if (decoded == null)
+            {
+                if (TryHandleKnownMessages(msg, out var knownMessageResponse))
+                {
+                    return;
+                }
+
+                throw new InvalidOperationException($"Non-encoded message received! {msg}");
+            }
+
+            if (decoded.Value.type == null)
+            {
+                Debug.LogWarning($"Unknown message type {decoded.Value.typeName}");
+                return;
+            }
+
+            if (!Handlers.TryGetValue(decoded.Value.type, out var handler))
+            {
+                Debug.LogWarning($"Missing handler for message {decoded.Value.typeName}");
+                return;
+            }
+
+            handler(decoded.Value.objectJson);
+        }
+
+        internal static string HandleReceivedMessagesWithResponse(string msg)
         {
             var decoded = MessageTypeCache.DecodeMessageJson(msg);
 
@@ -113,7 +185,7 @@ namespace BlazorWith3d.Unity
                 return string.Empty;
             }
 
-            if (!Handlers.TryGetValue(decoded.Value.type, out var handler))
+            if (!HandlersWithResponse.TryGetValue(decoded.Value.type, out var handler))
             {
                 Debug.LogWarning($"Missing handler for message {decoded.Value.typeName}");
                 return string.Empty;

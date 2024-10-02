@@ -10,7 +10,7 @@ namespace BlazorWith3d.Unity
     {
         private static int _responseIdCounter = 0;
 
-        private static IDictionary<int, AwaitableCompletionSource<string>> _responseAwaitables =
+        private static readonly IDictionary<int, AwaitableCompletionSource<string>> _responseAwaitables =
             new Dictionary<int, AwaitableCompletionSource<string>>();
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSplashScreen)]
@@ -20,23 +20,30 @@ namespace BlazorWith3d.Unity
             WebGLInput.captureAllKeyboardInput = false;
 
             Debug.Log($"On before BlazorApiUnity.InitializeApi");
-            InitializeApi(OnMessageReceived);
+            _InitializeApi(_OnMessageReceivedWithResponse, _OnMessageReceived);
 
             Debug.Log($"On after BlazorApiUnity.InitializeApi");
-            var response = await SendMessageFromUnity("UNITY_INITIALIZED");
+            var response = await SendMessageWithResponseFromUnityAsync("UNITY_INITIALIZED");
             Debug.Log($"UNITY_INITIALIZED:{response}");
 #endif
         }
 
-        [MonoPInvokeCallback(typeof(Func<string, string>))]
-        private static string OnMessageReceived(string msg)
+        [MonoPInvokeCallback(typeof(Action<string>))]
+        private static void _OnMessageReceived(string msg)
         {
-            return TypedMessageBlazorApi.HandleReceivedMessages(msg);
+            TypedMessageBlazorApi.HandleReceivedMessages(msg);
+        }
+
+        [MonoPInvokeCallback(typeof(Func<string, string>))]
+        private static string _OnMessageReceivedWithResponse(string msg)
+        {
+            return TypedMessageBlazorApi.HandleReceivedMessagesWithResponse(msg);
         }
 
         [MonoPInvokeCallback(typeof(Action<int, string>))]
         private static async void OnResponseReceived(int msgId, string response)
         {
+            Debug.Log($"Received response for msg {msgId} as {response}");
             await Awaitable.MainThreadAsync();
             if (_responseAwaitables.TryGetValue(msgId, out var tcs))
             {
@@ -46,13 +53,16 @@ namespace BlazorWith3d.Unity
         }
 
         [DllImport("__Internal")]
-        private static extern void SendMessageFromUnity(int msgId, string message,
+        private static extern void _SendMessageWithResponseFromUnity(int msgId, string message,
             Action<int, string> onResponseReceived);
 
         [DllImport("__Internal")]
-        private static extern string InitializeApi(Func<string, string> onMessageReceived);
+        private static extern void _SendMessageFromUnity(string message);
 
-        internal static Awaitable<string> SendMessageFromUnity(string message)
+        [DllImport("__Internal")]
+        private static extern string _InitializeApi(Func<string, string> onMessageReceivedWithResponse,Action<string> onMessageReceived);
+
+        internal static Awaitable<string> SendMessageWithResponseFromUnityAsync(string message)
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
             int msgId;
@@ -62,10 +72,20 @@ namespace BlazorWith3d.Unity
                 msgId = _responseIdCounter++;
             }
 
+            Debug.Log($"Sending msg {msgId} as {message}");
+
             var awaitableTcs = new AwaitableCompletionSource<string>();
             _responseAwaitables[msgId] = awaitableTcs;
-            SendMessageFromUnity(msgId, message, OnResponseReceived);
+            _SendMessageWithResponseFromUnity(msgId, message, OnResponseReceived);
             return awaitableTcs.Awaitable;
+#else
+            throw new NotImplementedException();
+#endif
+        }
+        internal static void SendMessageFromUnity(string message)
+        {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            _SendMessageFromUnity(message);
 #else
             throw new NotImplementedException();
 #endif

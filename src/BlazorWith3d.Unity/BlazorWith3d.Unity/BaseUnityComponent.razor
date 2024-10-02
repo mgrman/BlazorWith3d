@@ -32,7 +32,7 @@
     
     protected override void OnInitialized()
     {
-        _messageReceiverProxyReference = DotNetObjectReference.Create(new JsMessageReceiverProxy(OnMessageReceived, OnUnityInitialized));
+        _messageReceiverProxyReference = DotNetObjectReference.Create(new JsMessageReceiverProxy(OnMessageReceivedWithResponseAsync, OnMessageReceived, OnUnityInitialized));
         base.OnInitialized();
     }
 
@@ -47,17 +47,21 @@
         var moduleTask = new Lazy<Task<IJSObjectReference>>(() => JsRuntime.InvokeAsync<IJSObjectReference>("import", "./_content/BlazorWith3d.Unity/unityInitialization.js").AsTask());
         var module = await moduleTask.Value;
 
-        _unityApi = await module.InvokeAsync<IJSObjectReference>("showUnity",UnityBuildFilePath, _containerElementReference, _messageReceiverProxyReference, nameof(JsMessageReceiverProxy.OnMessageReceived), nameof(JsMessageReceiverProxy.OnUnityInitialized));
+        _unityApi = await module.InvokeAsync<IJSObjectReference>("showUnity",UnityBuildFilePath, _containerElementReference, _messageReceiverProxyReference, nameof(JsMessageReceiverProxy.OnMessageWithResponseReceived), nameof(JsMessageReceiverProxy.OnMessageReceived), nameof(JsMessageReceiverProxy.OnUnityInitialized));
 
         await base.OnAfterRenderAsync(firstRender);
     }
 
-    protected virtual ValueTask<string> OnMessageReceived(string msg)
+    protected virtual void OnMessageReceived(string msg)
+    {
+    }
+
+    protected virtual ValueTask<string> OnMessageReceivedWithResponseAsync(string msg)
     {
         return ValueTask.FromResult("ACK");
     }
 
-    protected virtual async ValueTask<string> SendMessageToUnity(string msg)
+    protected virtual async ValueTask SendMessageToUnityAsync(string msg)
     {
         await _unityInitializedTcs.Task;
 
@@ -66,7 +70,19 @@
             throw new InvalidOperationException("CRITICAL FAILURE, SendMessageToUnity called without _unityApi reference!");
         }
 
-        var response= await _unityApi.InvokeAsync<string>("sendMessage", msg);
+        await _unityApi.InvokeAsync<string>("SendMessage", msg);
+    }
+
+    protected virtual async ValueTask<string> SendMessageWithResponseToUnityAsync(string msg)
+    {
+        await _unityInitializedTcs.Task;
+
+        if (_unityApi == null)
+        {
+            throw new InvalidOperationException("CRITICAL FAILURE, SendMessageToUnity called without _unityApi reference!");
+        }
+
+        var response= await _unityApi.InvokeAsync<string>("SendMessageWithResponse", msg);
         
         if (response == null)
         {
@@ -87,12 +103,17 @@
         return ValueTask.CompletedTask;
     }
 
-    private class JsMessageReceiverProxy(Func<string, ValueTask<string>> onMessageReceived, Func<ValueTask> onInitialized)
+    private class JsMessageReceiverProxy(Func<string, ValueTask<string>> onMessageWithResponseReceived,Action<string> onMessageReceived, Func<ValueTask> onInitialized)
     {
         [JSInvokable]
-        public ValueTask<string> OnMessageReceived(string msg)
+        public void OnMessageReceived(string msg)
         {
-            return onMessageReceived(msg);
+            onMessageReceived(msg);
+        }
+        [JSInvokable]
+        public ValueTask<string> OnMessageWithResponseReceived(string msg)
+        {
+            return onMessageWithResponseReceived(msg);
         }
 
         [JSInvokable]

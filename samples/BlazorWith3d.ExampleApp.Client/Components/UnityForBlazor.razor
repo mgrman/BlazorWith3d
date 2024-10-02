@@ -173,16 +173,14 @@
 
     protected override void OnAfterRender(bool firstRender)
     {
-        
-        _unityComponent.AddMessageProcessCallback<AppInitialized,NoResponse>(OnAppInitialized);
+        _unityComponent.AddMessageProcessCallback<AppInitialized>(OnAppInitialized);
         base.OnAfterRender(firstRender);
     }
 
-    private async ValueTask<NoResponse> OnAppInitialized(AppInitialized arg)
+    private async ValueTask OnAppInitialized(AppInitialized arg)
     {
         AppInitialized = true;
        await ReplayState();
-        return NoResponse.Instance;
     }
 
     private async ValueTask ReplayState()
@@ -190,48 +188,58 @@
         foreach (var template in _templates)
         {
             var msg = new AddBlockTemplateMessage() { TemplateId = template.id, SizeX = template.sizeX, SizeY = template.sizeY, SizeZ = template.sizeZ };
-           await SendMessage<AddBlockTemplateMessage, NoResponse>(msg);
+           await SendMessage<AddBlockTemplateMessage>(msg);
         }
         foreach (var block in _blocks)
         {
             var msg = new AddBlockInstanceMessage() { BlockId = block.blockId, PositionX = block.positionX, PositionY = block.positionY, RotationZ = block.rotationZ, TemplateId = block.templateId};
-            SendMessage<AddBlockInstanceMessage, NoResponse>(msg);
+            SendMessage<AddBlockInstanceMessage>(msg);
         }
     }
 
     private async Task AddTemplate()
     {
         var msg = new AddBlockTemplateMessage() { TemplateId = newIdCounter++, SizeX = newTemplateSizeX, SizeY = newTemplateSizeY, SizeZ = newTemplateSizeZ };
-        await SendMessage<AddBlockTemplateMessage, NoResponse>(msg);
+        await SendMessage<AddBlockTemplateMessage>(msg);
         _templates.Add((msg.TemplateId, msg.SizeX, msg.SizeY, msg.SizeZ));
     }
 
     private async Task RemoveTemplate(int id)
     {
-        await SendMessage<RemoveBlockTemplateMessage, NoResponse>(new RemoveBlockTemplateMessage(){ TemplateId = id});
+        await SendMessage<RemoveBlockTemplateMessage>(new RemoveBlockTemplateMessage(){ TemplateId = id});
         _templates.RemoveAll(o => o.id == id);
     }
 
     private async Task AddBlock()
     {
         var msg = new AddBlockInstanceMessage() { BlockId = newIdCounter++, PositionX = newBlockPositionX, PositionY = newBlockPositionY, RotationZ = newBlockRotationZ, TemplateId = newBlockTemplateId};
-        await SendMessage<AddBlockInstanceMessage, NoResponse>(msg);
+        await SendMessage<AddBlockInstanceMessage>(msg);
         _blocks.Add((msg.BlockId, msg.PositionX,msg.PositionY,msg.RotationZ, msg.TemplateId));
     }
 
     private async Task RemoveBlock(int id)
     {
-        await SendMessage<RemoveBlockMessage, NoResponse>(new RemoveBlockMessage(){ BlockId = id});
+        await SendMessage<RemoveBlockMessage>(new RemoveBlockMessage(){ BlockId = id});
         _blocks.RemoveAll(o => o.blockId == id);
     }
 
-    private ValueTask<TResponse> SendMessage<TMessage, TResponse>(TMessage message) where TMessage : IMessageToUnity<TMessage, TResponse>
+    private ValueTask<TResponse> SendMessageWithResponse<TMessage, TResponse>(TMessage message) where TMessage : IMessageToUnity<TMessage, TResponse>
     {
         if (!AppInitialized)
         {
             throw new InvalidOperationException("Unity app is not initialized!");
         }
-        return  _unityComponent.SendMessage<TMessage, TResponse>(message);
+        return  _unityComponent.SendMessageWithResponse<TMessage, TResponse>(message);
+    }
+
+    private ValueTask SendMessage<TMessage>(TMessage message) where TMessage : IMessageToUnity<TMessage>
+    {
+        if (!AppInitialized)
+        {
+            throw new InvalidOperationException("Unity app is not initialized!");
+        }
+        
+        return  _unityComponent.SendMessage<TMessage>(message);
     }
 
 }

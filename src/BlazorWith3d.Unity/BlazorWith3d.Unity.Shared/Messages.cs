@@ -23,16 +23,21 @@ namespace BlazorWith3d.Unity.Shared
     }
 
     // ReSharper disable UnusedTypeParameter
+    public interface IMessageFromUnity<TMessageFromUnity>
+        // ReSharper restore UnusedTypeParameter
+    {
+    }
+
+    // ReSharper disable UnusedTypeParameter
     public interface IMessageToUnity<TMessageToUnity, TResponseFromUnity>
         // ReSharper restore UnusedTypeParameter
     {
     }
-    
-    public sealed class NoResponse
-    {
-        // TODO add explictly not waiting for response if Expected response is NoResponse
 
-        public static readonly NoResponse Instance = new NoResponse();
+    // ReSharper disable UnusedTypeParameter
+    public interface IMessageToUnity<TMessageToUnity>
+        // ReSharper restore UnusedTypeParameter
+    {
     }
     
 #if COMMON_DOTNET
