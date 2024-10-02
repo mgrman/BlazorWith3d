@@ -61,15 +61,11 @@ export function InitializeUnityApi ( ){
     // Task<string> BlazorApi_OnMessageFromUnityWithResponseHandler(string message)
     unityInstance.Module["BlazorApi_OnMessageFromUnityWithResponseHandler"]= function (msg){
 
-      // TODO investigate https://react-unity-webgl.dev/docs/api/event-system
-
       return unityApi.onMessageReceivedWithResponseHandler( msg);
     }
 
     // void BlazorApi_OnMessageFromUnityHandler(string message)
     unityInstance.Module["BlazorApi_OnMessageFromUnityHandler"]= function (msg){
-
-      // TODO investigate https://react-unity-webgl.dev/docs/api/event-system
 
       unityApi.onMessageReceivedHandler( msg);
     }
