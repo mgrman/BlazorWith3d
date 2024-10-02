@@ -37,15 +37,14 @@ export function InitializeUnityApi ( ){
   };
 
   unityApi.InitializeDotnetInterop=function(dotnetObject,onMessageReceivedWithResponseMethodName,onMessageReceivedMethodName,onInitializedMethodName){
-    unityApi.dotnetObject=dotnetObject;
     unityApi.onMessageReceivedHandler = function(msg){
-      unityApi.dotnetObject.invokeMethodAsync(onMessageReceivedMethodName, msg);
+      dotnetObject.invokeMethodAsync(onMessageReceivedMethodName, msg);
     };
     unityApi.onMessageReceivedWithResponseHandler= function(msg){
-      return unityApi.dotnetObject.invokeMethodAsync(onMessageReceivedWithResponseMethodName, msg);
+      return dotnetObject.invokeMethodAsync(onMessageReceivedWithResponseMethodName, msg);
     };
     unityApi.onInitializedHandler=function(){
-      unityApi.dotnetObject.invokeMethodAsync(onInitializedMethodName)
+      dotnetObject.invokeMethodAsync(onInitializedMethodName)
           .then(() => {
 
             var response=unityApi.SendMessageWithResponse("JS_INITIALIZED");
