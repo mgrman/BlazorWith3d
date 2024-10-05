@@ -55,6 +55,9 @@ namespace BlazorWith3d.Unity
             get => _onHandleReceivedMessages;
             set
             {
+#if !(UNITY_WEBGL && !UNITY_EDITOR)
+                throw new NotImplementedException();
+#endif
                 _onHandleReceivedMessages = value;
                 if (value != null)
                 {
@@ -79,8 +82,7 @@ namespace BlazorWith3d.Unity
         internal static void SendMessageFromUnity(byte[] bytes)
         {
 #if !(UNITY_WEBGL && !UNITY_EDITOR)
-            Debug.Log($"SendMessageFromUnity({string.Join(", ", bytes)})");
-            return;
+            throw new NotImplementedException();
 #endif
             _SendMessageFromUnity(bytes,bytes.Length);
         }

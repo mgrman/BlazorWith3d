@@ -4,15 +4,22 @@ using BlazorWith3d.ExampleApp.Client.Unity.Shared;
 using BlazorWith3d.Unity;
 using BlazorWith3d.Unity.Shared;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 namespace ExampleApp
 {
     public class ExampleAppInitializer :MonoBehaviour
     {
-        private readonly Dictionary<int, (GameObject template, Vector3 size)> _templates=new ();
-        private readonly Dictionary<int, GameObject > _blocks=new ();
+        private readonly Dictionary<int, BlockController> _templates=new ();
+        private readonly Dictionary<int, BlockController > _blocks=new ();
         private GameObject _templateRoot;
+        
+        [SerializeField]
+        private BlockController _templatePrefab;
+        
+        [SerializeField]
+        private GameObject _backgroundPlane;
 
         public void Start()
         {
@@ -50,22 +57,26 @@ namespace ExampleApp
             // TypedMessageBlazorApi.SimulateMessage(
             //     @"AddBlockTemplateMessage;{""TemplateId"":0,""SizeX"":1.0,""SizeY"":2.0,""SizeZ"":3.0}");
             #endif
+            
+            
+            
         }
-        
+
+        private void Update()
+        {
+          //  Debug.Log(EventSystem.current.currentSelectedGameObject);
+        }
+
         private void OnAddBlockTemplateMessage(AddBlockTemplateMessage msg)
         {
             Debug.Log($"Adding block template: {JsonUtility.ToJson(msg)}");
-            var templateGo=new GameObject($"BlockTemplate_{msg.TemplateId}");
-            templateGo.transform.SetParent(_templateRoot.transform);
             
             
-            var meshGo = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            meshGo.transform.SetParent(templateGo.transform);
-            meshGo.transform.localScale=new Vector3(msg.SizeX, msg.SizeY, msg.SizeZ);
-            meshGo.transform.localPosition=new Vector3(0, msg.SizeY/2,0);
+            var meshGo = GameObject.Instantiate(_templatePrefab, _templateRoot.transform);
             
+            meshGo.Initialize(msg,gameObject);
             
-            _templates.Add(msg.TemplateId, (meshGo,meshGo.transform.localScale));
+            _templates.Add(msg.TemplateId, meshGo);
 
             Debug.Log($"Added block template: {JsonUtility.ToJson(msg)}");
         }
@@ -80,11 +91,11 @@ namespace ExampleApp
         private void OnAddBlockInstanceMessage(AddBlockInstanceMessage msg)
         {
             Debug.Log($"Adding block : {JsonUtility.ToJson(msg)}");
-            var template=_templates[msg.TemplateId];    
-            
-             var blockGo=GameObject.Instantiate(template.template, new Vector3(msg.PositionX, msg.PositionY,0), Quaternion.Euler(0,0,msg.RotationZ),  transform  );
-            
-             _blocks.Add(msg.BlockId,blockGo );
+            var template=_templates[msg.TemplateId];
+
+
+            var instance=template.CreateInstance(msg);
+             _blocks.Add(msg.BlockId,instance );
              Debug.Log($"Added block : {JsonUtility.ToJson(msg)}");
         }
 
