@@ -1,4 +1,5 @@
-﻿using BlazorWith3d.Unity.Shared;
+﻿using System.Text;
+using BlazorWith3d.Unity.Shared;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -27,17 +28,12 @@ public class TypedMessageUnityComponent : BaseUnityComponent
 {
     [Inject] private ILogger<TypedMessageUnityComponent> Logger { get; set; } = null!;
 
-    
-    
     private IDictionary<Type, Func<int, string, ValueTask<string>>> _handlersWithResponse =
         new Dictionary<Type, Func<int, string, ValueTask<string>>>();
 
     private IDictionary<Type, Action<string>> _handlers = new Dictionary<Type, Action<string>>();
 
-
     private Dictionary<int, TaskCompletionSource<(string responseObjectJson, Type responseType)>> _responseTcs = new();
-
-
 
     public async ValueTask SendMessage<TMessage>(TMessage message) where TMessage : IMessageToUnity<TMessage>
     {
@@ -48,7 +44,7 @@ public class TypedMessageUnityComponent : BaseUnityComponent
 
         try
         {
-            await base.SendMessageToUnityAsync(encodedMessage);
+            await SendMessageToUnityAsync(encodedMessage);
         }
         catch (Exception ex)
         {
@@ -69,7 +65,7 @@ public class TypedMessageUnityComponent : BaseUnityComponent
         {
             var tcs = new TaskCompletionSource<(string responseObjectJson, Type responseType)>();
             _responseTcs[msgId] = tcs;
-            await base.SendMessageToUnityAsync(encodedMessage);
+            await SendMessageToUnityAsync(encodedMessage);
 
             var (responseObjectJson, responseType) = await tcs.Task;
 
@@ -132,7 +128,18 @@ public class TypedMessageUnityComponent : BaseUnityComponent
         };
     }
 
-    protected override void OnMessageReceived(string msg)
+    protected override void OnMessageBytesReceived(byte[] messageBytes)
+    {
+        OnMessageReceived(Encoding.Unicode.GetString(messageBytes));
+    }
+
+
+    protected ValueTask SendMessageToUnityAsync(string message)
+    {
+        return SendMessageBytesToUnityAsync(Encoding.Unicode.GetBytes(message));
+    }
+
+    protected virtual void OnMessageReceived(string msg)
     {
         var decoded = MessageTypeCache.DecodeMessageJson(msg);
 
@@ -169,7 +176,7 @@ public class TypedMessageUnityComponent : BaseUnityComponent
             {
                 var response = await handlerWithResponse(decoded.Value.respondWithId.Value, decoded.Value.objectJson);
 
-                await base.SendMessageToUnityAsync(response);
+                await SendMessageToUnityAsync(response);
             });
         }
         else

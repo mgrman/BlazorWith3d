@@ -51,24 +51,19 @@
         await base.OnAfterRenderAsync(firstRender);
     }
 
-    private void OnMessageBytesReceived(byte[] messageBytes)
-    {
-        var message = Encoding.Unicode.GetString(messageBytes);
-        OnMessageReceived(message);
-    }
-
-    protected virtual void OnMessageReceived(string msg)
+    protected virtual void OnMessageBytesReceived(byte[] messageBytes)
     {
     }
 
-    protected async ValueTask SendMessageToUnityAsync(string msg)
+
+    protected async ValueTask SendMessageBytesToUnityAsync(byte[] messageBytes)
     {
         if (_unityApi == null)
         {
             throw new InvalidOperationException("CRITICAL FAILURE, SendMessageToUnity called without _unityApi reference!");
         }
 
-        await _unityApi.InvokeAsync<string>("SendMessage", Encoding.Unicode.GetBytes(msg));
+        await _unityApi.InvokeAsync<byte[]>("SendMessage", messageBytes);
     }
 
     private class JsMessageReceiverProxy(Action<byte[]> onMessageBytesReceived)

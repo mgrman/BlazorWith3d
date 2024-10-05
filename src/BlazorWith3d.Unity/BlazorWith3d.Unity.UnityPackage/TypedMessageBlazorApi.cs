@@ -21,7 +21,7 @@ namespace BlazorWith3d.Unity
         {
             if (BlazorApi.OnHandleReceivedMessages != null)
             {
-                throw new InvalidOperationException("There is already a handledr for blazor messages!");
+                throw new InvalidOperationException("There is already a handler for blazor messages!");
             }
 
             BlazorApi.OnHandleReceivedMessages = OnMessageReceived;

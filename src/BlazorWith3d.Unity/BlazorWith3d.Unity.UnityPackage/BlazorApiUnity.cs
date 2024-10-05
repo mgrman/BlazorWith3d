@@ -89,7 +89,5 @@ namespace BlazorWith3d.Unity
             
             _SendMessageFromUnity(btyes,btyes.Length);
         }
-
-        //public static Func<string, string> ProcessReceivedMessage { get; set; } not overridable for now, unnecessary complexity to support
     }
 }
