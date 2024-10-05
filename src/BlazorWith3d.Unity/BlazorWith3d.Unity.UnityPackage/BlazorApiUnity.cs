@@ -10,9 +10,9 @@ namespace BlazorWith3d.Unity
 {
     internal static class BlazorApi
     {
-        private static List<string> messageBuffer = new List<string>();
+        private static List<byte[]> messageBuffer = new List<byte[]>();
 
-        private static Action<string> _onHandleReceivedMessages;
+        private static Action<byte[]> _onHandleReceivedMessages;
         
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSplashScreen)]
         static void OnBeforeSplashScreen()
@@ -26,7 +26,7 @@ namespace BlazorWith3d.Unity
             _InitializeApi(_InstantiateByteArray);
 
             Debug.Log($"On after BlazorApiUnity.InitializeApi");
-            SendMessageFromUnity("UNITY_INITIALIZED");
+            SendMessageFromUnity(Encoding.Unicode.GetBytes("UNITY_INITIALIZED"));
         }
 
         [MonoPInvokeCallback(typeof(Action<int, int>))]
@@ -38,23 +38,19 @@ namespace BlazorWith3d.Unity
             _ReadBytesBuffer(id, bytes);
             Debug.Log($"_ReadBytesBuffer({id},bytes)");
             
-            var message = Encoding.Unicode.GetString(bytes);
-            
-            
             Debug.Log($"Received message ({string.Join(", ",bytes)})");
-            Debug.Log($"Received message ({message})");
             if (OnHandleReceivedMessages == null)
             {
-                messageBuffer.Add(message);
+                messageBuffer.Add(bytes);
             }
             else
             {
-                OnHandleReceivedMessages?.Invoke(message);
+                OnHandleReceivedMessages?.Invoke(bytes);
             }
         }
 
         
-        internal static Action<string> OnHandleReceivedMessages
+        internal static Action<byte[]> OnHandleReceivedMessages
         {
             get => _onHandleReceivedMessages;
             set
@@ -80,14 +76,13 @@ namespace BlazorWith3d.Unity
         [DllImport("__Internal")]
         private static extern string _InitializeApi(Action<int, int> instantiateByteArrayCallback);
         
-        internal static void SendMessageFromUnity(string message)
+        internal static void SendMessageFromUnity(byte[] bytes)
         {
 #if !(UNITY_WEBGL && !UNITY_EDITOR)
-            throw new NotImplementedException();
+            Debug.Log($"SendMessageFromUnity({string.Join(", ", bytes)})");
+            return;
 #endif
-            var btyes = Encoding.Unicode.GetBytes(message);
-            
-            _SendMessageFromUnity(btyes,btyes.Length);
+            _SendMessageFromUnity(bytes,bytes.Length);
         }
     }
 }

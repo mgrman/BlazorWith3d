@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 using BlazorWith3d.Unity.Shared;
 using UnityEngine;
 
@@ -7,13 +8,12 @@ namespace BlazorWith3d.Unity
 {
     public class TypedMessageBlazorApi
     {
-        private IDictionary<Type, Func<int, string, Awaitable<string>>> _handlersWithResponse =
+        private readonly IDictionary<Type, Func<int, string, Awaitable<string>>> _handlersWithResponse =
             new Dictionary<Type, Func<int, string, Awaitable<string>>>();
 
-        private IDictionary<Type, Action<string>> _handlers = new Dictionary<Type, Action<string>>();
+        private readonly IDictionary<Type, Action<string>> _handlers = new Dictionary<Type, Action<string>>();
 
-
-        private Dictionary<int, AwaitableCompletionSource<(string responseObjectJson, Type responseType)>>
+        private readonly Dictionary<int, AwaitableCompletionSource<(string responseObjectJson, Type responseType)>>
             _responseTcs = new();
 
 
@@ -37,10 +37,11 @@ namespace BlazorWith3d.Unity
 
             try
             {
-                BlazorApi.SendMessageFromUnity(encodedMessage);
+                SendMessageFromUnity(encodedMessage);
             }
             catch (Exception ex)
             {
+                Debug.LogException(ex);
                 throw;
             }
         }
@@ -59,7 +60,7 @@ namespace BlazorWith3d.Unity
                 var tcs = new AwaitableCompletionSource<(string responseObjectJson, Type responseType)>();
                 _responseTcs[msgId] = tcs;
 
-                BlazorApi.SendMessageFromUnity(encodedMessage);
+                SendMessageFromUnity(encodedMessage);
 
                 var (responseObjectJson, responseType) = await tcs.Awaitable;
 
@@ -80,6 +81,7 @@ namespace BlazorWith3d.Unity
             }
             catch (Exception ex)
             {
+                Debug.LogException(ex);
                 throw;
             }
         }
@@ -122,13 +124,20 @@ namespace BlazorWith3d.Unity
             };
         }
 
-        protected async void OnMessageReceived(string msg)
+        protected void SendMessageFromUnity(string msg)
         {
+            BlazorApi.SendMessageFromUnity(Encoding.Unicode.GetBytes(msg));
+        }
+
+        protected async void OnMessageReceived(byte[] bytes)
+        {
+            var msg = Encoding.Unicode.GetString(bytes);
+            
             var decoded = MessageTypeCache.DecodeMessageJson(msg);
 
             if (decoded == null)
             {
-                if (TryHandleKnownMessages(msg, out var knownMessageResponse))
+                if (TryHandleKnownMessages(msg))
                 {
                     return;
                 }
@@ -157,8 +166,7 @@ namespace BlazorWith3d.Unity
 
                 var response = await handlerWithResponse(decoded.Value.respondWithId.Value, decoded.Value.objectJson);
 
-                BlazorApi.SendMessageFromUnity(response);
-
+                SendMessageFromUnity(response);
             }
             else
             {
@@ -172,16 +180,14 @@ namespace BlazorWith3d.Unity
             }
         }
 
-        private bool TryHandleKnownMessages(string msg, out string response)
+        private bool TryHandleKnownMessages(string msg)
         {
             switch (msg)
             {
                 case "JS_INITIALIZED":
                     Debug.LogWarning($"JS_INITIALIZED received");
-                    response = "ACK";
                     return true;
                 default:
-                    response = string.Empty;
                     return false;
             }
         }

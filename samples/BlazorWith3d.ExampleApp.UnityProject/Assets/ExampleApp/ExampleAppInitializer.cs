@@ -34,10 +34,10 @@ namespace ExampleApp
             OnAddBlockTemplateMessage(new AddBlockTemplateMessage()
             {
                 TemplateId = 0,
-                SizeX = 1, SizeY = 1, SizeZ = 0, VisualsUri = null
+                SizeX = 1, SizeY = 1, SizeZ = 1, VisualsUri = null
             });
-            OnAddBlockInstanceMessage(new AddBlockInstanceMessage(){ BlockId = 0, TemplateId = 0});
-            OnRemoveBlockMessage(new RemoveBlockMessage() { BlockId = 0 });
+            OnAddBlockInstanceMessage(new AddBlockInstanceMessage(){ BlockId = 0, TemplateId = 0, PositionX = 0, PositionY = 0, RotationZ = 0});
+            //OnRemoveBlockMessage(new RemoveBlockMessage() { BlockId = 0 });
             //
             // OnAddBlockTemplateMessage(new AddBlockTemplateMessage()
             // {

@@ -48,6 +48,7 @@ public class TypedMessageUnityComponent : BaseUnityComponent
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "Failed to send message to Unity");
             throw;
         }
     }
@@ -86,6 +87,7 @@ public class TypedMessageUnityComponent : BaseUnityComponent
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "Failed to send message to Unity");
             throw;
         }
     }
@@ -111,11 +113,11 @@ public class TypedMessageUnityComponent : BaseUnityComponent
         };
     }
 
-    public void AddMessageProcessCallback<TMessage>(Func<TMessage, ValueTask> messageHandler)
+    public void AddMessageProcessCallback<TMessage>(Action<TMessage> messageHandler)
         where TMessage : IMessageFromUnity<TMessage>
     {
         MessageTypeCache.AddTypeToCache<TMessage>();
-        _handlers[typeof(TMessage)] = async objectJson =>
+        _handlers[typeof(TMessage)] = objectJson =>
         {
             var messageObject = JsonConvert.DeserializeObject<TMessage>(objectJson);
             if (messageObject == null)
@@ -124,7 +126,7 @@ public class TypedMessageUnityComponent : BaseUnityComponent
                     $"Message for {typeof(TMessage).Name} was not deserializable into {typeof(TMessage).Name}");
             }
 
-            await messageHandler(messageObject);
+            messageHandler(messageObject);
         };
     }
 
@@ -139,13 +141,13 @@ public class TypedMessageUnityComponent : BaseUnityComponent
         return SendMessageBytesToUnityAsync(Encoding.Unicode.GetBytes(message));
     }
 
-    protected virtual void OnMessageReceived(string msg)
+    protected virtual async void OnMessageReceived(string msg)
     {
         var decoded = MessageTypeCache.DecodeMessageJson(msg);
 
         if (decoded == null)
         {
-            if (TryHandleKnownMessages(msg, out var knownMessageResponse))
+            if (TryHandleKnownMessages(msg))
             {
                 return;
             }
@@ -172,12 +174,10 @@ public class TypedMessageUnityComponent : BaseUnityComponent
                 return;
             }
 
-            Task.Run(async () =>
-            {
-                var response = await handlerWithResponse(decoded.Value.respondWithId.Value, decoded.Value.objectJson);
+       
+            var response = await handlerWithResponse(decoded.Value.respondWithId.Value, decoded.Value.objectJson);
 
-                await SendMessageToUnityAsync(response);
-            });
+            await SendMessageToUnityAsync(response);
         }
         else
         {
@@ -191,16 +191,14 @@ public class TypedMessageUnityComponent : BaseUnityComponent
         }
     }
 
-    private bool TryHandleKnownMessages(string msg, out string response)
+    private bool TryHandleKnownMessages(string msg)
     {
         switch (msg)
         {
             case "UNITY_INITIALIZED":
                 Logger.LogWarning($"UNITY_INITIALIZED received");
-                response = "ACK";
                 return true;
             default:
-                response = string.Empty;
                 return false;
         }
     }

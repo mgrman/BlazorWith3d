@@ -139,6 +139,7 @@
 
 @code {
     
+    // TODO this is never null, test again how the disappearance is handled!!
     private TypedMessageUnityComponent? _unityComponent;
 
     private bool AppInitialized;
@@ -177,7 +178,7 @@
         base.OnAfterRender(firstRender);
     }
 
-    private async ValueTask OnAppInitialized(AppInitialized arg)
+    private async void  OnAppInitialized(AppInitialized arg)
     {
         AppInitialized = true;
        await ReplayState();
@@ -188,38 +189,38 @@
         foreach (var template in _templates)
         {
             var msg = new AddBlockTemplateMessage() { TemplateId = template.id, SizeX = template.sizeX, SizeY = template.sizeY, SizeZ = template.sizeZ };
-           await SendMessage<AddBlockTemplateMessage>(msg);
+           await SendMessage(msg);
         }
         foreach (var block in _blocks)
         {
             var msg = new AddBlockInstanceMessage() { BlockId = block.blockId, PositionX = block.positionX, PositionY = block.positionY, RotationZ = block.rotationZ, TemplateId = block.templateId};
-            SendMessage<AddBlockInstanceMessage>(msg);
+            SendMessage(msg);
         }
     }
 
     private async Task AddTemplate()
     {
         var msg = new AddBlockTemplateMessage() { TemplateId = newIdCounter++, SizeX = newTemplateSizeX, SizeY = newTemplateSizeY, SizeZ = newTemplateSizeZ };
-        await SendMessage<AddBlockTemplateMessage>(msg);
+        await SendMessage(msg);
         _templates.Add((msg.TemplateId, msg.SizeX, msg.SizeY, msg.SizeZ));
     }
 
     private async Task RemoveTemplate(int id)
     {
-        await SendMessage<RemoveBlockTemplateMessage>(new RemoveBlockTemplateMessage(){ TemplateId = id});
+        await SendMessage(new RemoveBlockTemplateMessage(){ TemplateId = id});
         _templates.RemoveAll(o => o.id == id);
     }
 
     private async Task AddBlock()
     {
         var msg = new AddBlockInstanceMessage() { BlockId = newIdCounter++, PositionX = newBlockPositionX, PositionY = newBlockPositionY, RotationZ = newBlockRotationZ, TemplateId = newBlockTemplateId};
-        await SendMessage<AddBlockInstanceMessage>(msg);
+        await SendMessage(msg);
         _blocks.Add((msg.BlockId, msg.PositionX,msg.PositionY,msg.RotationZ, msg.TemplateId));
     }
 
     private async Task RemoveBlock(int id)
     {
-        await SendMessage<RemoveBlockMessage>(new RemoveBlockMessage(){ BlockId = id});
+        await SendMessage(new RemoveBlockMessage(){ BlockId = id});
         _blocks.RemoveAll(o => o.blockId == id);
     }
 
