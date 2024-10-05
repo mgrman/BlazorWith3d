@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 using AOT;
 using UnityEngine;
 
@@ -8,87 +10,84 @@ namespace BlazorWith3d.Unity
 {
     internal static class BlazorApi
     {
-        private static int _responseIdCounter = 0;
+        private static List<string> messageBuffer = new List<string>();
 
-        private static readonly IDictionary<int, AwaitableCompletionSource<string>> _responseAwaitables =
-            new Dictionary<int, AwaitableCompletionSource<string>>();
-
+        private static Action<string> _onHandleReceivedMessages;
+        
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSplashScreen)]
-        static async void OnBeforeSplashScreen()
+        static void OnBeforeSplashScreen()
         {
-#if UNITY_WEBGL && !UNITY_EDITOR
+#if !(UNITY_WEBGL && !UNITY_EDITOR)
+            return;
+#endif
             WebGLInput.captureAllKeyboardInput = false;
 
             Debug.Log($"On before BlazorApiUnity.InitializeApi");
-            _InitializeApi(_OnMessageReceivedWithResponse, _OnMessageReceived);
+            _InitializeApi(_InstantiateByteArray);
 
             Debug.Log($"On after BlazorApiUnity.InitializeApi");
-            var response = await SendMessageWithResponseFromUnityAsync("UNITY_INITIALIZED");
-            Debug.Log($"UNITY_INITIALIZED:{response}");
-#endif
+            SendMessageFromUnity("UNITY_INITIALIZED");
         }
 
-        [MonoPInvokeCallback(typeof(Action<string>))]
-        private static void _OnMessageReceived(string msg)
+        [MonoPInvokeCallback(typeof(Action<int, int>))]
+        private static void _InstantiateByteArray(int size, int id)
         {
-            TypedMessageBlazorApi.HandleReceivedMessages(msg);
-        }
-
-        [MonoPInvokeCallback(typeof(Func<string, string>))]
-        private static string _OnMessageReceivedWithResponse(string msg)
-        {
-            return TypedMessageBlazorApi.HandleReceivedMessagesWithResponse(msg);
-        }
-
-        [MonoPInvokeCallback(typeof(Action<int, string>))]
-        private static async void OnResponseReceived(int msgId, string response)
-        {
-            Debug.Log($"Received response for msg {msgId} as {response}");
-            await Awaitable.MainThreadAsync();
-            if (_responseAwaitables.TryGetValue(msgId, out var tcs))
+            Debug.Log($"_InstantiateByteArray({size},{id})");
+            var bytes = new byte[size];
+            
+            _ReadBytesBuffer(id, bytes);
+            Debug.Log($"_ReadBytesBuffer({id},bytes)");
+            
+            var message = Encoding.Unicode.GetString(bytes);
+            
+            
+            Debug.Log($"Received message ({string.Join(", ",bytes)})");
+            Debug.Log($"Received message ({message})");
+            if (OnHandleReceivedMessages == null)
             {
-                tcs.TrySetResult(response);
-                _responseAwaitables.Remove(msgId);
+                messageBuffer.Add(message);
+            }
+            else
+            {
+                OnHandleReceivedMessages?.Invoke(message);
+            }
+        }
+
+        
+        internal static Action<string> OnHandleReceivedMessages
+        {
+            get => _onHandleReceivedMessages;
+            set
+            {
+                _onHandleReceivedMessages = value;
+                if (value != null)
+                {
+                    foreach (var msg in messageBuffer)
+                    {
+                        value(msg);
+                    }
+                    messageBuffer.Clear();
+                }
             }
         }
 
         [DllImport("__Internal")]
-        private static extern void _SendMessageWithResponseFromUnity(int msgId, string message,
-            Action<int, string> onResponseReceived);
+        private static extern void _SendMessageFromUnity(byte[] message, int size);
 
         [DllImport("__Internal")]
-        private static extern void _SendMessageFromUnity(string message);
+        private static extern void _ReadBytesBuffer(int id, byte[] array);
 
         [DllImport("__Internal")]
-        private static extern string _InitializeApi(Func<string, string> onMessageReceivedWithResponse,Action<string> onMessageReceived);
-
-        internal static Awaitable<string> SendMessageWithResponseFromUnityAsync(string message)
-        {
-#if UNITY_WEBGL && !UNITY_EDITOR
-            int msgId;
-            unchecked
-            {
-
-                msgId = _responseIdCounter++;
-            }
-
-            Debug.Log($"Sending msg {msgId} as {message}");
-
-            var awaitableTcs = new AwaitableCompletionSource<string>();
-            _responseAwaitables[msgId] = awaitableTcs;
-            _SendMessageWithResponseFromUnity(msgId, message, OnResponseReceived);
-            return awaitableTcs.Awaitable;
-#else
-            throw new NotImplementedException();
-#endif
-        }
+        private static extern string _InitializeApi(Action<int, int> instantiateByteArrayCallback);
+        
         internal static void SendMessageFromUnity(string message)
         {
-#if UNITY_WEBGL && !UNITY_EDITOR
-            _SendMessageFromUnity(message);
-#else
+#if !(UNITY_WEBGL && !UNITY_EDITOR)
             throw new NotImplementedException();
 #endif
+            var btyes = Encoding.Unicode.GetBytes(message);
+            
+            _SendMessageFromUnity(btyes,btyes.Length);
         }
 
         //public static Func<string, string> ProcessReceivedMessage { get; set; } not overridable for now, unnecessary complexity to support

@@ -1,50 +1,36 @@
 var BlazorApiUnity = {
-    _InitializeApi: async function (onMessageReceivedWithResponseCallback,onMessageReceivedCallback) {
-        
-        // string BlazorApi_SendMessageToUnityWithResponse(string message)
-        Module["BlazorApi_SendMessageToUnityWithResponse"]=function (message){ 
+    
+    _InitializeApi: async function (instantiateByteArrayCallback) {
+        Module["BlazorApi_MessageBuffer"]={};
+        // void BlazorApi_SendMessageToUnity(byte[] message)
+        Module["BlazorApi_SendMessageToUnity"] = function (bytes){
 
-            var buffer = stringToNewUTF8(message);
-            var response={{{ makeDynCall('ii', 'onMessageReceivedWithResponseCallback') }}}(buffer);
-            _free(buffer);
+            var id=Math.floor(Math.random() * 500);
             
-            var _response = UTF8ToString(response);
-            _free(response);
-            return _response;
+            Module["BlazorApi_MessageBuffer"][id]=bytes;
+            {{{ makeDynCall('vii', 'instantiateByteArrayCallback') }}}(bytes.length, id);
         };
+    },
+    _ReadBytesBuffer: function (id, array){
+
+        console.log("_ReadBytesBuffer"+Module["BlazorApi_MessageBuffer"][id]+" at "+array)
         
-        // void BlazorApi_SendMessageToUnity(string message)
-        Module["BlazorApi_SendMessageToUnity"] = function (message){
+        HEAPU8.set(Module["BlazorApi_MessageBuffer"][id], array);
 
-            var buffer = stringToNewUTF8(message);
-            {{{ makeDynCall('vi', 'onMessageReceivedCallback') }}}(buffer);
-            _free(buffer);
-        };
-
-        // void BlazorApi_Initialized()
-        var onInitializeFunc=Module["BlazorApi_Initialized"];
-        if(onInitializeFunc) {
-            onInitializeFunc();
-        }
+        delete Module["BlazorApi_MessageBuffer"][id]
     },
-    _SendMessageWithResponseFromUnity: function (msgId,message, responseCallback) {
+    
+    _SendMessageFromUnity: function (array, size) {
 
-        var _message = UTF8ToString(message);
+        // TODO check if this works, maybe a copy will have to be made
 
-        // Task<string> BlazorApi_OnMessageFromUnityWithResponseHandler(string message)
-        Module["BlazorApi_OnMessageFromUnityWithResponseHandler"](_message) // returns promise
-            .then(response => {
-                var buffer = stringToNewUTF8(response);
-
-                {{{ makeDynCall('vii', 'responseCallback') }}}(msgId,buffer);
-            });
-    },
-    _SendMessageFromUnity: function (message,) {
-
-        var _message = UTF8ToString(message);
-
-        // void BlazorApi_OnMessageFromUnityHandler(string message)
-        Module["BlazorApi_OnMessageFromUnityHandler"](_message)
+        console.log("Array at "+array)
+        console.log("size at "+size)
+        
+        var buffer= new Uint8Array(HEAPU8.buffer, array, size);
+        console.log("buffer at "+buffer.length);
+        // void BlazorApi_OnMessageFromUnityHandler(byte[] message)
+        Module["BlazorApi_OnMessageFromUnityHandler"](buffer)
     },
 };
 

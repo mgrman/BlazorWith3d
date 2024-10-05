@@ -1,97 +1,34 @@
 // This is a JavaScript module that is loaded on demand. It can export any number of
 // functions, and may import other JavaScript modules if required.
-export function InitializeUnityApi ( ){
-  let unityApi={}
-  unityApi.SendMessage = function(message){
+export function InitializeUnityApi (unityInstance, onMessageReceivedCallback ) {
 
-    if(unityApi.unityInstance){
+  let unityApi = {}
 
-      // void BlazorApi_SendMessageToUnity(string message)
-      try {
-        unityApi.unityInstance.Module["BlazorApi_SendMessageToUnity"](message);
-      }
-      catch(err){
-        console.error(err);
-      }
+  // void BlazorApi_OnMessageFromUnityHandler(byte[] message)
+  unityInstance.Module["BlazorApi_OnMessageFromUnityHandler"] = function (msgBytes) {
+    try {
+      onMessageReceivedCallback(msgBytes);
+    } catch (err) {
+      console.error(err);
     }
-    else{
-      throw new Error('sending message before api is initialized');
+  }
+
+  unityApi.SendMessage = function (msgBytes) {
+    // void BlazorApi_SendMessageToUnity(byte[] msgBytes)
+    
+    console.log("SendMessage " + msgBytes);
+    try {
+      unityInstance.Module["BlazorApi_SendMessageToUnity"](msgBytes);
+    } catch (err) {
+      console.error(err);
     }
   };
 
-  unityApi.SendMessageWithResponse=function(message){
-
-    if(unityApi.unityInstance){
-
-      // string BlazorApi_SendMessageToUnityWithResponse(string message)
-      try {
-        return unityApi.unityInstance.Module["BlazorApi_SendMessageToUnityWithResponse"](message);
-      }
-      catch(err){
-        console.error(err);
-      }
-    }
-    else{
-      throw new Error('sending message before api is initialized');
-    }
-  };
-
-  unityApi.InitializeDotnetInterop=function(dotnetObject,onMessageReceivedWithResponseMethodName,onMessageReceivedMethodName,onInitializedMethodName){
-    unityApi.onMessageReceivedHandler = function(msg){
-      dotnetObject.invokeMethodAsync(onMessageReceivedMethodName, msg);
-    };
-    unityApi.onMessageReceivedWithResponseHandler= function(msg){
-      return dotnetObject.invokeMethodAsync(onMessageReceivedWithResponseMethodName, msg);
-    };
-    unityApi.onInitializedHandler=function(){
-      dotnetObject.invokeMethodAsync(onInitializedMethodName)
-          .then(() => {
-
-            var response=unityApi.SendMessageWithResponse("JS_INITIALIZED");
-            console.log("JS_INITIALIZED:"+response);
-          });
-    };
-  }
-
-  unityApi.setUnityInstance= function(unityInstance){
-
-
-    unityApi.unityInstance=unityInstance;
-
-    // Task<string> BlazorApi_OnMessageFromUnityWithResponseHandler(string message)
-    unityInstance.Module["BlazorApi_OnMessageFromUnityWithResponseHandler"]= function (msg){
-
-      // TODO investigate https://react-unity-webgl.dev/docs/api/event-system
-
-      return unityApi.onMessageReceivedWithResponseHandler( msg);
-    }
-
-    // void BlazorApi_OnMessageFromUnityHandler(string message)
-    unityInstance.Module["BlazorApi_OnMessageFromUnityHandler"]= function (msg){
-
-      // TODO investigate https://react-unity-webgl.dev/docs/api/event-system
-
-      unityApi.onMessageReceivedHandler( msg);
-    }
-
-    // void BlazorApi_Initialized()
-    unityInstance.Module["BlazorApi_Initialized"]=function (){
-      console.log("OnBlazorApiInitialized!!!");
-
-      unityApi.onInitializedHandler()
-    }
-
-
-
-
-  }
   return unityApi;
 }
 
 
-
-
-export function showUnity(buildUrl,container, dotnetObject,onMessageWithResponseReceivedMethodName,onMessageReceivedMethodName,onInitializedMethodName ){
+export function showUnity(buildUrl,container, dotnetObject, onMessageReceivedMethodName ) {
 
   var canvas = container.querySelector("#unity-canvas");
 
@@ -103,16 +40,18 @@ export function showUnity(buildUrl,container, dotnetObject,onMessageWithResponse
   // user.
   function unityShowBanner(msg, type) {
     var warningBanner = container.querySelector("#unity-warning");
+
     function updateBannerVisibility() {
       warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
     }
+
     var div = document.createElement('div');
     div.innerHTML = msg;
     warningBanner.appendChild(div);
     if (type == 'error') div.style = 'background: red; padding: 10px;';
     else {
       if (type == 'warning') div.style = 'background: yellow; padding: 10px;';
-      setTimeout(function() {
+      setTimeout(function () {
         warningBanner.removeChild(div);
         updateBannerVisibility();
       }, 5000);
@@ -134,7 +73,7 @@ export function showUnity(buildUrl,container, dotnetObject,onMessageWithResponse
     productVersion: "0.1.0",
     showBanner: unityShowBanner,
     matchWebGLToCanvasSize: true,
-    devicePixelRatio:1
+    devicePixelRatio: 1
   };
 
   // If you would like all file writes inside Unity Application.persistentDataPath
@@ -148,56 +87,59 @@ export function showUnity(buildUrl,container, dotnetObject,onMessageWithResponse
 
   container.querySelector("#unity-loading-bar").style.display = "block";
 
-  var unityApi=InitializeUnityApi();
-  unityApi.InitializeDotnetInterop( dotnetObject,onMessageWithResponseReceivedMethodName,onMessageReceivedMethodName,onInitializedMethodName )
-
-  var script = document.createElement("script");
-  script.src = loaderUrl;
-  script.onload = () => {
-    createUnityInstance(canvas, config, (progress) => {
-      container.querySelector("#unity-progress-bar-full").style.width = 100 * progress + "%";
-    }).then((unityInstance) => {
-
-      unityApi.setUnityInstance(unityInstance);
-
-      container.querySelector("#unity-loading-bar").style.display = "none";
-      // container.querySelector("#unity-fullscreen-button").onclick = () => {
-      //   unityInstance.SetFullscreen(1);
-      // };
-
-      // Unloading web content from DOM so that browser GC can run can be tricky to get right.
-      // This code snippet shows how to correctly implement a Unity content Unload mechanism to a web page.
-
-      // Unloading Unity content enables a web page to reclaim the memory used by Unity, e.g. for
-      // the purpose of later loading another Unity content instance on the _same_ web page.
-
-      // When using this functionality, take caution to carefully make sure to clear all JavaScript code,
-      // DOM element and event handler references to the old content you may have retained, or
-      // otherwise the browser's garbage collector will be unable to reclaim the old page.
-
-      // N.b. Unity content does _not_ need to be manually unloaded when the user is navigating away from
-      // the current page to another web page. The browser will take care to clear memory of old visited
-      // pages automatically. This functionality is only needed if you want to switch between loading
-      // multiple Unity builds on a single web page.
-      // var quit = document.createElement("button");
-      // quit.style = "margin-left: 5px; background-color: lightgray; border: none; padding: 5px; cursor: pointer";
-      // quit.innerHTML = "Unload";
-      // container.querySelector("#unity-build-title").appendChild(quit);
-      // quit.onclick = () => {
-      //   // Quit Unity application execution
-      //   unityInstance.Quit().then(() => {
-      //     // Remove DOM elements from the page so GC can run
-      //     container.remove();
-      //     canvas = null;
-      //   });
-      // };
-    }).catch((message) => {
-      alert(message);
-    });
-  };
-
-  container.appendChild(script);
+  return new Promise((resolve, reject) => {
+    var script = document.createElement("script");
+    script.src = loaderUrl;
+    script.onload = () => {
+      createUnityInstance(canvas, config, (progress) => {
+        container.querySelector("#unity-progress-bar-full").style.width = 100 * progress + "%";
+      }).then((unityInstance) => {
+        container.querySelector("#unity-loading-bar").style.display = "none";
 
 
-  return unityApi;
+        ;
+
+        var unityApi = InitializeUnityApi(unityInstance, function(msgBytes){
+          dotnetObject.invokeMethodAsync(onMessageReceivedMethodName, msgBytes)
+        });
+        resolve(unityApi);
+
+        // container.querySelector("#unity-fullscreen-button").onclick = () => {
+        //   unityInstance.SetFullscreen(1);
+        // };
+
+        // Unloading web content from DOM so that browser GC can run can be tricky to get right.
+        // This code snippet shows how to correctly implement a Unity content Unload mechanism to a web page.
+
+        // Unloading Unity content enables a web page to reclaim the memory used by Unity, e.g. for
+        // the purpose of later loading another Unity content instance on the _same_ web page.
+
+        // When using this functionality, take caution to carefully make sure to clear all JavaScript code,
+        // DOM element and event handler references to the old content you may have retained, or
+        // otherwise the browser's garbage collector will be unable to reclaim the old page.
+
+        // N.b. Unity content does _not_ need to be manually unloaded when the user is navigating away from
+        // the current page to another web page. The browser will take care to clear memory of old visited
+        // pages automatically. This functionality is only needed if you want to switch between loading
+        // multiple Unity builds on a single web page.
+        // var quit = document.createElement("button");
+        // quit.style = "margin-left: 5px; background-color: lightgray; border: none; padding: 5px; cursor: pointer";
+        // quit.innerHTML = "Unload";
+        // container.querySelector("#unity-build-title").appendChild(quit);
+        // quit.onclick = () => {
+        //   // Quit Unity application execution
+        //   unityInstance.Quit().then(() => {
+        //     // Remove DOM elements from the page so GC can run
+        //     container.remove();
+        //     canvas = null;
+        //   });
+        // };
+      }).catch((message) => {
+        alert(message);
+        reject(message);
+      });
+    };
+
+    container.appendChild(script);
+  });
 }

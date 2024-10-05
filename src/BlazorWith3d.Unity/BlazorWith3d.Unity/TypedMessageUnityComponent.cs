@@ -23,14 +23,21 @@ namespace BlazorWith3d.Unity;
 // +arguments are auto wrapped into a message class
 
 
-public class TypedMessageUnityComponent:BaseUnityComponent
+public class TypedMessageUnityComponent : BaseUnityComponent
 {
-    [Inject] 
-    private ILogger<TypedMessageUnityComponent> Logger { get; set; } = null!;
+    [Inject] private ILogger<TypedMessageUnityComponent> Logger { get; set; } = null!;
+
     
-    private IDictionary<Type, Func<string, ValueTask<string>>> _handlersWithResponse = new Dictionary<Type, Func<string, ValueTask<string>>>();
     
-    private IDictionary<Type, Action<string>> _handlers = new Dictionary<Type,  Action<string>>();
+    private IDictionary<Type, Func<int, string, ValueTask<string>>> _handlersWithResponse =
+        new Dictionary<Type, Func<int, string, ValueTask<string>>>();
+
+    private IDictionary<Type, Action<string>> _handlers = new Dictionary<Type, Action<string>>();
+
+
+    private Dictionary<int, TaskCompletionSource<(string responseObjectJson, Type responseType)>> _responseTcs = new();
+
+
 
     public async ValueTask SendMessage<TMessage>(TMessage message) where TMessage : IMessageToUnity<TMessage>
     {
@@ -41,7 +48,7 @@ public class TypedMessageUnityComponent:BaseUnityComponent
 
         try
         {
-            await SendMessageToUnityAsync(encodedMessage);
+            await base.SendMessageToUnityAsync(encodedMessage);
         }
         catch (Exception ex)
         {
@@ -49,33 +56,30 @@ public class TypedMessageUnityComponent:BaseUnityComponent
         }
     }
 
-    public async ValueTask<TResponse> SendMessageWithResponse<TMessage, TResponse>(TMessage message) where TMessage : IMessageToUnity<TMessage, TResponse>
+    public async Task<TResponse> SendMessageWithResponse<TMessage, TResponse>(TMessage message)
+        where TMessage : IMessageToUnity<TMessage, TResponse>
     {
         MessageTypeCache.AddTypeToCache<TMessage>();
         MessageTypeCache.AddTypeToCache<TResponse>();
 
         var messageString = JsonConvert.SerializeObject(message);
-        var encodedMessage = MessageTypeCache.EncodeMessageJson<TMessage>(messageString);
+        var (encodedMessage, msgId) = MessageTypeCache.EncodeMessageWithResponseJson<TMessage>(messageString);
 
         try
         {
-            var responseString = await SendMessageWithResponseToUnityAsync(encodedMessage);
-            
-            var decoded = MessageTypeCache.DecodeMessageJson(responseString);
+            var tcs = new TaskCompletionSource<(string responseObjectJson, Type responseType)>();
+            _responseTcs[msgId] = tcs;
+            await base.SendMessageToUnityAsync(encodedMessage);
 
-            if (decoded == null)
+            var (responseObjectJson, responseType) = await tcs.Task;
+
+            if (responseType != typeof(TResponse))
             {
                 throw new InvalidOperationException(
-                    $"Response for {typeof(TMessage).Name} was not encoded correctly! {responseString}");
+                    $"Unexpected response type! Expected {typeof(TResponse).Name} and received '{responseType}'!");
             }
 
-            if (decoded.Value.type != typeof(TResponse))
-            {
-                throw new InvalidOperationException(
-                    $"Unexpected response type! Expected {typeof(TResponse).Name} and received '{decoded.Value.typeName}'!");
-            }
-
-            var response = JsonConvert.DeserializeObject<TResponse>(decoded.Value.objectJson);
+            var response = JsonConvert.DeserializeObject<TResponse>(responseObjectJson);
             if (response == null)
             {
                 throw new InvalidOperationException(
@@ -90,26 +94,29 @@ public class TypedMessageUnityComponent:BaseUnityComponent
         }
     }
 
-    public void AddMessageWithResponseProcessCallback<TMessage, TResponse>(Func<TMessage, ValueTask<TResponse>> messageHandler) where TMessage : IMessageFromUnity<TMessage, TResponse>
+    public void AddMessageWithResponseProcessCallback<TMessage, TResponse>(
+        Func<TMessage, ValueTask<TResponse>> messageHandler) where TMessage : IMessageFromUnity<TMessage, TResponse>
     {
         MessageTypeCache.AddTypeToCache<TMessage>();
         MessageTypeCache.AddTypeToCache<TResponse>();
-        _handlersWithResponse[typeof(TMessage)] = async objectJson =>
+        _handlersWithResponse[typeof(TMessage)] = async (responseId, objectJson) =>
         {
             var messageObject = JsonConvert.DeserializeObject<TMessage>(objectJson);
             if (messageObject == null)
             {
-                throw new InvalidOperationException($"Message for {typeof(TMessage).Name} was not deserializable into {typeof(TMessage).Name}");
+                throw new InvalidOperationException(
+                    $"Message for {typeof(TMessage).Name} was not deserializable into {typeof(TMessage).Name}");
             }
 
             var responseObject = await messageHandler(messageObject);
 
             var response = JsonConvert.SerializeObject(responseObject);
-            return MessageTypeCache.EncodeMessageJson<TResponse>(response);
+            return MessageTypeCache.EncodeResponseMessageJson<TResponse>(response, responseId);
         };
     }
 
-    public void AddMessageProcessCallback<TMessage>(Func<TMessage, ValueTask> messageHandler) where TMessage : IMessageFromUnity<TMessage>
+    public void AddMessageProcessCallback<TMessage>(Func<TMessage, ValueTask> messageHandler)
+        where TMessage : IMessageFromUnity<TMessage>
     {
         MessageTypeCache.AddTypeToCache<TMessage>();
         _handlers[typeof(TMessage)] = async objectJson =>
@@ -117,68 +124,64 @@ public class TypedMessageUnityComponent:BaseUnityComponent
             var messageObject = JsonConvert.DeserializeObject<TMessage>(objectJson);
             if (messageObject == null)
             {
-                throw new InvalidOperationException($"Message for {typeof(TMessage).Name} was not deserializable into {typeof(TMessage).Name}");
+                throw new InvalidOperationException(
+                    $"Message for {typeof(TMessage).Name} was not deserializable into {typeof(TMessage).Name}");
             }
 
             await messageHandler(messageObject);
         };
     }
-    
-    protected override async ValueTask<string> OnMessageReceivedWithResponseAsync(string msg)
-    {
-        var decoded = MessageTypeCache.DecodeMessageJson(msg);
 
-        if (decoded== null)
-        {
-            if (TryHandleKnownMessages(msg, out var knownMessageResponse))
-            {
-                return knownMessageResponse;
-            }
-            throw new InvalidOperationException($"Non-encoded message received! {msg}");
-        }
-        
-        if (decoded.Value.type == null)
-        {
-            Logger.LogWarning($"Unknown message type {decoded.Value.typeName}");
-            return string.Empty;
-        }
-
-        if (!_handlersWithResponse.TryGetValue(decoded.Value.type, out var handlerWithResponse))
-        {
-            Logger.LogWarning($"Missing handler for message {decoded.Value.typeName}");
-            return string.Empty;
-        }
-
-        var response = await handlerWithResponse(decoded.Value.objectJson);
-        return response;
-    }
-    
     protected override void OnMessageReceived(string msg)
     {
         var decoded = MessageTypeCache.DecodeMessageJson(msg);
 
-        if (decoded== null)
+        if (decoded == null)
         {
             if (TryHandleKnownMessages(msg, out var knownMessageResponse))
             {
                 return;
             }
+
             throw new InvalidOperationException($"Non-encoded message received! {msg}");
         }
-        
+
         if (decoded.Value.type == null)
         {
             Logger.LogWarning($"Unknown message type {decoded.Value.typeName}");
             return;
         }
 
-        if (!_handlers.TryGetValue(decoded.Value.type, out var handler))
+        if (decoded.Value.responseToMessageId != null)
         {
-            Logger.LogWarning($"Missing handler for message {decoded.Value.typeName}");
-            return;
+            _responseTcs[decoded.Value.responseToMessageId.Value]
+                .SetResult((decoded.Value.objectJson, decoded.Value.type));
         }
+        else if (decoded.Value.respondWithId != null)
+        {
+            if (!_handlersWithResponse.TryGetValue(decoded.Value.type, out var handlerWithResponse))
+            {
+                Logger.LogError($"Missing handler for message with response {decoded.Value.typeName}");
+                return;
+            }
 
-        handler(decoded.Value.objectJson);
+            Task.Run(async () =>
+            {
+                var response = await handlerWithResponse(decoded.Value.respondWithId.Value, decoded.Value.objectJson);
+
+                await base.SendMessageToUnityAsync(response);
+            });
+        }
+        else
+        {
+            if (!_handlers.TryGetValue(decoded.Value.type, out var handler))
+            {
+                Logger.LogError($"Missing handler for message {decoded.Value.typeName}");
+                return;
+            }
+
+            handler(decoded.Value.objectJson);
+        }
     }
 
     private bool TryHandleKnownMessages(string msg, out string response)

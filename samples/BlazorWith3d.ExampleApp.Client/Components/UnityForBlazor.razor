@@ -223,7 +223,7 @@
         _blocks.RemoveAll(o => o.blockId == id);
     }
 
-    private ValueTask<TResponse> SendMessageWithResponse<TMessage, TResponse>(TMessage message) where TMessage : IMessageToUnity<TMessage, TResponse>
+    private Task<TResponse> SendMessageWithResponse<TMessage, TResponse>(TMessage message) where TMessage : IMessageToUnity<TMessage, TResponse>
     {
         if (!AppInitialized)
         {

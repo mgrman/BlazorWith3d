@@ -20,13 +20,15 @@ namespace ExampleApp
             _templateRoot=new GameObject($"BlockTemplateRoot");
             _templateRoot.SetActive(false);
             _templateRoot.transform.parent = transform;
-            
-            TypedMessageBlazorApi.AddMessageProcessCallback<AddBlockTemplateMessage>(OnAddBlockTemplateMessage);
-            TypedMessageBlazorApi.AddMessageProcessCallback<RemoveBlockTemplateMessage>(OnRemoveBlockTemplateMessage);
-            TypedMessageBlazorApi.AddMessageProcessCallback<AddBlockInstanceMessage>(OnAddBlockInstanceMessage);
-            TypedMessageBlazorApi.AddMessageProcessCallback<RemoveBlockMessage>(OnRemoveBlockMessage);
 
-            TypedMessageBlazorApi.SendMessage(new AppInitialized());
+            var typedApi = new TypedMessageBlazorApi();
+            
+            typedApi.AddMessageProcessCallback<AddBlockTemplateMessage>(OnAddBlockTemplateMessage);
+            typedApi.AddMessageProcessCallback<RemoveBlockTemplateMessage>(OnRemoveBlockTemplateMessage);
+            typedApi.AddMessageProcessCallback<AddBlockInstanceMessage>(OnAddBlockInstanceMessage);
+            typedApi.AddMessageProcessCallback<RemoveBlockMessage>(OnRemoveBlockMessage);
+
+            typedApi.SendMessage(new AppInitialized());
             
             #if UNITY_EDITOR
             OnAddBlockTemplateMessage(new AddBlockTemplateMessage()
