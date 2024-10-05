@@ -57,9 +57,9 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
     public sealed class PoseChangeResponse
     {
         public bool IsValid;
-        public float? NewPositionX;
-        public float? NewPositionY;
-        public float? NewRotationZ;
+        public float NewPositionX;
+        public float NewPositionY;
+        public float NewRotationZ;
     }
 
     

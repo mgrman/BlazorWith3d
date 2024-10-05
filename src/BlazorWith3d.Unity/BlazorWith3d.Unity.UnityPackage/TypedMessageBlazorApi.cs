@@ -19,9 +19,6 @@ namespace BlazorWith3d.Unity
 
         public TypedMessageBlazorApi()
         {
-#if !(UNITY_WEBGL && !UNITY_EDITOR)
-            return;
-#endif
             if (BlazorApi.OnHandleReceivedMessages != null)
             {
                 throw new InvalidOperationException("There is already a handler for blazor messages!");
@@ -52,10 +49,10 @@ namespace BlazorWith3d.Unity
         public async Awaitable<TResponse> SendMessageWithResponse<TMessage, TResponse>(TMessage message)
             where TMessage : IMessageFromUnity<TMessage, TResponse>
         {
-            MessageTypeCache.AddTypeToCache<TMessage>();
-            MessageTypeCache.AddTypeToCache<TResponse>();
 
             var messageString = JsonUtility.ToJson(message);
+            MessageTypeCache.AddTypeToCache<TMessage>();
+            MessageTypeCache.AddTypeToCache<TResponse>();
             var (encodedMessage, msgId) = MessageTypeCache.EncodeMessageWithResponseJson<TMessage>(messageString);
 
             try
@@ -129,10 +126,6 @@ namespace BlazorWith3d.Unity
 
         protected void SendMessageFromUnity(string msg)
         {
-#if !(UNITY_WEBGL && !UNITY_EDITOR)
-            Debug.Log($"Sending message: {msg}");
-            return;
-#endif
             BlazorApi.SendMessageFromUnity(Encoding.Unicode.GetBytes(msg));
         }
 

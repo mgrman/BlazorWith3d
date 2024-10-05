@@ -21,21 +21,22 @@ namespace ExampleApp
         [SerializeField]
         private GameObject _backgroundPlane;
 
+        private TypedMessageBlazorApi _typedApi;
+
         public void Start()
         {
-
             _templateRoot=new GameObject($"BlockTemplateRoot");
             _templateRoot.SetActive(false);
             _templateRoot.transform.parent = transform;
 
-            var typedApi = new TypedMessageBlazorApi();
+            _typedApi = new TypedMessageBlazorApi();
             
-            typedApi.AddMessageProcessCallback<AddBlockTemplateMessage>(OnAddBlockTemplateMessage);
-            typedApi.AddMessageProcessCallback<RemoveBlockTemplateMessage>(OnRemoveBlockTemplateMessage);
-            typedApi.AddMessageProcessCallback<AddBlockInstanceMessage>(OnAddBlockInstanceMessage);
-            typedApi.AddMessageProcessCallback<RemoveBlockMessage>(OnRemoveBlockMessage);
+            _typedApi.AddMessageProcessCallback<AddBlockTemplateMessage>(OnAddBlockTemplateMessage);
+            _typedApi.AddMessageProcessCallback<RemoveBlockTemplateMessage>(OnRemoveBlockTemplateMessage);
+            _typedApi.AddMessageProcessCallback<AddBlockInstanceMessage>(OnAddBlockInstanceMessage);
+            _typedApi.AddMessageProcessCallback<RemoveBlockMessage>(OnRemoveBlockMessage);
 
-            typedApi.SendMessage(new AppInitialized());
+            _typedApi.SendMessage(new AppInitialized());
             
             #if UNITY_EDITOR
             OnAddBlockTemplateMessage(new AddBlockTemplateMessage()
@@ -74,7 +75,7 @@ namespace ExampleApp
             
             var meshGo = GameObject.Instantiate(_templatePrefab, _templateRoot.transform);
             
-            meshGo.Initialize(msg,gameObject);
+            meshGo.Initialize(msg,gameObject, _typedApi);
             
             _templates.Add(msg.TemplateId, meshGo);
 

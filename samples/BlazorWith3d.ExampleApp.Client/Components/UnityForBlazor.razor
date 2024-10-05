@@ -3,7 +3,12 @@
 @using BlazorWith3d.Unity
 @using BlazorWith3d.Unity.Shared
 
+@inject IServiceProvider Services
+
 <InputCheckbox @bind-Value="Is3DVisible" ></InputCheckbox>
+
+<text>@(OperatingSystem.IsBrowser()?"WASM":"Serverside")</text>
+
 
 <table>
     <thead>
@@ -141,21 +146,24 @@
     
     // TODO this is never null, test again how the disappearance is handled!!
     private TypedMessageUnityComponent? _unityComponent;
+    private TypedMessageUnityComponent? _unityComponent2;
+    private TypedMessageUnityComponent? _unityComponent23;
+    private TypedMessageUnityComponent? _unityComponent233;
 
     private bool AppInitialized;
     
     int newIdCounter;
     
-    float newTemplateSizeX;
-    float newTemplateSizeY;
-    float newTemplateSizeZ;
+    float newTemplateSizeX=1;
+    float newTemplateSizeY=1;
+    float newTemplateSizeZ=1;
     
     float newBlockPositionX;
     float newBlockPositionY;
     float newBlockRotationZ;
     int newBlockTemplateId;
 
-    private List<(int id,float sizeX, float sizeY, float sizeZ)> _templates = new ();
+    private List<(int id, float sizeX, float sizeY, float sizeZ)> _templates = new();
     private List<(int blockId, float positionX, float positionY, float rotationZ, int templateId)> _blocks = new ();
     
     private bool _is3DVisible=true;
@@ -172,15 +180,44 @@
         } 
     }
 
+    protected override void OnInitialized()
+    {
+        
+        base.OnInitialized();
+    }
+
     protected override void OnAfterRender(bool firstRender)
     {
         _unityComponent.AddMessageProcessCallback<AppInitialized>(OnAppInitialized);
+        _unityComponent.AddMessageWithResponseProcessCallback<BlockPoseChangingMessage,PoseChangeResponse>(OnBlockPoseChanging);
+        _unityComponent.AddMessageProcessCallback<BlockPoseChangedMessage>(OnBlockPoseChanged);
         base.OnAfterRender(firstRender);
+    }
+
+    private void OnBlockPoseChanged(BlockPoseChangedMessage obj)
+    {
+        var blockIndex = _blocks.FindIndex(o => o.blockId == obj.BlockId);
+        var block = _blocks[blockIndex];
+
+        _blocks[blockIndex] = (block.blockId, obj.PositionX, obj.PositionY, obj.RotationZ, block.templateId);
+        this.StateHasChanged();
+    }
+
+    private async ValueTask<PoseChangeResponse> OnBlockPoseChanging(BlockPoseChangingMessage arg)
+    {
+        return new PoseChangeResponse()
+        {
+            IsValid = true,
+            NewPositionX = (float)Math.Round(arg.PositionX,1),
+            NewPositionY = (float)Math.Round(arg.PositionY,1),
+            NewRotationZ = arg.RotationZ
+        };
     }
 
     private async void  OnAppInitialized(AppInitialized arg)
     {
         AppInitialized = true;
+        
        await ReplayState();
     }
 

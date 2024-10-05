@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 
 namespace BlazorWith3d.Unity.Shared
@@ -97,25 +98,24 @@ namespace BlazorWith3d.Unity.Shared
                 return null;
             }
             
-            
             var responseString = messageString.Substring(0, separatorIndex);
 
             int? responseToMessageId;
             int? respondWithId;
             
-            switch (responseString)
+            switch (responseString?.FirstOrDefault())
             {
-                case "V":
+                case 'V':
                     responseToMessageId=null;
                     respondWithId=null;
                     break;
-                case "M":
-                    responseToMessageId=int.Parse(responseString.AsSpan(1));
-                    respondWithId=null;
-                    break;
-                case "R":
+                case 'M':
                     responseToMessageId=null;
                     respondWithId=int.Parse(responseString.AsSpan(1));
+                    break;
+                case 'R':
+                    responseToMessageId=int.Parse(responseString.AsSpan(1));
+                    respondWithId=null;
                     break;
                 default:
                     throw new InvalidOperationException();
