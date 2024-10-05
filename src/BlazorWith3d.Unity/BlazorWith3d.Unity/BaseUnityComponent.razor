@@ -1,6 +1,7 @@
 ﻿@inject IJSRuntime JsRuntime
 @using System.Text
 @using Microsoft.JSInterop
+@implements IUnityApi
 @implements IDisposable
 
 <div @ref="_containerElementReference" class="unity-container">
@@ -53,12 +54,14 @@ private IJSObjectReference? _unityApi3;
         await base.OnAfterRenderAsync(firstRender);
     }
 
-    protected virtual void OnMessageBytesReceived(byte[] messageBytes)
+    public Action<byte[]> OnHandleReceivedMessages { get; set; }
+    private void OnMessageBytesReceived(byte[] messageBytes)
     {
+        OnHandleReceivedMessages?.Invoke(messageBytes);
     }
 
 
-    protected async ValueTask SendMessageBytesToUnityAsync(byte[] messageBytes)
+    public async Task SendMessageToUnity(byte[] messageBytes)
     {
         if (_unityApi == null)
         {
@@ -76,4 +79,5 @@ private IJSObjectReference? _unityApi3;
             onMessageBytesReceived(msg);
         }
     }
+
 }

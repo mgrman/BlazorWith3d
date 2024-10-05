@@ -1,0 +1,12 @@
+﻿using System;
+using System.Threading.Tasks;
+
+namespace BlazorWith3d.Unity
+{
+
+        public interface IUnityApi
+        {
+                Action<byte[]> OnHandleReceivedMessages { get; set; }
+                Task SendMessageToUnity(byte[] bytes);
+        }
+}

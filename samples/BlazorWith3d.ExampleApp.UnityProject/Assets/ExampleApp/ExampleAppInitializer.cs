@@ -22,6 +22,7 @@ namespace ExampleApp
         private GameObject _backgroundPlane;
 
         private TypedMessageBlazorApi _typedApi;
+        private BlazorApi _blazorApi;
 
         public void Start()
         {
@@ -29,7 +30,10 @@ namespace ExampleApp
             _templateRoot.SetActive(false);
             _templateRoot.transform.parent = transform;
 
-            _typedApi = new TypedMessageBlazorApi();
+            // TODO create a simulator!!!
+            
+            _blazorApi = new BlazorApi();
+            _typedApi = new TypedMessageBlazorApi(_blazorApi);
             
             _typedApi.AddMessageProcessCallback<AddBlockTemplateMessage>(OnAddBlockTemplateMessage);
             _typedApi.AddMessageProcessCallback<RemoveBlockTemplateMessage>(OnRemoveBlockTemplateMessage);

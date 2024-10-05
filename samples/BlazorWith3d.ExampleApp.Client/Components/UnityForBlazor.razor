@@ -188,9 +188,9 @@
 
     protected override void OnAfterRender(bool firstRender)
     {
-        _unityComponent.AddMessageProcessCallback<AppInitialized>(OnAppInitialized);
-        _unityComponent.AddMessageWithResponseProcessCallback<BlockPoseChangingMessage,PoseChangeResponse>(OnBlockPoseChanging);
-        _unityComponent.AddMessageProcessCallback<BlockPoseChangedMessage>(OnBlockPoseChanged);
+        _unityComponent.TypedUnityApi.AddMessageProcessCallback<AppInitialized>(OnAppInitialized);
+        _unityComponent.TypedUnityApi.AddMessageWithResponseProcessCallback<BlockPoseChangingMessage,PoseChangeResponse>(OnBlockPoseChanging);
+        _unityComponent.TypedUnityApi.AddMessageProcessCallback<BlockPoseChangedMessage>(OnBlockPoseChanged);
         base.OnAfterRender(firstRender);
     }
 
@@ -203,7 +203,7 @@
         this.StateHasChanged();
     }
 
-    private async ValueTask<PoseChangeResponse> OnBlockPoseChanging(BlockPoseChangingMessage arg)
+    private async Task<PoseChangeResponse> OnBlockPoseChanging(BlockPoseChangingMessage arg)
     {
         return new PoseChangeResponse()
         {
@@ -267,17 +267,17 @@
         {
             throw new InvalidOperationException("Unity app is not initialized!");
         }
-        return  _unityComponent.SendMessageWithResponse<TMessage, TResponse>(message);
+        return  _unityComponent.TypedUnityApi.SendMessageWithResponse<TMessage, TResponse>(message);
     }
 
-    private ValueTask SendMessage<TMessage>(TMessage message) where TMessage : IMessageToUnity<TMessage>
+    private Task SendMessage<TMessage>(TMessage message) where TMessage : IMessageToUnity<TMessage>
     {
         if (!AppInitialized)
         {
             throw new InvalidOperationException("Unity app is not initialized!");
         }
         
-        return  _unityComponent.SendMessage<TMessage>(message);
+        return  _unityComponent.TypedUnityApi.SendMessage<TMessage>(message);
     }
 
 }

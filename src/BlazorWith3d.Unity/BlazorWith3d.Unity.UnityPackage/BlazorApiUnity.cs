@@ -8,9 +8,9 @@ using UnityEngine;
 
 namespace BlazorWith3d.Unity
 {
-    internal static class BlazorApi
+    public class BlazorApi : IBlazorApi
     {
-        private static List<byte[]> messageBuffer = new List<byte[]>();
+        private static List<byte[]> messageBuffer = new ();
 
         private static Action<byte[]> _onHandleReceivedMessages;
         
@@ -26,7 +26,8 @@ namespace BlazorWith3d.Unity
             _InitializeApi(_InstantiateByteArray);
 
             Debug.Log($"On after BlazorApiUnity.InitializeApi");
-            SendMessageFromUnity(Encoding.Unicode.GetBytes("UNITY_INITIALIZED"));
+            var bytes = Encoding.Unicode.GetBytes("UNITY_INITIALIZED");
+            _SendMessageFromUnity(bytes,bytes.Length);
         }
 
         [MonoPInvokeCallback(typeof(Action<int, int>))]
@@ -39,18 +40,18 @@ namespace BlazorWith3d.Unity
             Debug.Log($"_ReadBytesBuffer({id},bytes)");
             
             Debug.Log($"Received message ({string.Join(", ",bytes)})");
-            if (OnHandleReceivedMessages == null)
+            if (_onHandleReceivedMessages == null)
             {
                 messageBuffer.Add(bytes);
             }
             else
             {
-                OnHandleReceivedMessages?.Invoke(bytes);
+                _onHandleReceivedMessages?.Invoke(bytes);
             }
         }
 
-        
-        internal static Action<byte[]> OnHandleReceivedMessages
+
+        public Action<byte[]> OnHandleReceivedMessages
         {
             get => _onHandleReceivedMessages;
             set
@@ -78,8 +79,8 @@ namespace BlazorWith3d.Unity
 
         [DllImport("__Internal")]
         private static extern string _InitializeApi(Action<int, int> instantiateByteArrayCallback);
-        
-        internal static void SendMessageFromUnity(byte[] bytes)
+
+        public void SendMessageFromUnity(byte[] bytes)
         {
 #if !(UNITY_WEBGL && !UNITY_EDITOR)
             throw new NotImplementedException();
