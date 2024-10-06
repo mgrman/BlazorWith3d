@@ -208,7 +208,7 @@
         return new PoseChangeResponse()
         {
             IsValid = true,
-            NewPositionX = (float)Math.Round(arg.PositionX,1),
+            NewPositionX = arg.PositionX,
             NewPositionY = (float)Math.Round(arg.PositionY,1),
             NewRotationZ = arg.RotationZ
         };
