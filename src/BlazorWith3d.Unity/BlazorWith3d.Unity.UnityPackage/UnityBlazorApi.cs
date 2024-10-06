@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace BlazorWith3d.Unity
 {
-    public class BlazorApi : IBlazorApi
+    public class UnityBlazorApi : IBlazorApi
     {
         private static List<byte[]> messageBuffer = new ();
 
@@ -51,7 +51,7 @@ namespace BlazorWith3d.Unity
         }
 
 
-        public Action<byte[]> OnHandleReceivedMessages
+        public Action<byte[]> OnMessageFromBlazor
         {
             get => _onHandleReceivedMessages;
             set
@@ -80,7 +80,7 @@ namespace BlazorWith3d.Unity
         [DllImport("__Internal")]
         private static extern string _InitializeApi(Action<int, int> instantiateByteArrayCallback);
 
-        public void SendMessageFromUnity(byte[] bytes)
+        public void SendMessageToBlazor(byte[] bytes)
         {
 #if !(UNITY_WEBGL && !UNITY_EDITOR)
             throw new NotImplementedException();

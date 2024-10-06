@@ -24,7 +24,7 @@ namespace ExampleApp
         [SerializeField]
         private string? VisualsUri;
 
-        private TypedMessageBlazorApi _blazorApi;
+        private TypedBlazorApi _blazorApi;
 
         private int BlockId;
         
@@ -60,7 +60,7 @@ namespace ExampleApp
         private Plane _dragPlane;
         private Vector3 _dragOffset; 
 
-        public void Initialize(AddBlockTemplateMessage msg, GameObject backgroundPlane, TypedMessageBlazorApi blazorApi )
+        public void Initialize(AddBlockTemplateMessage msg, GameObject backgroundPlane, TypedBlazorApi blazorApi )
         {
             TemplateId = msg.TemplateId;
             Size = new(msg.SizeX, msg.SizeY, msg.SizeZ);

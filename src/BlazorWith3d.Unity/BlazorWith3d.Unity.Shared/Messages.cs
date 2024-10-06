@@ -17,13 +17,13 @@ namespace BlazorWith3d.Unity.Shared
     }
 
     // ReSharper disable UnusedTypeParameter
-    public interface IMessageFromUnity<TMessageFromUnity, TResponseToUnity>:IMessage<TMessageFromUnity, TResponseToUnity>
+    public interface IMessageToBlazor<TMessageFromUnity, TResponseToUnity>:IMessage<TMessageFromUnity, TResponseToUnity>
         // ReSharper restore UnusedTypeParameter
     {
     }
 
     // ReSharper disable UnusedTypeParameter
-    public interface IMessageFromUnity<TMessageFromUnity>:IMessage<TMessageFromUnity>
+    public interface IMessageToBlazor<TMessageFromUnity>:IMessage<TMessageFromUnity>
         // ReSharper restore UnusedTypeParameter
     {
     }

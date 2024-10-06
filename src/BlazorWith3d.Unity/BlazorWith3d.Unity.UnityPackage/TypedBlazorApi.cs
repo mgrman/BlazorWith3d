@@ -7,9 +7,9 @@ using UnityEngine;
 namespace BlazorWith3d.Unity
 {
     // not in Shared package, as it uses too many Unity specific APIs, mainly Awaitables
-    public class TypedMessageBlazorApi
+    public class TypedBlazorApi
     {
-        private readonly BlazorApi _blazorApi;
+        private readonly IBlazorApi _blazorApi;
 
         private readonly IDictionary<Type, Func<int, string, Awaitable<string>>> _handlersWithResponse =
             new Dictionary<Type, Func<int, string, Awaitable<string>>>();
@@ -20,20 +20,20 @@ namespace BlazorWith3d.Unity
             _responseTcs = new();
 
 
-        public TypedMessageBlazorApi(BlazorApi blazorApi)
+        public TypedBlazorApi(IBlazorApi blazorApi)
         {
-            if (blazorApi.OnHandleReceivedMessages != null)
+            if (blazorApi.OnMessageFromBlazor != null)
             {
                 throw new InvalidOperationException("There is already a handler for blazor messages!");
             }
 
             _blazorApi = blazorApi;
 
-            blazorApi.OnHandleReceivedMessages = OnMessageReceived;
+            blazorApi.OnMessageFromBlazor = OnMessageReceived;
         }
 
 
-        public void SendMessage<TMessage>(TMessage message) where TMessage : IMessageFromUnity<TMessage>
+        public void SendMessage<TMessage>(TMessage message) where TMessage : IMessageToBlazor<TMessage>
         {
             MessageTypeCache.AddTypeToCache<TMessage>();
 
@@ -52,7 +52,7 @@ namespace BlazorWith3d.Unity
         }
 
         public async Awaitable<TResponse> SendMessageWithResponse<TMessage, TResponse>(TMessage message)
-            where TMessage : IMessageFromUnity<TMessage, TResponse>
+            where TMessage : IMessageToBlazor<TMessage, TResponse>
         {
 
             var messageString = JsonUtility.ToJson(message);
@@ -131,7 +131,7 @@ namespace BlazorWith3d.Unity
 
         protected void SendMessageFromUnity(string msg)
         {
-            _blazorApi.SendMessageFromUnity(Encoding.Unicode.GetBytes(msg));
+            _blazorApi.SendMessageToBlazor(Encoding.Unicode.GetBytes(msg));
         }
 
         protected async void OnMessageReceived(byte[] bytes)

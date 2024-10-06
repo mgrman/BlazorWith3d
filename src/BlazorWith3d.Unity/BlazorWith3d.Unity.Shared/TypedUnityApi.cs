@@ -22,7 +22,7 @@ namespace BlazorWith3d.Unity
         public TypedUnityApi(IUnityApi unityApi)
         {
             _unityApi = unityApi;
-            _unityApi.OnHandleReceivedMessages = OnMessageBytesReceived;
+            _unityApi.OnMessageFromUnity = OnMessageBytesReceived;
         }
 
 
@@ -42,7 +42,7 @@ namespace BlazorWith3d.Unity
 
             try
             {
-                await SendMessageToUnityAsync(encodedMessage);
+                SendMessageToUnity(encodedMessage);
             }
             catch (Exception ex)
             {
@@ -64,7 +64,7 @@ namespace BlazorWith3d.Unity
             {
                 var tcs = new TaskCompletionSource<(string responseObjectJson, Type responseType)>();
                 _responseTcs[msgId] = tcs;
-                await SendMessageToUnityAsync(encodedMessage);
+                SendMessageToUnity(encodedMessage);
 
                 var (responseObjectJson, responseType) = await tcs.Task;
 
@@ -91,7 +91,7 @@ namespace BlazorWith3d.Unity
         }
 
         public void AddMessageWithResponseProcessCallback<TMessage, TResponse>(
-            Func<TMessage, Task<TResponse>> messageHandler) where TMessage : IMessageFromUnity<TMessage, TResponse>
+            Func<TMessage, Task<TResponse>> messageHandler) where TMessage : IMessageToBlazor<TMessage, TResponse>
         {
             MessageTypeCache.AddTypeToCache<TMessage>();
             MessageTypeCache.AddTypeToCache<TResponse>();
@@ -112,7 +112,7 @@ namespace BlazorWith3d.Unity
         }
 
         public void AddMessageProcessCallback<TMessage>(Action<TMessage> messageHandler)
-            where TMessage : IMessageFromUnity<TMessage>
+            where TMessage : IMessageToBlazor<TMessage>
         {
             MessageTypeCache.AddTypeToCache<TMessage>();
             _handlers[typeof(TMessage)] = objectJson =>
@@ -134,9 +134,9 @@ namespace BlazorWith3d.Unity
         }
 
 
-        protected Task SendMessageToUnityAsync(string message)
+        protected void SendMessageToUnity(string message)
         {
-            return _unityApi.SendMessageToUnity(Encoding.Unicode.GetBytes(message));
+            _unityApi.SendMessageToUnity(Encoding.Unicode.GetBytes(message));
         }
 
         protected virtual async void OnMessageReceived(string msg)
@@ -175,7 +175,7 @@ namespace BlazorWith3d.Unity
 
                 var response = await handlerWithResponse(decoded.Value.respondWithId.Value, decoded.Value.objectJson);
 
-                await SendMessageToUnityAsync(response);
+                SendMessageToUnity(response);
             }
             else
             {

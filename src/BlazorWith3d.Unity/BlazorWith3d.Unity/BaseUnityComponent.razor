@@ -1,5 +1,7 @@
 ﻿@inject IJSRuntime JsRuntime
+@inject Logger<BaseUnityComponent> Logger
 @using System.Text
+@using Microsoft.Extensions.Logging
 @using Microsoft.JSInterop
 @implements IUnityApi
 @implements IDisposable
@@ -18,8 +20,6 @@
 @code
 {
     private IJSObjectReference? _unityApi;
-private IJSObjectReference? _unityApi2;
-private IJSObjectReference? _unityApi3;
 
     private ElementReference _containerElementReference;
     private DotNetObjectReference<JsMessageReceiverProxy>? _messageReceiverProxyReference;
@@ -54,21 +54,30 @@ private IJSObjectReference? _unityApi3;
         await base.OnAfterRenderAsync(firstRender);
     }
 
-    public Action<byte[]> OnHandleReceivedMessages { get; set; }
+    public Action<byte[]> OnMessageFromUnity { get; set; }
     private void OnMessageBytesReceived(byte[] messageBytes)
     {
-        OnHandleReceivedMessages?.Invoke(messageBytes);
+        OnMessageFromUnity?.Invoke(messageBytes);
     }
 
-
-    public async Task SendMessageToUnity(byte[] messageBytes)
+    public void SendMessageToUnity(byte[] messageBytes)
     {
         if (_unityApi == null)
         {
             throw new InvalidOperationException("CRITICAL FAILURE, SendMessageToUnity called without _unityApi reference!");
         }
 
-        await _unityApi.InvokeAsync<byte[]>("SendMessage", messageBytes);
+        Task.Run(async () =>
+        {
+            try
+            {
+                await _unityApi.InvokeVoidAsync("SendMessage", messageBytes);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error sending message");
+            }
+        } );
     }
 
     private class JsMessageReceiverProxy(Action<byte[]> onMessageBytesReceived)

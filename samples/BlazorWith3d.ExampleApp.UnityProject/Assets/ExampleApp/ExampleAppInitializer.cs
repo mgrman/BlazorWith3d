@@ -21,8 +21,8 @@ namespace ExampleApp
         [SerializeField]
         private GameObject _backgroundPlane;
 
-        private TypedMessageBlazorApi _typedApi;
-        private BlazorApi _blazorApi;
+        private TypedBlazorApi _typedApi;
+        private IBlazorApi _blazorApi;
 
         public void Start()
         {
@@ -32,8 +32,18 @@ namespace ExampleApp
 
             // TODO create a simulator!!!
             
-            _blazorApi = new BlazorApi();
-            _typedApi = new TypedMessageBlazorApi(_blazorApi);
+            #if UNITY_EDITOR
+            
+            var simulatorApi = new SimulatorApi();
+            var simulatorTypedApi = new UnityTypedUnityApi(simulatorApi);
+            var simulator = gameObject.AddComponent<BlazorSimulator>();
+            gameObject.AddComponent<DragChangingSimulatorHandler>();
+            simulator.Initialize(simulatorTypedApi, typeof(AppInitialized).Assembly);
+            _blazorApi = simulatorApi;
+            #else
+            _blazorApi = new UnityBlazorApi();
+            #endif
+            _typedApi = new TypedBlazorApi(_blazorApi);
             
             _typedApi.AddMessageProcessCallback<AddBlockTemplateMessage>(OnAddBlockTemplateMessage);
             _typedApi.AddMessageProcessCallback<RemoveBlockTemplateMessage>(OnRemoveBlockTemplateMessage);
@@ -41,30 +51,16 @@ namespace ExampleApp
             _typedApi.AddMessageProcessCallback<RemoveBlockMessage>(OnRemoveBlockMessage);
 
             _typedApi.SendMessage(new AppInitialized());
-            
-            #if UNITY_EDITOR
-            OnAddBlockTemplateMessage(new AddBlockTemplateMessage()
+
+#if UNITY_EDITOR
+
+            simulatorTypedApi.SendMessage(new AddBlockTemplateMessage()
             {
                 TemplateId = 0,
                 SizeX = 1, SizeY = 1, SizeZ = 1, VisualsUri = null
             });
-            OnAddBlockInstanceMessage(new AddBlockInstanceMessage(){ BlockId = 0, TemplateId = 0, PositionX = 0, PositionY = 0, RotationZ = 0});
-            //OnRemoveBlockMessage(new RemoveBlockMessage() { BlockId = 0 });
-            //
-            // OnAddBlockTemplateMessage(new AddBlockTemplateMessage()
-            // {
-            //     TemplateId = 1,
-            //     SizeX = 0, SizeY = 0, SizeZ = 0, VisualsUri = null
-            // });
-
-            // TypedMessageBlazorApi.SimulateMessage(
-            //     @"AddBlockTemplateMessage;{""TemplateId"":0,""SizeX"":1.0,""SizeY"":2.0,""SizeZ"":3.0}");
-            // TypedMessageBlazorApi.SimulateMessage(
-            //     @"AddBlockTemplateMessage;{""TemplateId"":0,""SizeX"":1.0,""SizeY"":2.0,""SizeZ"":3.0}");
-            #endif
-            
-            
-            
+            simulatorTypedApi.SendMessage(new AddBlockInstanceMessage(){ BlockId = 0, TemplateId = 0, PositionX = 0, PositionY = 0, RotationZ = 0});
+#endif
         }
 
         private void Update()

@@ -12,7 +12,7 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
 // - void SubscribeToBlockPoseChanged(Action<int blockId, float positionX, float positionY, float rotationZ> onPoseChanged)
 // - void StartDraggingBlock(int blockId, int templateId)
 
-    public sealed class AppInitialized : IMessageFromUnity<AppInitialized>
+    public sealed class AppInitialized : IMessageToBlazor<AppInitialized>
     {
     }
     public sealed class AddBlockTemplateMessage : IMessageToUnity<AddBlockTemplateMessage>
@@ -63,7 +63,7 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
     }
 
     
-    public sealed class BlockPoseChangingMessage : IMessageFromUnity<BlockPoseChangingMessage, PoseChangeResponse>
+    public sealed class BlockPoseChangingMessage : IMessageToBlazor<BlockPoseChangingMessage, PoseChangeResponse>
     {
         public int BlockId;
         public float PositionX;
@@ -72,7 +72,7 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
     }
 
     
-    public sealed class BlockPoseChangedMessage : IMessageFromUnity<BlockPoseChangedMessage>
+    public sealed class BlockPoseChangedMessage : IMessageToBlazor<BlockPoseChangedMessage>
     {
         public int BlockId;
         public float PositionX;
