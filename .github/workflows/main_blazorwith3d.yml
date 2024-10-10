@@ -21,16 +21,25 @@ jobs:
       - uses: actions/checkout@v4
       - name: Free up Disk Space
         run: |
-          # Remove specific Docker images that are no longer needed
-          docker rmi $(docker images -f "dangling=true" -q) || true
-          
-          # Prune unused Docker objects (images, containers, volumes, and networks)
-          docker system prune -f || true
-      
-          # Clean up specific directories known to consume a lot of space
-          sudo rm -rf /path/to/large/directory
-      
-          # Show disk space usage
+          echo "=============================================================================="
+          echo "Freeing up disk space on CI system"
+          echo "=============================================================================="
+
+          echo "Listing 100 largest packages"
+          dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -n | tail -n 100
+          df -h
+          echo "Removing large packages"
+          sudo apt-get remove -y '^ghc-8.*'
+          sudo apt-get remove -y '^dotnet-.*'
+          sudo apt-get remove -y '^llvm-.*'
+          sudo apt-get remove -y 'php.*'
+          sudo apt-get remove -y azure-cli google-cloud-sdk hhvm google-chrome-stable firefox powershell mono-devel
+          sudo apt-get autoremove -y
+          sudo apt-get clean
+          df -h
+          echo "Removing large directories"
+          # deleting 15GB
+          rm -rf /usr/share/dotnet/
           df -h
       - uses: game-ci/unity-builder@v4
         env:
