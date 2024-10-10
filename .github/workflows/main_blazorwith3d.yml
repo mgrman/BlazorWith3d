@@ -19,7 +19,19 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
+      - name: Free up Disk Space
+        run: |
+          # Remove specific Docker images that are no longer needed
+          docker rmi $(docker images -f "dangling=true" -q) || true
+          
+          # Prune unused Docker objects (images, containers, volumes, and networks)
+          docker system prune -f || true
+      
+          # Clean up specific directories known to consume a lot of space
+          sudo rm -rf /path/to/large/directory
+      
+          # Show disk space usage
+          df -h
       - uses: game-ci/unity-builder@v4
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
