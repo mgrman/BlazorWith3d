@@ -9,6 +9,10 @@ on:
       - main
   workflow_dispatch:
 
+env:
+  PROJECT_WEB_APP_PATH: 'samples/BlazorWith3d.ExampleApp/BlazorWith3d.ExampleApp.csproj'
+  WEBGL_BUILD_PATH: 'samples/BlazorWith3d.ExampleApp.Client/wwwroot/'
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -16,16 +20,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          targetPlatform: WebGL
+          projectPath: samples\BlazorWith3d.ExampleApp.UnityProject
+          buildsPath: ${{env.DOTNET_ROOT}}/mywebglapp
+
+      - name: Copy build
+        run: cp -a "${{env.DOTNET_ROOT}}/mywebglapp/WebGL/Build/." "${{vars.WEBGL_BUILD_PATH}}"
+
       - name: Set up .NET Core
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '9.x'
 
       - name: Build with dotnet
-        run: dotnet build --configuration Release
+        run: dotnet build "${{vars.PROJECT_WEB_APP_PATH}}" --configuration Release
 
       - name: dotnet publish
-        run: dotnet publish -c Release -o ${{env.DOTNET_ROOT}}/myapp
+        run: dotnet publish "${{vars.PROJECT_WEB_APP_PATH}}" -c Release -o ${{env.DOTNET_ROOT}}/myapp
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -47,7 +64,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: .net-app
-      
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
