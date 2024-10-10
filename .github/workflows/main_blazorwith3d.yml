@@ -52,6 +52,8 @@ jobs:
           targetPlatform: WebGL
           projectPath: samples/BlazorWith3d.ExampleApp.UnityProject/
           buildsPath: ${{env.DOTNET_ROOT}}/mywebglapp
+          runAsHostUser: true
+          dockerWorkspacePath: /github/workspace
 
       - name: Copy build
         run: cp -a "${{env.DOTNET_ROOT}}/mywebglapp/WebGL/Build/." "${{vars.WEBGL_BUILD_PATH}}"
