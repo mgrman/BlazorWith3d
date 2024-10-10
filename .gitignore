@@ -1,3 +1,30 @@
+
+# IDEs
 .idea
 .vs
 *.sln.DotSettings.user
+*.csproj.user
+.vsconfig
+
+# Unity
+Library
+Logs
+Temp
+obj
+Build
+Build.*
+UserSettings
+
+# .NET
+bin
+obj
+
+# shared lib
+.obj
+.bin
+
+
+
+# remove Unity generated project/solution
+/**/*.UnityProject/*.csproj
+/**/*.UnityProject/*.sln
