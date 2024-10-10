@@ -29,8 +29,19 @@ var BlazorApiUnity = {
         
         var buffer= new Uint8Array(HEAPU8.buffer, array, size);
         console.log("buffer at "+buffer.length);
-        // void BlazorApi_OnMessageFromUnityHandler(byte[] message)
-        Module["BlazorApi_OnMessageFromUnityHandler"](buffer)
+        
+        if(Module["BlazorApi_OnMessageFromUnityHandler"]==null) {
+            if (Module["BlazorApi_OnMessageFromUnityHandler_Buffer"] == null) {
+                Module["BlazorApi_OnMessageFromUnityHandler_Buffer"] = []
+            }
+            
+            Module["BlazorApi_OnMessageFromUnityHandler_Buffer"].push(buffer.slice());
+        }
+        
+        else {
+            // void BlazorApi_OnMessageFromUnityHandler(byte[] message)
+            Module["BlazorApi_OnMessageFromUnityHandler"](buffer)
+        }
     },
 };
 

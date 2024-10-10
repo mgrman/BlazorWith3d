@@ -159,10 +159,11 @@
     
                         // Create a temporary ArrayBuffer and copy the contents of the shared buffer
                         // into it.
-                        const tempView = new Uint8Array(message.length)
+                        const tempView = new Uint8Array(buffer.length)
     
-                        tempView.set(message)
-                        
+                        tempView.set(buffer)
+
+                        var dec=new TextDecoder('utf-16le');
                         console.log("received message: "+dec.decode(tempView.buffer))
 
                         resolve(unityApi);

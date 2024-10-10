@@ -3,15 +3,25 @@
 export function InitializeUnityApi (unityInstance, onMessageReceivedCallback ) {
 
   let unityApi = {}
-
-  // void BlazorApi_OnMessageFromUnityHandler(byte[] message)
-  unityInstance.Module["BlazorApi_OnMessageFromUnityHandler"] = function (msgBytes) {
+  
+  var messageReceivedCallback=function (msgBytes) {
     try {
       onMessageReceivedCallback(msgBytes);
     } catch (err) {
       console.error(err);
     }
+  };
+
+  if(Module["BlazorApi_OnMessageFromUnityHandler_Buffer"]){
+    for(var buffer in Module["BlazorApi_OnMessageFromUnityHandler_Buffer"]){
+      messageReceivedCallback(buffer);
+    }
+
+    Module["BlazorApi_OnMessageFromUnityHandler_Buffer"]=null;
   }
+  
+  // void BlazorApi_OnMessageFromUnityHandler(byte[] message)
+  unityInstance.Module["BlazorApi_OnMessageFromUnityHandler"] = messageReceivedCallback;
 
   unityApi.SendMessage = function (msgBytes) {
     // void BlazorApi_SendMessageToUnity(byte[] msgBytes)
@@ -24,6 +34,8 @@ export function InitializeUnityApi (unityInstance, onMessageReceivedCallback ) {
     }
   };
 
+  
+  
   return unityApi;
 }
 
