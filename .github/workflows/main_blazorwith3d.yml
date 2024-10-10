@@ -27,7 +27,7 @@ jobs:
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
         with:
           targetPlatform: WebGL
-          projectPath: samples\BlazorWith3d.ExampleApp.UnityProject
+          projectPath: samples/BlazorWith3d.ExampleApp.UnityProject/
           buildsPath: ${{env.DOTNET_ROOT}}/mywebglapp
 
       - name: Copy build
