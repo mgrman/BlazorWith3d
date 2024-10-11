@@ -33,7 +33,7 @@ namespace BlazorWith3d.Unity
         }
 
 
-        public void SendMessage<TMessage>(TMessage message) where TMessage : IMessageToBlazor<TMessage>
+        public void SendMessage<TMessage>(TMessage message) where TMessage : IMessageToBlazor
         {
             MessageTypeCache.AddTypeToCache<TMessage>();
 
@@ -52,7 +52,7 @@ namespace BlazorWith3d.Unity
         }
 
         public async Awaitable<TResponse> SendMessageWithResponse<TMessage, TResponse>(TMessage message)
-            where TMessage : IMessageToBlazor<TMessage, TResponse>
+            where TMessage : IMessageToBlazor<TResponse>
         {
 
             var messageString = JsonUtility.ToJson(message);
@@ -92,7 +92,7 @@ namespace BlazorWith3d.Unity
         }
 
         public void AddMessageWithResponseProcessCallback<TMessage, TResponse>(
-            Func<TMessage, Awaitable<TResponse>> messageHandler) where TMessage : IMessageToUnity<TMessage, TResponse>
+            Func<TMessage, Awaitable<TResponse>> messageHandler) where TMessage : IMessageToUnity<TResponse>
         {
             MessageTypeCache.AddTypeToCache<TMessage>();
             MessageTypeCache.AddTypeToCache<TResponse>();
@@ -113,7 +113,7 @@ namespace BlazorWith3d.Unity
         }
 
         public void AddMessageProcessCallback<TMessage>(Action<TMessage> messageHandler)
-            where TMessage : IMessageToUnity<TMessage>
+            where TMessage : IMessageToUnity
         {
             MessageTypeCache.AddTypeToCache<TMessage>();
             _handlers[typeof(TMessage)] = objectJson =>

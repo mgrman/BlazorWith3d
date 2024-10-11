@@ -253,12 +253,12 @@
         _blocks.RemoveAll(o => o.blockId == id);
     }
 
-    private Task<TResponse> SendMessageWithResponse<TMessage, TResponse>(TMessage message) where TMessage : IMessageToUnity<TMessage, TResponse>
+    private Task<TResponse> SendMessageWithResponse<TMessage, TResponse>(TMessage message) where TMessage : IMessageToUnity<TResponse>
     {
         return  _unityComponent.TypedUnityApi.SendMessageWithResponse<TMessage, TResponse>(message);
     }
 
-    private Task SendMessage<TMessage>(TMessage message) where TMessage : IMessageToUnity<TMessage>
+    private Task SendMessage<TMessage>(TMessage message) where TMessage : IMessageToUnity
     {
         return  _unityComponent.TypedUnityApi.SendMessage<TMessage>(message);
     }

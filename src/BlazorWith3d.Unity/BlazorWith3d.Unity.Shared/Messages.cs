@@ -9,7 +9,7 @@ namespace BlazorWith3d.Unity.Shared
         public MessageTypeAttribute()
         {
         }
-        
+
         public MessageTypeAttribute(string? typeName)
         {
             TypeName = typeName;
@@ -17,45 +17,33 @@ namespace BlazorWith3d.Unity.Shared
     }
 
     // ReSharper disable UnusedTypeParameter
-    public interface IMessageToBlazor<TMessageFromUnity, TResponseToUnity>:IMessage<TMessageFromUnity, TResponseToUnity>
-        // ReSharper restore UnusedTypeParameter
+    public interface IMessageToBlazor<TResponseToUnity>
+    // ReSharper restore UnusedTypeParameter
     {
     }
 
     // ReSharper disable UnusedTypeParameter
-    public interface IMessageToBlazor<TMessageFromUnity>:IMessage<TMessageFromUnity>
-        // ReSharper restore UnusedTypeParameter
+    public interface IMessageToBlazor
+    // ReSharper restore UnusedTypeParameter
     {
     }
 
     // ReSharper disable UnusedTypeParameter
-    public interface IMessageToUnity<TMessageToUnity, TResponseFromUnity>:IMessage<TMessageToUnity, TResponseFromUnity>
-        // ReSharper restore UnusedTypeParameter
+    public interface IMessageToUnity<TResponseFromUnity>
+    // ReSharper restore UnusedTypeParameter
     {
     }
 
     // ReSharper disable UnusedTypeParameter
-    public interface IMessageToUnity<TMessageToUnity>:IMessage<TMessageToUnity>
-        // ReSharper restore UnusedTypeParameter
+    public interface IMessageToUnity
+    // ReSharper restore UnusedTypeParameter
     {
     }
 
-    // ReSharper disable UnusedTypeParameter
-    public interface IMessage<TMessage>
-        // ReSharper restore UnusedTypeParameter
-    {
-    }
-
-    // ReSharper disable UnusedTypeParameter
-    public interface IMessage<TMessage, TResponse>
-        // ReSharper restore UnusedTypeParameter
-    {
-    }
-    
 #if COMMON_DOTNET
 #endif
 
-    
+
 
 #if COMMON_UNITY
 #endif

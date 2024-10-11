@@ -33,7 +33,7 @@ namespace BlazorWith3d.Unity
         protected abstract string SerializeObject<T>(T obj);
         protected abstract T DeserializeObject<T>(string json);
 
-        public async Task SendMessage<TMessage>(TMessage message) where TMessage : IMessageToUnity<TMessage>
+        public async Task SendMessage<TMessage>(TMessage message) where TMessage : IMessageToUnity
         {
             MessageTypeCache.AddTypeToCache<TMessage>();
 
@@ -52,7 +52,7 @@ namespace BlazorWith3d.Unity
         }
 
         public async Task<TResponse> SendMessageWithResponse<TMessage, TResponse>(TMessage message)
-            where TMessage : IMessageToUnity<TMessage, TResponse>
+            where TMessage : IMessageToUnity<TResponse>
         {
             MessageTypeCache.AddTypeToCache<TMessage>();
             MessageTypeCache.AddTypeToCache<TResponse>();
@@ -91,7 +91,7 @@ namespace BlazorWith3d.Unity
         }
 
         public void AddMessageWithResponseProcessCallback<TMessage, TResponse>(
-            Func<TMessage, Task<TResponse>> messageHandler) where TMessage : IMessageToBlazor<TMessage, TResponse>
+            Func<TMessage, Task<TResponse>> messageHandler) where TMessage : IMessageToBlazor<TResponse>
         {
             MessageTypeCache.AddTypeToCache<TMessage>();
             MessageTypeCache.AddTypeToCache<TResponse>();
@@ -112,7 +112,7 @@ namespace BlazorWith3d.Unity
         }
 
         public void AddMessageProcessCallback<TMessage>(Action<TMessage> messageHandler)
-            where TMessage : IMessageToBlazor<TMessage>
+            where TMessage : IMessageToBlazor
         {
             MessageTypeCache.AddTypeToCache<TMessage>();
             _handlers[typeof(TMessage)] = objectJson =>

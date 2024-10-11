@@ -12,10 +12,10 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
     // - void SubscribeToBlockPoseChanged(Action<int blockId, float positionX, float positionY, float rotationZ> onPoseChanged)
     // - void StartDraggingBlock(int blockId, int templateId)
 
-    public sealed class AppInitialized : IMessageToBlazor<AppInitialized>
+    public sealed class AppInitialized : IMessageToBlazor
     {
     }
-    public sealed class AddBlockTemplateMessage : IMessageToUnity<AddBlockTemplateMessage>
+    public sealed class AddBlockTemplateMessage : IMessageToUnity
     {
         public int TemplateId;
         public float SizeX;
@@ -25,7 +25,7 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
     }
 
 
-    public sealed class AddBlockInstanceMessage : IMessageToUnity<AddBlockInstanceMessage>
+    public sealed class AddBlockInstanceMessage : IMessageToUnity
     {
         public int BlockId;
         public float PositionX;
@@ -34,19 +34,19 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
         public int TemplateId;
     }
 
-    public sealed class RemoveBlockMessage : IMessageToUnity<RemoveBlockMessage>
+    public sealed class RemoveBlockMessage : IMessageToUnity
     {
         public int BlockId;
     }
 
 
-    public sealed class RemoveBlockTemplateMessage : IMessageToUnity<RemoveBlockTemplateMessage>
+    public sealed class RemoveBlockTemplateMessage : IMessageToUnity
     {
         public int TemplateId;
     }
 
 
-    public sealed class StartDraggingBlockMessage : IMessageToUnity<StartDraggingBlockMessage>
+    public sealed class StartDraggingBlockMessage : IMessageToUnity
     {
         public int TemplateId;
         public int BlockId;
@@ -62,7 +62,7 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
     }
 
 
-    public sealed class BlockPoseChangingMessage : IMessageToBlazor<BlockPoseChangingMessage, PoseChangeResponse>
+    public sealed class BlockPoseChangingMessage : IMessageToBlazor<PoseChangeResponse>
     {
         public int BlockId;
         public float PositionX;
@@ -71,7 +71,7 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
     }
 
 
-    public sealed class BlockPoseChangedMessage : IMessageToBlazor<BlockPoseChangedMessage>
+    public sealed class BlockPoseChangedMessage : IMessageToBlazor
     {
         public int BlockId;
         public float PositionX;

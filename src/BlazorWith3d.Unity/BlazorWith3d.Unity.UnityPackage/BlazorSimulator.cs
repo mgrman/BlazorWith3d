@@ -34,8 +34,7 @@ namespace BlazorWith3d.Unity
             
         
             var messageTypesToHandle = _messsageAssembly.GetTypes().Where(o =>
-                o.GetInterfaces().Any(i =>
-                    i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IMessageToBlazor<>)));
+                o.GetInterfaces().Any(i => i == typeof(IMessageToBlazor)));
 
             foreach (var messageTypeToHandle in messageTypesToHandle)
             {
@@ -50,11 +49,11 @@ namespace BlazorWith3d.Unity
                 .Select(o =>
                 {
                     var messageWithResponseInterface = o.GetInterfaces()
-                        .FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IMessageToBlazor<,>));
+                        .FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IMessageToBlazor<>));
 
                     if (messageWithResponseInterface != null)
                     {
-                        return (messageType:o, responseType: messageWithResponseInterface.GenericTypeArguments[1]);
+                        return (messageType:o, responseType: messageWithResponseInterface.GenericTypeArguments[0]);
                     }
 
                     return (messageType:null, responseType: null);
@@ -125,7 +124,7 @@ namespace BlazorWith3d.Unity
                         .Select(o =>
                         {
                             var messageInterface = o.GetInterfaces()
-                                .FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IMessageToUnity<>) );
+                                .FirstOrDefault(i => i == typeof(IMessageToUnity) );
 
                             if (messageInterface != null)
                             {
@@ -133,11 +132,11 @@ namespace BlazorWith3d.Unity
                             }
                             
                             var messageWithResponseInterface = o.GetInterfaces()
-                                .FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IMessageToUnity<,>));
+                                .FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IMessageToUnity<>));
 
                             if (messageWithResponseInterface != null)
                             {
-                                return (messageType:o, responseType: messageWithResponseInterface.GenericTypeArguments[1]);
+                                return (messageType:o, responseType: messageWithResponseInterface.GenericTypeArguments[0]);
                             }
 
                             return (messageType:null, responseType: null);
