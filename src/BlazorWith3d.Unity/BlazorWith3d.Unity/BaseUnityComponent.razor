@@ -27,6 +27,8 @@
     [Parameter, EditorRequired] 
     public string UnityBuildFilePath { get; set; } = "";
 
+    private List<byte[]> _unsentMessages = new List<byte[]>();
+
     public void Dispose()
     {
         _messageReceiverProxyReference?.Dispose();
@@ -50,11 +52,18 @@
         var module = await moduleTask.Value;
 
         _unityApi= await module.InvokeAsync<IJSObjectReference>("showUnity", UnityBuildFilePath, _containerElementReference, _messageReceiverProxyReference, nameof(JsMessageReceiverProxy.OnMessageBytesReceived));
+
+        foreach (var msg in _unsentMessages)
+        {
+            SendMessageToUnity(msg);
+        }
+        _unsentMessages.Clear();
         
         await base.OnAfterRenderAsync(firstRender);
     }
 
     public Action<byte[]> OnMessageFromUnity { get; set; }
+    
     private void OnMessageBytesReceived(byte[] messageBytes)
     {
         OnMessageFromUnity?.Invoke(messageBytes);
@@ -64,7 +73,8 @@
     {
         if (_unityApi == null)
         {
-            throw new InvalidOperationException("CRITICAL FAILURE, SendMessageToUnity called without _unityApi reference!");
+            _unsentMessages.Add(messageBytes);
+            return;
         }
 
         Task.Run(async () =>
