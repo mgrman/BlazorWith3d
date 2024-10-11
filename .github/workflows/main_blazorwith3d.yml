@@ -56,7 +56,7 @@ jobs:
       - name: Set up .NET Core
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.x'
+          dotnet-version: '9.0.0-preview.6.24327.7'
 
       - name: Build with dotnet
         run: dotnet build "${{vars.PROJECT_WEB_APP_PATH}}" --configuration Release
