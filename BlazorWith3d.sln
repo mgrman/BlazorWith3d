@@ -1,5 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.12.35323.107
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d.ExampleApp", "samples\BlazorWith3d.ExampleApp\BlazorWith3d.ExampleApp.csproj", "{950A34BA-A271-435A-9161-28891E4082BB}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d.ExampleApp.Client", "samples\BlazorWith3d.ExampleApp.Client\BlazorWith3d.ExampleApp.Client.csproj", "{386015FC-3AD7-4D4B-99B5-590B111D82BF}"
@@ -9,6 +12,15 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d.Unity.Shared", "src\BlazorWith3d.Unity\BlazorWith3d.Unity.Shared\BlazorWith3d.Unity.Shared.csproj", "{5DE1CF85-C4B0-4B38-8804-3DC41F6355B4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d.ExampleApp.Client.Unity.Shared", "samples\BlazorWith3d.ExampleApp.Client.Unity.Shared\BlazorWith3d.ExampleApp.Client.Unity.Shared.csproj", "{28BF01DB-5A24-497C-957B-6FAB7F1A2B07}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{DCF5B369-95B8-4FA0-94BE-8AEDE842B105}"
+	ProjectSection(SolutionItems) = preProject
+		.gitattributes = .gitattributes
+		.gitignore = .gitignore
+		LICENSE = LICENSE
+		.github\workflows\main_blazorwith3d.yml = .github\workflows\main_blazorwith3d.yml
+		README.md = README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -36,5 +48,8 @@ Global
 		{28BF01DB-5A24-497C-957B-6FAB7F1A2B07}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{28BF01DB-5A24-497C-957B-6FAB7F1A2B07}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{28BF01DB-5A24-497C-957B-6FAB7F1A2B07}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
 	EndGlobalSection
 EndGlobal

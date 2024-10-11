@@ -43,6 +43,11 @@ jobs:
           # deleting 15GB
           rm -rf /usr/share/dotnet/
           df -h
+      - name: Set up .NET Core
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.0-preview.6'
+          dotnet-quality: 'preview'
       - uses: game-ci/unity-builder@v4
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
@@ -53,10 +58,6 @@ jobs:
           projectPath: samples/BlazorWith3d.ExampleApp.UnityProject/
           buildsPath: ${{env.DOTNET_ROOT}}/mywebglapp
 
-      - name: Set up .NET Core
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0.0-preview.6.24327.7'
 
       - name: Build with dotnet
         run: dotnet build "${{vars.PROJECT_WEB_APP_PATH}}" --configuration Release
