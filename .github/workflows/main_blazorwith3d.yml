@@ -46,7 +46,7 @@ jobs:
       - name: Set up .NET Core
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.0-preview.6'
+          dotnet-version: '9.0.100-preview.6.24328.19'
           dotnet-quality: 'preview'
       - uses: game-ci/unity-builder@v4
         env:
