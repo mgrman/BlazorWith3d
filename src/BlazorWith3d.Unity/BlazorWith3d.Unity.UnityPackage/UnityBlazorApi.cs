@@ -10,10 +10,10 @@ namespace BlazorWith3d.Unity
 {
     public class UnityBlazorApi : IBlazorApi
     {
-        private static List<byte[]> messageBuffer = new ();
+        private static List<byte[]> messageBuffer = new();
 
         private static Action<byte[]> _onHandleReceivedMessages;
-        
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSplashScreen)]
         static void OnBeforeSplashScreen()
         {
@@ -27,19 +27,19 @@ namespace BlazorWith3d.Unity
 
             Debug.Log($"On after BlazorApiUnity.InitializeApi");
             var bytes = Encoding.Unicode.GetBytes("UNITY_INITIALIZED");
-            _SendMessageFromUnity(bytes,bytes.Length);
+            _SendMessageFromUnity(bytes, bytes.Length);
         }
 
         [MonoPInvokeCallback(typeof(Action<int, int>))]
         private static void _InstantiateByteArray(int size, int id)
         {
-            Debug.Log($"_InstantiateByteArray({size},{id})");
+            //Debug.Log($"_InstantiateByteArray({size},{id})");
             var bytes = new byte[size];
-            
+
             _ReadBytesBuffer(id, bytes);
-            Debug.Log($"_ReadBytesBuffer({id},bytes)");
-            
-            Debug.Log($"Received message ({string.Join(", ",bytes)})");
+            //Debug.Log($"_ReadBytesBuffer({id},bytes)");
+
+            //Debug.Log($"Received message ({string.Join(", ",bytes)})");
             if (_onHandleReceivedMessages == null)
             {
                 messageBuffer.Add(bytes);
@@ -85,7 +85,7 @@ namespace BlazorWith3d.Unity
 #if !(UNITY_WEBGL && !UNITY_EDITOR)
             throw new NotImplementedException();
 #endif
-            _SendMessageFromUnity(bytes,bytes.Length);
+            _SendMessageFromUnity(bytes, bytes.Length);
         }
     }
 }

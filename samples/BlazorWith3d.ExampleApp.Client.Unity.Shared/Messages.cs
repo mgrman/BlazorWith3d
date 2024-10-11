@@ -34,7 +34,6 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
         public int TemplateId;
     }
 
-
     public sealed class RemoveBlockMessage : IMessageToUnity<RemoveBlockMessage>
     {
         public int BlockId;

@@ -70,7 +70,7 @@ namespace ExampleApp
             _blazorApi = blazorApi;
 
             _cubePlaceholderVisuals.transform.localScale = Size;
-            _cubePlaceholderVisuals.transform.localPosition = new Vector3(0, Size.y / 2, 0);
+            _cubePlaceholderVisuals.transform.localPosition = new Vector3(0, 0, Size.z / 2);
         }
 
         public BlockController CreateInstance(AddBlockInstanceMessage msg)
@@ -103,23 +103,25 @@ namespace ExampleApp
         {
             Debug.Log($"OnDrag  {BlockId}");
 
-            var ray = Camera.main.ScreenPointToRay(eventData.pointerCurrentRaycast.screenPosition);
+            var ray = Camera.main.ScreenPointToRay(eventData.position);
 
             if (!_dragPlane.Raycast(ray, out var distance))
             {
                 return;
             }
+            Debug.Log($"OnDrag  {BlockId} {distance}");
 
             var dragPlaneHit = _backgroundPlane.transform.InverseTransformPoint(ray.GetPoint(distance));
 
             var newPosition = (dragPlaneHit - _dragOffset).xy();
+            Debug.Log($"OnDrag  {BlockId} {newPosition}");
             
             _lastDragCts?.Cancel();
             var cts=new CancellationTokenSource();
             _lastDragCts = cts;
             
             _dragMessageCounter.Reset();
-            Debug.Log($"_dragMessageCounter  {_dragMessageCounter}");
+           //Debug.Log($"_dragMessageCounter  {_dragMessageCounter}");
             var newPose = await _blazorApi.SendMessageWithResponse<BlockPoseChangingMessage, PoseChangeResponse>(
                 new BlockPoseChangingMessage()
                 {

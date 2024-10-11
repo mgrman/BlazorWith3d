@@ -149,8 +149,6 @@
     private TypedMessageUnityComponent? _unityComponent2;
     private TypedMessageUnityComponent? _unityComponent23;
     private TypedMessageUnityComponent? _unityComponent233;
-
-    private bool AppInitialized;
     
     int newIdCounter;
     
@@ -173,10 +171,6 @@
         set
         {
             _is3DVisible = value;
-            if (!value)
-            {
-                AppInitialized = false;
-            }
         } 
     }
 
@@ -216,8 +210,6 @@
 
     private async void  OnAppInitialized(AppInitialized arg)
     {
-        AppInitialized = true;
-        
        await ReplayState();
     }
 
@@ -263,20 +255,11 @@
 
     private Task<TResponse> SendMessageWithResponse<TMessage, TResponse>(TMessage message) where TMessage : IMessageToUnity<TMessage, TResponse>
     {
-        if (!AppInitialized)
-        {
-            throw new InvalidOperationException("Unity app is not initialized!");
-        }
         return  _unityComponent.TypedUnityApi.SendMessageWithResponse<TMessage, TResponse>(message);
     }
 
     private Task SendMessage<TMessage>(TMessage message) where TMessage : IMessageToUnity<TMessage>
     {
-        if (!AppInitialized)
-        {
-            throw new InvalidOperationException("Unity app is not initialized!");
-        }
-        
         return  _unityComponent.TypedUnityApi.SendMessage<TMessage>(message);
     }
 
