@@ -3,14 +3,16 @@ using Microsoft.Extensions.Logging;
 
 namespace BlazorWith3d.Unity;
 
-// remark: using Newtonsoft.Json only as Unity needs fields for serialization, which are not supported in System.Text.Json
-
-// TODO add catching of exceptions as they happen in "native" code and do not always propagate properly
+// TODO double check catching of exceptions as they happen in "native" code and do not always propagate properly
 
 // TODO consider some generic reactive dictionary or patch requests on object support
 // e.g. that both sides can instantiate kind of reactive dictionry and through generic messages they both can be kept automatically in sync, with changes always propagating to the other side
+// kinda like flux https://facebookarchive.github.io/flux/docs/in-depth-overview/
 
-//TODO consider using structs with attributes for response with better binary serialization (e.g. https://neuecc.medium.com/how-to-make-the-fastest-net-serializer-with-net-7-c-11-case-of-memorypack-ad28c0366516 )
+// TODO with memory pack the Unity build got slower, investigate why!
+// e.g. might be worth having a define or something to switch the serialization libraries (have one for faster compile time and one for faster runtime)
+
+// TODO add benchmarking of speed, e.g. a dedicated project with just benchamarks (method only, string message, binary string message, memory pack message)
 
 public class TypedMessageUnityComponent : BaseUnityComponent
 {
