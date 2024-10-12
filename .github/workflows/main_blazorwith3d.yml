@@ -49,6 +49,9 @@ jobs:
           dotnet-version: '9.0.100-preview.6.24328.19'
           dotnet-quality: 'preview'
 
+      - name: dotnet tool restore
+        run: dotnet tool restore
+
       - name: restore nuget for unity
         run: dotnet nugetforunity restore "samples\BlazorWith3d.ExampleApp.UnityProject"
 
