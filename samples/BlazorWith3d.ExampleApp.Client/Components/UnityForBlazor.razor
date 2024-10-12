@@ -1,8 +1,7 @@
 ﻿@rendermode InteractiveAuto
 @using BlazorWith3d.ExampleApp.Client.Unity.Shared
 @using BlazorWith3d.Unity
-@using BlazorWith3d.Unity.Shared
-
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
 @inject IServiceProvider Services
 
 <InputCheckbox @bind-Value="Is3DVisible" ></InputCheckbox>
@@ -146,9 +145,6 @@
     
     // TODO this is never null, test again how the disappearance is handled!!
     private TypedMessageUnityComponent? _unityComponent;
-    private TypedMessageUnityComponent? _unityComponent2;
-    private TypedMessageUnityComponent? _unityComponent23;
-    private TypedMessageUnityComponent? _unityComponent233;
     
     int newIdCounter;
     
@@ -174,26 +170,42 @@
         } 
     }
 
-    protected override void OnInitialized()
+    private MyUnityApi _unityAppApi;
+
+    protected override async Task OnInitializedAsync()
     {
+        if (OperatingSystem.IsBrowser())
+        {
+            _templates = await localStorage.GetItemAsync<List<(int id, float sizeX, float sizeY, float sizeZ)>>("_templates") ?? new(); 
+            _blocks = await localStorage.GetItemAsync<List<(int blockId, float positionX, float positionY, float rotationZ, int templateId)>>("_blocks") ?? new();
+
+            newIdCounter = _templates.Select(o => o.id).Concat(_blocks.Select(o => o.blockId)).DefaultIfEmpty(-1).Max() + 1;
+        }
         
-        base.OnInitialized();
+        await base.OnInitializedAsync();
     }
 
-    protected override void OnAfterRender(bool firstRender)
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        _unityComponent.TypedUnityApi.AddMessageProcessCallback<AppInitialized>(OnAppInitialized);
-        _unityComponent.TypedUnityApi.AddMessageWithResponseProcessCallback<BlockPoseChangingMessage,PoseChangeResponse>(OnBlockPoseChanging);
-        _unityComponent.TypedUnityApi.AddMessageProcessCallback<BlockPoseChangedMessage>(OnBlockPoseChanged);
+        if (firstRender)
+        {
+            _unityAppApi = new MyUnityApi(_unityComponent.TypedUnityApi);
+
+            _unityAppApi.OnAppInitialized += OnAppInitialized;
+            _unityAppApi.OnBlockPoseChangingMessage += OnBlockPoseChanging;
+            _unityAppApi.OnBlockPoseChangedMessage += OnBlockPoseChanged;
+        }
+
         base.OnAfterRender(firstRender);
     }
-
+    
     private void OnBlockPoseChanged(BlockPoseChangedMessage obj)
     {
         var blockIndex = _blocks.FindIndex(o => o.blockId == obj.BlockId);
         var block = _blocks[blockIndex];
 
         _blocks[blockIndex] = (block.blockId, obj.PositionX, obj.PositionY, obj.RotationZ, block.templateId);
+        StateUpdated();
         this.StateHasChanged();
     }
 
@@ -218,49 +230,50 @@
         foreach (var template in _templates)
         {
             var msg = new AddBlockTemplateMessage() { TemplateId = template.id, SizeX = template.sizeX, SizeY = template.sizeY, SizeZ = template.sizeZ };
-           await SendMessage(msg);
+            await _unityAppApi.InvokeAddBlockTemplateMessage(msg);
         }
         foreach (var block in _blocks)
         {
             var msg = new AddBlockInstanceMessage() { BlockId = block.blockId, PositionX = block.positionX, PositionY = block.positionY, RotationZ = block.rotationZ, TemplateId = block.templateId};
-            SendMessage(msg);
+            await _unityAppApi.InvokeAddBlockInstanceMessage(msg);
         }
     }
 
     private async Task AddTemplate()
     {
         var msg = new AddBlockTemplateMessage() { TemplateId = newIdCounter++, SizeX = newTemplateSizeX, SizeY = newTemplateSizeY, SizeZ = newTemplateSizeZ };
-        await SendMessage(msg);
+        await _unityAppApi.InvokeAddBlockTemplateMessage(msg);
         _templates.Add((msg.TemplateId, msg.SizeX, msg.SizeY, msg.SizeZ));
+       await StateUpdated();
+    }
+
+    private async Task StateUpdated()
+    {
+        
+        await localStorage.SetItemAsync("_templates", _templates);
+        await localStorage.SetItemAsync("_blocks", _blocks);
     }
 
     private async Task RemoveTemplate(int id)
     {
-        await SendMessage(new RemoveBlockTemplateMessage(){ TemplateId = id});
+        await _unityAppApi.InvokeRemoveBlockTemplateMessage(new RemoveBlockTemplateMessage(){ TemplateId = id});
         _templates.RemoveAll(o => o.id == id);
+        await StateUpdated();
     }
 
     private async Task AddBlock()
     {
         var msg = new AddBlockInstanceMessage() { BlockId = newIdCounter++, PositionX = newBlockPositionX, PositionY = newBlockPositionY, RotationZ = newBlockRotationZ, TemplateId = newBlockTemplateId};
-        await SendMessage(msg);
+        await _unityAppApi.InvokeAddBlockInstanceMessage(msg);
         _blocks.Add((msg.BlockId, msg.PositionX,msg.PositionY,msg.RotationZ, msg.TemplateId));
+        await StateUpdated();
     }
 
     private async Task RemoveBlock(int id)
     {
-        await SendMessage(new RemoveBlockMessage(){ BlockId = id});
+        await _unityAppApi.InvokeRemoveBlockMessage(new RemoveBlockMessage(){ BlockId = id});
         _blocks.RemoveAll(o => o.blockId == id);
-    }
-
-    private Task<TResponse> SendMessageWithResponse<TMessage, TResponse>(TMessage message) where TMessage : IMessageToUnity<TResponse>
-    {
-        return  _unityComponent.TypedUnityApi.SendMessageWithResponse<TMessage, TResponse>(message);
-    }
-
-    private Task SendMessage<TMessage>(TMessage message) where TMessage : IMessageToUnity
-    {
-        return  _unityComponent.TypedUnityApi.SendMessage<TMessage>(message);
+        await StateUpdated();
     }
 
 }

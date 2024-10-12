@@ -1,3 +1,4 @@
+using Blazored.LocalStorage;
 using BlazorWith3d.Components;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -6,6 +7,13 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
     .AddInteractiveWebAssemblyComponents();
+
+builder.Services.AddBlazoredLocalStorage(c =>
+{
+    c.JsonSerializerOptions.IncludeFields= true;
+    c.JsonSerializerOptions.IgnoreReadOnlyFields = false;
+    c.JsonSerializerOptions.IgnoreReadOnlyProperties = false;
+});
 
 var app = builder.Build();
 

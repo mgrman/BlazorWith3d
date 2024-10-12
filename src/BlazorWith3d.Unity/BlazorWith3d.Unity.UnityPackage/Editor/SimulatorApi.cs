@@ -12,9 +12,10 @@ namespace BlazorWith3d.Unity
         }
 
         public Action<byte[]> OnMessageFromUnity { get; set; }
-        public void SendMessageToUnity(byte[] bytes)
+        public Task SendMessageToUnity(byte[] bytes)
         {
             OnMessageFromBlazor?.Invoke(bytes);
+            return Task.CompletedTask;
         }
     }
 }

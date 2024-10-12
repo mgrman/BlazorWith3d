@@ -42,7 +42,7 @@ namespace BlazorWith3d.Unity
 
             try
             {
-                SendMessageToUnity(encodedMessage);
+                await SendMessageToUnity(encodedMessage);
             }
             catch (Exception ex)
             {
@@ -134,9 +134,9 @@ namespace BlazorWith3d.Unity
         }
 
 
-        protected void SendMessageToUnity(string message)
+        protected async Task SendMessageToUnity(string message)
         {
-            _unityApi.SendMessageToUnity(Encoding.Unicode.GetBytes(message));
+           await _unityApi.SendMessageToUnity(Encoding.Unicode.GetBytes(message));
         }
 
         protected virtual async void OnMessageReceived(string msg)

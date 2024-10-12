@@ -69,7 +69,7 @@
         OnMessageFromUnity?.Invoke(messageBytes);
     }
 
-    public void SendMessageToUnity(byte[] messageBytes)
+    public async Task SendMessageToUnity(byte[] messageBytes)
     {
         if (_unityApi == null)
         {
@@ -77,17 +77,14 @@
             return;
         }
 
-        Task.Run(async () =>
+        try
         {
-            try
-            {
-                await _unityApi.InvokeVoidAsync("SendMessage", messageBytes);
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "Error sending message");
-            }
-        } );
+            await _unityApi.InvokeVoidAsync("SendMessage", messageBytes);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error sending message");
+        }
     }
 
     private class JsMessageReceiverProxy(Action<byte[]> onMessageBytesReceived)
