@@ -53,7 +53,7 @@ jobs:
         run: dotnet tool restore
 
       - name: restore nuget for unity
-        run: dotnet nugetforunity restore "samples\BlazorWith3d.ExampleApp.UnityProject"
+        run: dotnet nugetforunity restore "samples/BlazorWith3d.ExampleApp.UnityProject"
 
       - uses: game-ci/unity-builder@v4
         env:
