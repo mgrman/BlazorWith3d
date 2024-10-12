@@ -48,6 +48,10 @@ jobs:
         with:
           dotnet-version: '9.0.100-preview.6.24328.19'
           dotnet-quality: 'preview'
+
+      - name: restore nuget for unity
+        run: dotnet nugetforunity restore "samples\BlazorWith3d.ExampleApp.UnityProject"
+
       - uses: game-ci/unity-builder@v4
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
