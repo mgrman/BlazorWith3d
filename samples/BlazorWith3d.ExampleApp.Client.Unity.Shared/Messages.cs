@@ -1,5 +1,4 @@
-﻿using System;
-using BlazorWith3d.Unity.Shared;
+﻿using BlazorWith3d.Unity.Shared;
 using MemoryPack;
 
 namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
@@ -16,7 +15,7 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
     
 
 #if COMMON_DOTNET
-    [BlazorWith3d.Unity.UnityApi]
+    [UnityApi]
     public partial class MyUnityApi
     {
         
@@ -24,7 +23,7 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
 #endif
     
 #if COMMON_UNITY
-    [BlazorWith3d.Unity.BlazorApi]
+    [BlazorApi]
     public partial class MyBlazorApi
     {
         
@@ -32,13 +31,11 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
 #endif
     
     [MemoryPackable]
-    
     public partial class AppInitialized : IMessageToBlazor
     {
     }
     
     [MemoryPackable]
-    
     public partial class AddBlockTemplateMessage : IMessageToUnity
     {
         public int TemplateId;
@@ -49,7 +46,6 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
     }
 
     [MemoryPackable]
-    
     public partial class AddBlockInstanceMessage : IMessageToUnity
     {
         public int BlockId;
@@ -60,21 +56,18 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
     }
 
     [MemoryPackable]
-    
     public partial class RemoveBlockMessage : IMessageToUnity
     {
         public int BlockId;
     }
 
     [MemoryPackable]
-    
     public partial class RemoveBlockTemplateMessage : IMessageToUnity
     {
         public int TemplateId;
     }
 
     [MemoryPackable]
-    
     public partial class StartDraggingBlockMessage : IMessageToUnity
     {
         public int TemplateId;
@@ -82,7 +75,6 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
     }
 
     [MemoryPackable]
-    
     public partial class BlockPoseChangingResponse: IMessageToUnity
     {
         public int BlockId;
@@ -94,7 +86,6 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
     }
 
     [MemoryPackable]
-    
     public partial class BlockPoseChangingMessage : IMessageToBlazor
     {
         public int BlockId;
@@ -105,7 +96,6 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
     }
 
     [MemoryPackable]
-    
     public partial class BlockPoseChangedMessage : IMessageToBlazor
     {
         public int BlockId;

@@ -190,7 +190,7 @@
         if (firstRender)
         {
             _unityAppApi = new MyUnityApi(_unityComponent.TypedUnityApi);
-
+            
             _unityAppApi.OnAppInitialized += OnAppInitialized;
             _unityAppApi.OnBlockPoseChangingMessage += OnBlockPoseChanging;
             _unityAppApi.OnBlockPoseChangedMessage += OnBlockPoseChanged;
@@ -213,6 +213,7 @@
     {
         _unityAppApi.InvokeBlockPoseChangingResponse(new BlockPoseChangingResponse()
         {
+            BlockId = arg.BlockId,
             IsValid = true,
             NewPositionX = arg.PositionX,
             NewPositionY = (float)Math.Round(arg.PositionY, 1),

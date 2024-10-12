@@ -24,10 +24,6 @@ namespace BlazorWith3d.Unity
 
             Debug.Log($"On before BlazorApiUnity.InitializeApi");
             _InitializeApi(_InstantiateByteArray);
-
-            Debug.Log($"On after BlazorApiUnity.InitializeApi");
-            var bytes = Encoding.Unicode.GetBytes("UNITY_INITIALIZED");
-            _SendMessageFromUnity(bytes, bytes.Length);
         }
 
         [MonoPInvokeCallback(typeof(Action<int, int>))]

@@ -4,15 +4,15 @@
         <BaseIntermediateOutputPath>.obj</BaseIntermediateOutputPath>
         <RootNamespace>.BlazorWith3d.Unity.Shared</RootNamespace>
         <DefineConstants>$(DefineConstants);COMMON_DOTNET</DefineConstants>
+        <TargetFrameworks>net9.0;netstandard2.1</TargetFrameworks>
     </PropertyGroup>
     
     <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
 
     <PropertyGroup>
-        <TargetFramework>netstandard2.1</TargetFramework>
         <Nullable>enable</Nullable>
         <IntermediateOutputPath>.obj</IntermediateOutputPath>
-        <LangVersion>10.0</LangVersion>
+        <LangVersion>10</LangVersion>
       <OutputPath>.bin\$(Configuration)\</OutputPath>
     </PropertyGroup>
 

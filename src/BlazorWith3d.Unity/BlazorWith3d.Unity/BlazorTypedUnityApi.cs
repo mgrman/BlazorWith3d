@@ -35,7 +35,7 @@ public class BlazorTypedUnityApi:TypedUnityApi
 
     protected override byte[] SerializeObject<T>(T obj)
     {
-        return MemoryPackSerializer.Serialize(obj);
+        return MemoryPackSerializer.Serialize<IMessageToUnity>(obj);
     }
 
     protected override object DeserializeObject(byte[] obj)

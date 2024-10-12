@@ -6,6 +6,9 @@
         <LangVersion>latest</LangVersion>
         <IsRoslynComponent>true</IsRoslynComponent>
 <!--        <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>-->
+
+        <OutputPath>..\BlazorWith3d.Unity.UnityPackage\Generator\</OutputPath>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     </PropertyGroup>
 
     <ItemGroup>
