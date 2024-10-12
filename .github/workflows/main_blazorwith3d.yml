@@ -49,6 +49,9 @@ jobs:
           dotnet-version: '9.0.100-preview.6.24328.19'
           dotnet-quality: 'preview'
 
+      - name: dotnet tool build generator
+        run: dotnet build "src/BlazorWith3d.Unity/BlazorWith3d.Unity.CodeGenerator/BlazorWith3d.Unity.CodeGenerator.csproj" -c Release
+
       - name: dotnet tool restore
         run: dotnet tool restore
 
