@@ -28,4 +28,7 @@
                         ReferenceOutputAssembly="false" />
       <ProjectReference Include="..\..\src\BlazorWith3d.Unity\BlazorWith3d.Unity.Shared\BlazorWith3d.Unity.Shared.csproj" />
     </ItemGroup>
+    <ItemGroup>
+      <PackageReference Include="MemoryPack" Version="1.21.3" />
+    </ItemGroup>
 </Project>

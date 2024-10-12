@@ -11,20 +11,19 @@ using UnityEngine;
 
 namespace BlazorWith3d.Unity
 {
-    public interface IBlazorSimulatorMessageWithResponseHandler
+    public interface IBlazorSimulatorMessageHandler
     {
         Type MessageType { get; }
-        Type ResponseType { get; }
         
-        object HandleMessage(object message);
+        TypedUnityApi UnityApi { set; }
+        
+        void HandleMessage(object message);
     }
     
     public class BlazorSimulator:MonoBehaviour
     {
         private TypedUnityApi _api;
         private Assembly _messsageAssembly;
-
-        private Dictionary<(Type msgType, Type responseType), object> _responses = new();
         
         public void Initialize(TypedUnityApi api, Assembly messsageAssembly)
         {
@@ -36,63 +35,33 @@ namespace BlazorWith3d.Unity
             var messageTypesToHandle = _messsageAssembly.GetTypes().Where(o =>
                 o.GetInterfaces().Any(i => i == typeof(IMessageToBlazor)));
 
-            foreach (var messageTypeToHandle in messageTypesToHandle)
+            var handlerCompoenents = gameObject.GetComponents<IBlazorSimulatorMessageHandler>();
+            foreach (var handlerCompoenent in handlerCompoenents)
             {
-                _api.GetType()
-                    .GetMethod(nameof(TypedUnityApi.AddMessageProcessCallback))
-                    .MakeGenericMethod(messageTypeToHandle)
-                    .Invoke(_api, new [] {CreateMessageProcessCallback(o=>Debug.Log($"Received msg {messageTypeToHandle.Name} {JsonUtility.ToJson(o)}"),messageTypeToHandle) });
+                handlerCompoenent.UnityApi=_api;
             }
-            
-            
-            var messageTypesToRespond = _messsageAssembly.GetTypes()
-                .Select(o =>
-                {
-                    var messageWithResponseInterface = o.GetInterfaces()
-                        .FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IMessageToBlazor<>));
 
-                    if (messageWithResponseInterface != null)
-                    {
-                        return (messageType:o, responseType: messageWithResponseInterface.GenericTypeArguments[0]);
-                    }
+            var attachedHandlers=handlerCompoenents
+                .ToDictionary(o=>o.MessageType, o=>(Action<object>)o.HandleMessage);
 
-                    return (messageType:null, responseType: null);
-                })
-                .Where(o=>o.messageType!=null);
-
-            var attachedHandlers=gameObject.GetComponents<IBlazorSimulatorMessageWithResponseHandler>()
-                .ToDictionary(o=>(o.MessageType,o.ResponseType), o=>(Func<object,object>)o.HandleMessage);
-            
-            foreach (var (messageType, responseToSendType) in messageTypesToRespond)
+            foreach (var messageType in messageTypesToHandle)
             {
-                if (!attachedHandlers.TryGetValue((messageType, responseToSendType), out var callback))
+                
+                if (!attachedHandlers.TryGetValue(messageType, out var callback))
                 {
-                    _responses[(messageType, responseToSendType)]=Activator.CreateInstance(responseToSendType);
                     callback = o =>
                     {
-                        Debug.Log(
-                            $"Received msg {o.GetType().Name} wanting response of {responseToSendType.Name} {JsonUtility.ToJson(o)}");
-                        return _responses[(messageType, responseToSendType)];
+                        Debug.Log($"Received msg {messageType.Name} {JsonUtility.ToJson(o)}");
                     };
                 }
                 
                 
                 _api.GetType()
-                    .GetMethod(nameof(TypedUnityApi.AddMessageWithResponseProcessCallback))
-                    .MakeGenericMethod(new[]{messageType,responseToSendType})
-                    .Invoke(_api, new [] {CreateMessageWithResponseProcessCallback(callback,messageType, responseToSendType) });
+                    .GetMethod(nameof(TypedUnityApi.AddMessageProcessCallback))
+                    .MakeGenericMethod(messageType)
+                    .Invoke(_api, new [] {CreateMessageProcessCallback(callback, messageType) });
             }
-        }
-
-        private object CreateMessageWithResponseProcessCallback(Func<object, object> callback, Type msgType, Type responseType)
-        {
-            return this.GetType().GetMethod(nameof(CreateMessageWithResponseProcessCallbackGeneric), BindingFlags.Instance | BindingFlags.NonPublic).MakeGenericMethod(msgType, responseType)
-                .Invoke(this,new object[] { callback });
-        }
-
-        private  Func<TMessage, Task<TResponse>> CreateMessageWithResponseProcessCallbackGeneric<TMessage, TResponse>(Func<object, object> callback)
-        {
-            return async (m)=>(TResponse) callback(m);
+            
         }
 
         private object CreateMessageProcessCallback(Action<object> callback, Type type)
@@ -128,22 +97,14 @@ namespace BlazorWith3d.Unity
 
                             if (messageInterface != null)
                             {
-                                return (messageType:o, responseType: null);
-                            }
-                            
-                            var messageWithResponseInterface = o.GetInterfaces()
-                                .FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IMessageToUnity<>));
-
-                            if (messageWithResponseInterface != null)
-                            {
-                                return (messageType:o, responseType: messageWithResponseInterface.GenericTypeArguments[0]);
+                                return o;
                             }
 
-                            return (messageType:null, responseType: null);
+                            return null;
                         })
-                        .Where(o=>o.messageType!=null);
+                        .Where(o=>o!=null);
 
-                    foreach (var (messageType, responseType) in messageTypes)
+                    foreach (var messageType in messageTypes)
                     {
                         EditorGUILayout.LabelField($"Send message of type {messageType.Name}");
                         if (!_editedInstances.TryGetValue(messageType, out var instance))
@@ -153,40 +114,11 @@ namespace BlazorWith3d.Unity
                         }
 
                           EditMessage(messageType, instance);
-
-                        if (responseType==null)
-                        {
-                            if (GUILayout.Button("Send message"))
-                            {
-                                typeof(TypedUnityApi).GetMethod(nameof(TypedUnityApi.SendMessage))
-                                    .MakeGenericMethod(messageType).Invoke(blazorSimulator._api, new[] { instance });
-                            }
-                        }
-                        else
-                        {
-                            if (GUILayout.Button("Send message with response"))
-                            {
-                                var task = typeof(TypedUnityApi)
-                                    .GetMethod(nameof(TypedUnityApi.SendMessageWithResponse))
-                                    .MakeGenericMethod(new[] { messageType, responseType })
-                                    .Invoke(blazorSimulator._api, new[] { instance }) as Task;
-
-                                task.ContinueWith(o =>
-                                {
-                                    var result = task.GetType().GetProperty("Result").GetValue(task);
-                                    Debug.Log($"Got response of {JsonUtility.ToJson(result)}");
-                                });
-
-                            }
-                        }
-                    }
-                    
-                    
-                    foreach (var response in blazorSimulator._responses)
-                    {
-                        EditorGUILayout.LabelField($"Prepare response for {response.Key.responseType.Name}");
-                         EditMessage(response.Key.responseType,response.Value);
-
+                          if (GUILayout.Button("Send message"))
+                          {
+                              typeof(TypedUnityApi).GetMethod(nameof(TypedUnityApi.SendMessage))
+                                  .MakeGenericMethod(messageType).Invoke(blazorSimulator._api, new[] { instance });
+                          }
                     }
                 }
             }

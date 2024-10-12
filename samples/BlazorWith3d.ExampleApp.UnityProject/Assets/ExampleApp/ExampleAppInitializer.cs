@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using BlazorWith3d.ExampleApp.Client.Unity.Shared;
 using BlazorWith3d.Unity;
 using BlazorWith3d.Unity.Shared;
+using MemoryPack;
+using MemoryPack.Formatters;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -23,6 +25,7 @@ namespace ExampleApp
         
         private TypedBlazorApi _typedApi;
         private IBlazorApi _blazorApi;
+        private MyBlazorApi _appApi;
 
         public void Start()
         {
@@ -31,7 +34,6 @@ namespace ExampleApp
             _templateRoot.transform.parent = transform;
 
 #if UNITY_EDITOR
-
             var simulatorApi = new SimulatorApi();
             var simulatorTypedApi = new UnityTypedUnityApi(simulatorApi);
             var simulator = gameObject.AddComponent<BlazorSimulator>();
@@ -43,10 +45,13 @@ namespace ExampleApp
 #endif
             _typedApi = new TypedBlazorApi(_blazorApi);
 
+            _appApi = new MyBlazorApi(_typedApi);
+
             _typedApi.AddMessageProcessCallback<AddBlockTemplateMessage>(OnAddBlockTemplateMessage);
             _typedApi.AddMessageProcessCallback<RemoveBlockTemplateMessage>(OnRemoveBlockTemplateMessage);
             _typedApi.AddMessageProcessCallback<AddBlockInstanceMessage>(OnAddBlockInstanceMessage);
             _typedApi.AddMessageProcessCallback<RemoveBlockMessage>(OnRemoveBlockMessage);
+            _typedApi.AddMessageProcessCallback<BlockPoseChangingResponse>(OnBlockPoseChangingResponse);
 
             _typedApi.SendMessage(new AppInitialized());
 
@@ -60,6 +65,11 @@ namespace ExampleApp
             simulatorTypedApi.SendMessage(new AddBlockInstanceMessage()
                 { BlockId = 0, TemplateId = 0, PositionX = 0, PositionY = 0, RotationZ = 0 });
 #endif
+        }
+
+        private void OnBlockPoseChangingResponse(BlockPoseChangingResponse obj)
+        {
+            _blocks[obj.BlockId].OnBlockPoseChangingResponse(obj);
         }
 
         private void Update()

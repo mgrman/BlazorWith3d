@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using BlazorWith3d.Unity.Shared;
+using MemoryPack;
 using UnityEngine;
 
 namespace BlazorWith3d.Unity
@@ -11,14 +12,7 @@ namespace BlazorWith3d.Unity
     {
         private readonly IBlazorApi _blazorApi;
 
-        private readonly IDictionary<Type, Func<int, string, Awaitable<string>>> _handlersWithResponse =
-            new Dictionary<Type, Func<int, string, Awaitable<string>>>();
-
-        private readonly IDictionary<Type, Action<string>> _handlers = new Dictionary<Type, Action<string>>();
-
-        private readonly Dictionary<int, AwaitableCompletionSource<(string responseObjectJson, Type responseType)>>
-            _responseTcs = new();
-
+        private IDictionary<Type, Action<object>> _handlers = new Dictionary<Type, Action<object>>();
 
         public TypedBlazorApi(IBlazorApi blazorApi)
         {
@@ -32,93 +26,58 @@ namespace BlazorWith3d.Unity
             blazorApi.OnMessageFromBlazor = OnMessageReceived;
         }
 
+        protected byte[] SerializeObject<T>(T obj) where T : IMessageToBlazor
+        {
+            return MemoryPackSerializer.Serialize<IMessageToBlazor>(obj);
+        }
+
+        protected object DeserializeObject(byte[] obj)
+        {
+             return MemoryPackSerializer.Deserialize<IMessageToUnity>(obj);
+        }
+        
+        protected void LogError(Exception exception, string msg)
+        {
+            Debug.LogException(exception);
+            Debug.LogError(msg);
+        }
+
+        protected void LogError(string msg)
+        {
+            Debug.LogError( msg);
+        }
+
+        protected void LogWarning(string msg)
+        {
+            Debug.LogWarning( msg);
+        }
+
+        protected void Log(string msg)
+        {
+            Debug.Log( msg);
+        }
 
         public void SendMessage<TMessage>(TMessage message) where TMessage : IMessageToBlazor
         {
-            MessageTypeCache.AddTypeToCache<TMessage>();
-
-            var messageString = JsonUtility.ToJson(message);
-            var encodedMessage = MessageTypeCache.EncodeMessageJson<TMessage>(messageString);
+            var encodedMessage = SerializeObject(message);
 
             try
             {
-                SendMessageFromUnity(encodedMessage);
+                _blazorApi.SendMessageToBlazor(encodedMessage);
             }
             catch (Exception ex)
             {
-                Debug.LogException(ex);
+                LogError(ex, "Failed to send message to Unity");
                 throw;
             }
-        }
-
-        public async Awaitable<TResponse> SendMessageWithResponse<TMessage, TResponse>(TMessage message)
-            where TMessage : IMessageToBlazor<TResponse>
-        {
-
-            var messageString = JsonUtility.ToJson(message);
-            MessageTypeCache.AddTypeToCache<TMessage>();
-            MessageTypeCache.AddTypeToCache<TResponse>();
-            var (encodedMessage, msgId) = MessageTypeCache.EncodeMessageWithResponseJson<TMessage>(messageString);
-
-            try
-            {
-                var tcs = new AwaitableCompletionSource<(string responseObjectJson, Type responseType)>();
-                _responseTcs[msgId] = tcs;
-
-                SendMessageFromUnity(encodedMessage);
-
-                var (responseObjectJson, responseType) = await tcs.Awaitable;
-
-                if (responseType != typeof(TResponse))
-                {
-                    throw new InvalidOperationException(
-                        $"Unexpected response type! Expected {typeof(TResponse).Name} and received '{responseType}'!");
-                }
-
-                var response = JsonUtility.FromJson<TResponse>(responseObjectJson);
-                if (response == null)
-                {
-                    throw new InvalidOperationException(
-                        $"Response for {typeof(TMessage).Name} was not deserializable into {typeof(TResponse).Name}");
-                }
-
-                return response;
-            }
-            catch (Exception ex)
-            {
-                Debug.LogException(ex);
-                throw;
-            }
-        }
-
-        public void AddMessageWithResponseProcessCallback<TMessage, TResponse>(
-            Func<TMessage, Awaitable<TResponse>> messageHandler) where TMessage : IMessageToUnity<TResponse>
-        {
-            MessageTypeCache.AddTypeToCache<TMessage>();
-            MessageTypeCache.AddTypeToCache<TResponse>();
-            _handlersWithResponse[typeof(TMessage)] = async (responseId, objectJson) =>
-            {
-                var messageObject = JsonUtility.FromJson<TMessage>(objectJson);
-                if (messageObject == null)
-                {
-                    throw new InvalidOperationException(
-                        $"Message for {typeof(TMessage).Name} was not deserializable into {typeof(TMessage).Name}");
-                }
-
-                var responseObject = await messageHandler(messageObject);
-
-                var response = JsonUtility.ToJson(responseObject);
-                return MessageTypeCache.EncodeResponseMessageJson<TResponse>(response, responseId);
-            };
         }
 
         public void AddMessageProcessCallback<TMessage>(Action<TMessage> messageHandler)
             where TMessage : IMessageToUnity
         {
-            MessageTypeCache.AddTypeToCache<TMessage>();
             _handlers[typeof(TMessage)] = objectJson =>
             {
-                var messageObject = JsonUtility.FromJson<TMessage>(objectJson);
+                var messageObject = (TMessage)objectJson;
                 if (messageObject == null)
                 {
                     throw new InvalidOperationException(
@@ -134,67 +93,21 @@ namespace BlazorWith3d.Unity
             _blazorApi.SendMessageToBlazor(Encoding.Unicode.GetBytes(msg));
         }
 
-        protected async void OnMessageReceived(byte[] bytes)
+        protected async void OnMessageReceived(byte[] messageBytes)
         {
-            var msg = Encoding.Unicode.GetString(bytes);
-            
-            var decoded = MessageTypeCache.DecodeMessageJson(msg);
-
+            var decoded = DeserializeObject(messageBytes);
             if (decoded == null)
             {
-                if (TryHandleKnownMessages(msg))
-                {
-                    return;
-                }
-
-                throw new InvalidOperationException($"Non-encoded message received! '{msg}'");
+                throw new InvalidOperationException($"Non-encoded message received! {messageBytes}");
             }
 
-            if (decoded.Value.type == null)
+            if (!_handlers.TryGetValue(decoded.GetType(), out var handler))
             {
-                Debug.LogWarning($"Unknown message type {decoded.Value.typeName}");
+                LogError($"Missing handler for message {decoded.GetType()}");
                 return;
             }
 
-            if (decoded.Value.responseToMessageId != null)
-            {
-                _responseTcs[decoded.Value.responseToMessageId.Value]
-                    .SetResult((decoded.Value.objectJson, decoded.Value.type));
-            }
-            else if (decoded.Value.respondWithId != null)
-            {
-                if (!_handlersWithResponse.TryGetValue(decoded.Value.type, out var handlerWithResponse))
-                {
-                    Debug.LogError($"Missing handler for message with response {decoded.Value.typeName}");
-                    return;
-                }
-
-                var response = await handlerWithResponse(decoded.Value.respondWithId.Value, decoded.Value.objectJson);
-
-                SendMessageFromUnity(response);
-            }
-            else
-            {
-                if (!_handlers.TryGetValue(decoded.Value.type, out var handler))
-                {
-                    Debug.LogError($"Missing handler for message {decoded.Value.typeName}");
-                    return;
-                }
-
-                handler(decoded.Value.objectJson);
-            }
-        }
-
-        private bool TryHandleKnownMessages(string msg)
-        {
-            switch (msg)
-            {
-                case "JS_INITIALIZED":
-                    Debug.LogWarning($"JS_INITIALIZED received");
-                    return true;
-                default:
-                    return false;
-            }
+            handler(decoded);
         }
     }
 }

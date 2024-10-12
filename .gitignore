@@ -28,3 +28,6 @@ obj
 # remove Unity generated project/solution
 /**/*.UnityProject/*.csproj
 /**/*.UnityProject/*.sln
+
+#nuget for Unity
+/**/Assets/Packages/*

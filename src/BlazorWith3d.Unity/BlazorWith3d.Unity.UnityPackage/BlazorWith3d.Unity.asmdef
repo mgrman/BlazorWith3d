@@ -2,7 +2,8 @@
     "name": "BlazorWith3d.Unity",
     "rootNamespace": "BlazorWith3d.Unity",
     "references": [
-        "GUID:f163fe17560e40a8ba1f360c16bd7561"
+        "GUID:f163fe17560e40a8ba1f360c16bd7561",
+        "GUID:756335c0388f7114790e504ed368ae1d"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

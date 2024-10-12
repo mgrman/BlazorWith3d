@@ -1,5 +1,6 @@
 ﻿using System;
 using BlazorWith3d.Unity.Shared;
+using MemoryPack;
 
 namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
 {
@@ -12,10 +13,33 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
     // - void SubscribeToBlockPoseChanged(Action<int blockId, float positionX, float positionY, float rotationZ> onPoseChanged)
     // - void StartDraggingBlock(int blockId, int templateId)
 
-    public sealed class AppInitialized : IMessageToBlazor
+    
+
+#if COMMON_DOTNET
+    [BlazorWith3d.Unity.UnityApi]
+    public partial class MyUnityApi
+    {
+        
+    }
+#endif
+    
+#if COMMON_UNITY
+    [BlazorWith3d.Unity.BlazorApi]
+    public partial class MyBlazorApi
+    {
+        
+    }
+#endif
+    
+    [MemoryPackable]
+    
+    public partial class AppInitialized : IMessageToBlazor
     {
     }
-    public sealed class AddBlockTemplateMessage : IMessageToUnity
+    
+    [MemoryPackable]
+    
+    public partial class AddBlockTemplateMessage : IMessageToUnity
     {
         public int TemplateId;
         public float SizeX;
@@ -24,8 +48,9 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
         public string? VisualsUri;
     }
 
-
-    public sealed class AddBlockInstanceMessage : IMessageToUnity
+    [MemoryPackable]
+    
+    public partial class AddBlockInstanceMessage : IMessageToUnity
     {
         public int BlockId;
         public float PositionX;
@@ -34,44 +59,54 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
         public int TemplateId;
     }
 
-    public sealed class RemoveBlockMessage : IMessageToUnity
+    [MemoryPackable]
+    
+    public partial class RemoveBlockMessage : IMessageToUnity
     {
         public int BlockId;
     }
 
-
-    public sealed class RemoveBlockTemplateMessage : IMessageToUnity
+    [MemoryPackable]
+    
+    public partial class RemoveBlockTemplateMessage : IMessageToUnity
     {
         public int TemplateId;
     }
 
-
-    public sealed class StartDraggingBlockMessage : IMessageToUnity
+    [MemoryPackable]
+    
+    public partial class StartDraggingBlockMessage : IMessageToUnity
     {
         public int TemplateId;
         public int BlockId;
     }
 
-
-    public sealed class PoseChangeResponse
+    [MemoryPackable]
+    
+    public partial class BlockPoseChangingResponse: IMessageToUnity
     {
+        public int BlockId;
         public bool IsValid;
         public float NewPositionX;
         public float NewPositionY;
         public float NewRotationZ;
+        public int ChangingRequestId;
     }
 
-
-    public sealed class BlockPoseChangingMessage : IMessageToBlazor<PoseChangeResponse>
+    [MemoryPackable]
+    
+    public partial class BlockPoseChangingMessage : IMessageToBlazor
     {
         public int BlockId;
         public float PositionX;
         public float PositionY;
         public float RotationZ;
+        public int ChangingRequestId;
     }
 
-
-    public sealed class BlockPoseChangedMessage : IMessageToBlazor
+    [MemoryPackable]
+    
+    public partial class BlockPoseChangedMessage : IMessageToBlazor
     {
         public int BlockId;
         public float PositionX;
@@ -81,8 +116,5 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
 
 
 #if COMMON_UNITY
-#endif
-
-#if COMMON_DOTNET
 #endif
 }

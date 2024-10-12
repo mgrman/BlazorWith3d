@@ -1,5 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
+﻿using BlazorWith3d.Unity.Shared;
+using MemoryPack;
+using Microsoft.Extensions.Logging;
 
 namespace BlazorWith3d.Unity;
 
@@ -32,13 +33,13 @@ public class BlazorTypedUnityApi:TypedUnityApi
         _logger.LogInformation( msg);
     }
 
-    protected override string SerializeObject<T>(T obj)
+    protected override byte[] SerializeObject<T>(T obj)
     {
-        return JsonConvert.SerializeObject(obj);
+        return MemoryPackSerializer.Serialize(obj);
     }
 
-    protected override T DeserializeObject<T>(string json)
+    protected override object DeserializeObject(byte[] obj)
     {
-        return JsonConvert.DeserializeObject<T>(json);
+        return MemoryPackSerializer.Deserialize<IMessageToBlazor>(obj);
     }
 }

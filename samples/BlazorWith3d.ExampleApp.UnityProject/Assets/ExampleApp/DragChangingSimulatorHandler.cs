@@ -6,21 +6,23 @@ using UnityEngine;
 
 namespace ExampleApp
 {
-    public class DragChangingSimulatorHandler: MonoBehaviour,IBlazorSimulatorMessageWithResponseHandler 
+    public class DragChangingSimulatorHandler: MonoBehaviour,IBlazorSimulatorMessageHandler 
     {
         public Type MessageType => typeof(BlockPoseChangingMessage);
-        public Type ResponseType => typeof(PoseChangeResponse);
-        public object HandleMessage(object messageObject)
+        public TypedUnityApi UnityApi { get; set; }
+
+        public void HandleMessage(object messageObject)
         {
             var message=(BlockPoseChangingMessage)messageObject;
 
-            return new PoseChangeResponse()
+            UnityApi.SendMessage(new BlockPoseChangingResponse()
             {
                 IsValid = true,
                 NewPositionX = message.PositionX,
                 NewPositionY = (float)Math.Round(message.PositionY, 0),
                 NewRotationZ = message.RotationZ,
-            };
+                ChangingRequestId = message.ChangingRequestId
+            });
         }
     }
 }

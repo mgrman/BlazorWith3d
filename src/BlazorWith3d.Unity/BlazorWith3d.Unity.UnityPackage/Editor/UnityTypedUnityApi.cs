@@ -1,4 +1,6 @@
 ﻿using System;
+using BlazorWith3d.Unity.Shared;
+using MemoryPack;
 using UnityEngine;
 
 namespace BlazorWith3d.Unity
@@ -30,15 +32,15 @@ namespace BlazorWith3d.Unity
         {
             Debug.Log(msg);
         }
-
-        protected override string SerializeObject<T>(T obj)
+        
+        protected override byte[] SerializeObject<T>(T obj)
         {
-            return JsonUtility.ToJson(obj);
+            return MemoryPackSerializer.Serialize<IMessageToUnity>(obj);
         }
 
-        protected override T DeserializeObject<T>(string json)
+        protected override object DeserializeObject(byte[] obj)
         {
-            return JsonUtility.FromJson<T>(json);
+            return MemoryPackSerializer.Deserialize<IMessageToBlazor>(obj);
         }
     }
 }

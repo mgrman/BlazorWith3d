@@ -209,15 +209,16 @@
         this.StateHasChanged();
     }
 
-    private async Task<PoseChangeResponse> OnBlockPoseChanging(BlockPoseChangingMessage arg)
+    private void OnBlockPoseChanging(BlockPoseChangingMessage arg)
     {
-        return new PoseChangeResponse()
+        _unityAppApi.InvokeBlockPoseChangingResponse(new BlockPoseChangingResponse()
         {
             IsValid = true,
             NewPositionX = arg.PositionX,
-            NewPositionY = (float)Math.Round(arg.PositionY,1),
-            NewRotationZ = arg.RotationZ
-        };
+            NewPositionY = (float)Math.Round(arg.PositionY, 1),
+            NewRotationZ = arg.RotationZ,
+            ChangingRequestId = arg.ChangingRequestId
+        });
     }
 
     private async void  OnAppInitialized(AppInitialized arg)

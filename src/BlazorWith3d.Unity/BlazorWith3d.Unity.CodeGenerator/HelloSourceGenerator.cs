@@ -10,8 +10,41 @@ namespace BlazorWith3d.Unity.CodeGenerator
     [Generator]
     public class HelloSourceGenerator : ISourceGenerator
     {
+        private const string unityApiAttributeText = @"
+using System;
+namespace BlazorWith3d.Unity
+{
+    [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
+    sealed class UnityApiAttribute : Attribute
+    {
+        public UnityApiAttribute()
+        {
+        }
+    }
+}
+";
+        private const string blazorApiAttributeText = @"
+using System;
+namespace BlazorWith3d.Unity
+{
+    [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
+    sealed class BlazorApiAttribute : Attribute
+    {
+        public BlazorApiAttribute()
+        {
+        }
+    }
+}
+";
+        
         public void Initialize(GeneratorInitializationContext context)
         {
+            context.RegisterForPostInitialization((i) =>
+            {
+                i.AddSource("UnityApiAttribute.g.cs", unityApiAttributeText);
+                i.AddSource("BlazorApiAttribute.g.cs", blazorApiAttributeText);
+            });
+            
             // Register a syntax receiver that will be created for each generation pass
             context.RegisterForSyntaxNotifications(() => new SyntaxReceiver());
         }
@@ -22,13 +55,24 @@ namespace BlazorWith3d.Unity.CodeGenerator
             if (!(context.SyntaxContextReceiver is SyntaxReceiver receiver))
                 return;
 
-            CreateApiForSendingMessages(context, receiver);
+
+            foreach (var (unityApiType, unityApiTypeNamespace) in receiver.UnityApiTypes)
+            {
+                var text=CreateApiForSendingMessages(receiver.MessageToUnityTypes, receiver.MessageToBlazorTypes,"IMessageToUnity" ,"IMessageToBlazor" , unityApiType, unityApiTypeNamespace,"TypedUnityApi", "Task");
+                context.AddSource($"{unityApiType}.g.cs", text);
+            }
+            
+            foreach (var (blazorApiType,blazorApiTypeNamespace) in receiver.BlazorApiTypes)
+            {
+                var text=CreateApiForSendingMessages(receiver.MessageToBlazorTypes, receiver.MessageToUnityTypes, "IMessageToBlazor" ,"IMessageToUnity" ,blazorApiType, blazorApiTypeNamespace,"TypedBlazorApi", "void");
+                context.AddSource($"{blazorApiType}.g.cs", text);
+            }
         }
 
-        private static void CreateApiForSendingMessages(GeneratorExecutionContext context, SyntaxReceiver receiver)
+        private static string CreateApiForSendingMessages(List<(string messageType, string namespac)> methodTypes, List<(string messageType, string namespac)> eventTypes, string methodTypeName, string eventTypeName,  string apiType, string apiTypeNamespace, string typedApiName, string sendMessageReturnType)
         {
             var sb = new IndentedStringBuilder();
-            var namespaces = receiver.MessageToUnityTypes.Concat(receiver.MessageToBlazorTypes).Select(o=>o.namespac)
+            var namespaces = methodTypes.Concat(eventTypes).Select(o=>o.namespac)
                 .Distinct()
                 .ToList();
 
@@ -37,37 +81,67 @@ namespace BlazorWith3d.Unity.CodeGenerator
             sb.AppendLine("using System;");
             sb.AppendLine("using System.Threading.Tasks;");
             sb.AppendLines(namespaces.Select(o=>$"using {o};"));
+            sb.AppendLine("using MemoryPack;");
+            sb.AppendLine("using MemoryPack.Formatters;");
             sb.AppendLine("using BlazorWith3d.Unity;");
-
-            var messagesCommonNamespace = namespaces.SingleOrDefault() ?? "BlazorWith3d.Unity.Generated";
-                
-            sb.AppendLine($"namespace {messagesCommonNamespace}");
+            sb.AppendLine("using BlazorWith3d.Unity.Shared;");
+            sb.AppendLine($"namespace {apiTypeNamespace}");
             using (sb.IndentWithCurlyBrackets())
             {
-                sb.AppendLine("public class MyUnityApi");
+                sb.AppendLine($"public partial class {apiType}");
                 using (sb.IndentWithCurlyBrackets())
                 {
-                    sb.AppendLine("private readonly TypedUnityApi _unityApi;");
-                    sb.AppendLine();
-                    sb.AppendLine("public MyUnityApi(TypedUnityApi unityApi)");
+                    
+                    sb.AppendLine($"static {apiType}()");
                     using (sb.IndentWithCurlyBrackets())
                     {
-                        sb.AppendLine("_unityApi = unityApi;");
+                        sb.AppendLine($"var messageEventFormatter = new DynamicUnionFormatter<{eventTypeName}>(");
+                        using (sb.Indent())
+                        {
+                            for (var i = 0; i < eventTypes.Count; i++)
+                            {
+                                var (type,_) = eventTypes[i];
+                                sb.AppendLine($"({i},typeof({type})){(i!=eventTypes.Count-1?",":"")}");
+                            }
+                        }
+                        sb.AppendLine(");");
+                        
+                        sb.AppendLine($"var messageMethodFormatter = new DynamicUnionFormatter<{methodTypeName}>(");
+                        using (sb.Indent())
+                        {
+                            for (var i = 0; i < methodTypes.Count; i++)
+                            {
+                                var (type,_) = methodTypes[i];
+                                sb.AppendLine($"({i},typeof({type})){(i!=methodTypes.Count-1?",":"")}");
+                            }
+                        }
+                        sb.AppendLine(");");
+
+                        sb.AppendLine("MemoryPackFormatterProvider.Register(messageEventFormatter);");
+                        sb.AppendLine("MemoryPackFormatterProvider.Register(messageMethodFormatter);");
+                    }
+                    
+                    sb.AppendLine($"private readonly {typedApiName} _typedApi;");
+                    sb.AppendLine();
+                    sb.AppendLine($"public {apiType}({typedApiName} typedApi)");
+                    using (sb.IndentWithCurlyBrackets())
+                    {
+                        sb.AppendLine("_typedApi = typedApi;");
                         
                     
-                        foreach (var (messageType,returnType,_) in receiver.MessageToBlazorTypes)
+                        foreach (var (messageType,_) in eventTypes)
                         {
                             var eventInvokeMethodName = $"Invoke{messageType}Event";
-                            var callbackMethodName = string.IsNullOrEmpty(returnType)?"AddMessageProcessCallback":"AddMessageWithResponseProcessCallback";
-                            var callbackMethodGenericArguments = string.IsNullOrEmpty(returnType)?messageType:$"{messageType}, {returnType}";
-                            sb.AppendLine($"_unityApi.{callbackMethodName}<{callbackMethodGenericArguments}>(this.{eventInvokeMethodName});");
+                            var callbackMethodName = "AddMessageProcessCallback";
+                            var callbackMethodGenericArguments = messageType;
+                            sb.AppendLine($"_typedApi.{callbackMethodName}<{callbackMethodGenericArguments}>(this.{eventInvokeMethodName});");
                         }
                     }
                     sb.AppendLine();
                     
-                    foreach (var (messageType,returnType,_) in receiver.MessageToBlazorTypes)
+                    foreach (var (messageType,_) in eventTypes)
                     {
-                        var eventType = string.IsNullOrEmpty(returnType) ? $"Action<{messageType}>" : $"Func<{messageType},Task<{returnType}>>";
+                        var eventType =  $"Action<{messageType}>";
                 
                         var eventName = $"On{messageType}";
 
@@ -75,26 +149,24 @@ namespace BlazorWith3d.Unity.CodeGenerator
                     }
 
                     sb.AppendLine();
-                    foreach (var (messageType,returnType,_) in receiver.MessageToUnityTypes)
+                    foreach (var (messageType,_) in methodTypes)
                     {
-                        var taskReturnType = string.IsNullOrEmpty(returnType) ? "Task" : $"Task<{returnType}>";
-                
                         var arguments = new[]{$"{messageType} msg"};
                         var methodName = $"Invoke{messageType}";
-                        var sendMethodName = string.IsNullOrEmpty(returnType)?"SendMessage":"SendMessageWithResponse";
+                        var sendMethodName = "SendMessage";
 
-                        sb.AppendLine($"public {taskReturnType} {methodName}({string.Join(", ", arguments)})");
+                        sb.AppendLine($"public {sendMessageReturnType} {methodName}({string.Join(", ", arguments)})");
                         using (sb.IndentWithCurlyBrackets())
                         {
-                            sb.AppendLine($"return _unityApi.{sendMethodName}(msg);");
+                            sb.AppendLine($"{(sendMessageReturnType=="void"?"":"return ")}_typedApi.{sendMethodName}(msg);");
                         }
                     }
                     sb.AppendLine();
                     
                     
-                    foreach (var (messageType,returnType,_) in receiver.MessageToBlazorTypes)
+                    foreach (var (messageType,_) in eventTypes)
                     {
-                        var methodReturnType = string.IsNullOrEmpty(returnType) ? "void" : $"Task<{returnType}>";
+                        var methodReturnType = "void";
                 
                         var arguments = new[]{$"{messageType} msg"};
                         var eventInvokeMethodName = $"Invoke{messageType}Event";
@@ -105,7 +177,7 @@ namespace BlazorWith3d.Unity.CodeGenerator
                 }
             }
 
-            context.AddSource("MyUnityApi.Generated.cs", sb.ToString());
+            return sb.ToString();
         }
 
 
@@ -115,8 +187,10 @@ namespace BlazorWith3d.Unity.CodeGenerator
         /// </summary>
         class SyntaxReceiver : ISyntaxContextReceiver
         {
-            public List<(string messageType, string? responseType, string namespac)> MessageToUnityTypes { get; } = new ();
-            public List<(string messageType, string? responseType, string namespac)> MessageToBlazorTypes { get; } = new ();
+            public List<(string apiType, string namespac)> UnityApiTypes { get; } = new ();
+            public List<(string apiType, string namespac)> BlazorApiTypes { get; } = new ();
+            public List<(string messageType, string namespac)> MessageToUnityTypes { get; } = new ();
+            public List<(string messageType,  string namespac)> MessageToBlazorTypes { get; } = new ();
 
             /// <summary>
             /// Called for every syntax node in the compilation, we can inspect the nodes and save any information useful for generation
@@ -127,15 +201,22 @@ namespace BlazorWith3d.Unity.CodeGenerator
                 if (context.Node is TypeDeclarationSyntax typeDeclarationSyntax)
                 {
                     var symbol = context.SemanticModel.GetDeclaredSymbol(context.Node) as INamedTypeSymbol;
-                    var returnType = symbol.AllInterfaces.FirstOrDefault(o=>o.IsGenericType && o.Name=="IMessageToBlazor")?.TypeArguments.FirstOrDefault()?.Name ?? null;
 
+                    if (symbol.GetAttributes().Any(ad => ad.AttributeClass.ToDisplayString() == "BlazorWith3d.Unity.UnityApiAttribute"))
+                    {
+                        UnityApiTypes.Add((symbol.Name,symbol.ContainingNamespace.ToDisplayString()));
+                    }
+                    if (symbol.GetAttributes().Any(ad => ad.AttributeClass.ToDisplayString() == "BlazorWith3d.Unity.BlazorApiAttribute"))
+                    {
+                        BlazorApiTypes.Add((symbol.Name,symbol.ContainingNamespace.ToDisplayString()));
+                    }
                     if (symbol.AllInterfaces.Any(i => i.Name == "IMessageToUnity"))
                     {
-                        MessageToUnityTypes.Add((symbol.Name,returnType,symbol.ContainingNamespace.ToDisplayString()));
+                        MessageToUnityTypes.Add((symbol.Name,symbol.ContainingNamespace.ToDisplayString()));
                     }
                     if (symbol.AllInterfaces.Any(i => i.Name == "IMessageToBlazor"))
                     {
-                        MessageToBlazorTypes.Add((symbol.Name,returnType,symbol.ContainingNamespace.ToDisplayString()));
+                        MessageToBlazorTypes.Add((symbol.Name,symbol.ContainingNamespace.ToDisplayString()));
                     }
                     
                 }

@@ -28,6 +28,8 @@ namespace ExampleApp
 
         private int BlockId;
         
+        private static int _validationCounter;
+        
         private Vector2 Position;
         // {
         //     get
@@ -52,13 +54,13 @@ namespace ExampleApp
         //         transform.localRotation = Quaternion.Euler(angles.x,angles.y,value);
         //     }
         // }
-        
-        private AwaitableCompletionSource _dragMessageCounter = new AwaitableCompletionSource();
 
-        private CancellationTokenSource _lastDragCts;
+        private int _lastAppliedValidationResponse;
+        private AwaitableCompletionSource _dragMessageCounter = new AwaitableCompletionSource();
         
         private Plane _dragPlane;
-        private Vector3 _dragOffset; 
+        private Vector3 _dragOffset;
+        private int _lastRequestedValidatioId;
 
         public void Initialize(AddBlockTemplateMessage msg, GameObject backgroundPlane, TypedBlazorApi blazorApi )
         {
@@ -116,30 +118,42 @@ namespace ExampleApp
             var newPosition = (dragPlaneHit - _dragOffset).xy();
             Debug.Log($"OnDrag  {BlockId} {newPosition}");
             
-            _lastDragCts?.Cancel();
-            var cts=new CancellationTokenSource();
-            _lastDragCts = cts;
-            
+
+            var newValidationId = _validationCounter++;
+            _lastRequestedValidatioId = newValidationId;
             _dragMessageCounter.Reset();
-           //Debug.Log($"_dragMessageCounter  {_dragMessageCounter}");
-            var newPose = await _blazorApi.SendMessageWithResponse<BlockPoseChangingMessage, PoseChangeResponse>(
+            
+            _blazorApi.SendMessage(
                 new BlockPoseChangingMessage()
                 {
                     BlockId = BlockId,
                     PositionX = newPosition.x,
                     PositionY = newPosition.y,
                     RotationZ = RotationZ,
+                    ChangingRequestId = newValidationId
                 });
+            
+        }
 
-            if (cts.IsCancellationRequested)
+        public void OnBlockPoseChangingResponse(BlockPoseChangingResponse newPose)
+        {
+            if (newPose.ChangingRequestId < _lastAppliedValidationResponse)
             {
                 return;
             }
+
+
+            _lastAppliedValidationResponse = newPose.ChangingRequestId;
+            
             this.Position = new Vector2(newPose.NewPositionX, newPose.NewPositionY);
             this.RotationZ = newPose.NewRotationZ;
-
+            
             UpdatePose();
-            _dragMessageCounter.SetResult();
+            
+            if (newPose.ChangingRequestId == _lastRequestedValidatioId)
+            {
+                _dragMessageCounter.SetResult();
+            }
         }
 
         public void OnBeginDrag(PointerEventData eventData)
@@ -172,6 +186,10 @@ namespace ExampleApp
             var localHit= _backgroundPlane.transform.InverseTransformPoint(eventData.pointerCurrentRaycast.worldPosition);
 
             _dragOffset = localHit- transform.localPosition;
+            
+            _validationCounter = 0;
+            _lastAppliedValidationResponse = -1;
+            _lastRequestedValidatioId = -1;
         }
     }
 }
