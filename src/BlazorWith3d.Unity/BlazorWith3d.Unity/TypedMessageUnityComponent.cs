@@ -13,12 +13,7 @@ namespace BlazorWith3d.Unity;
 // TODO consider some generic reactive dictionary or patch requests on object support
 // e.g. that both sides can instantiate kind of reactive dictionry and through generic messages they both can be kept automatically in sync, with changes always propagating to the other side
 
-
-// TODO more usefull, consider code generation, where interface is defined and marked
-// this generates Blazor code for it, which just needs to be instantiated with Unity Instance
-// and generates Unity code which references native message passing methods. 
-// +arguments are auto wrapped into a message class
-
+//TODO consider using structs with attributes for response with better binary serialization (e.g. https://neuecc.medium.com/how-to-make-the-fastest-net-serializer-with-net-7-c-11-case-of-memorypack-ad28c0366516 )
 
 public class TypedMessageUnityComponent : BaseUnityComponent
 {

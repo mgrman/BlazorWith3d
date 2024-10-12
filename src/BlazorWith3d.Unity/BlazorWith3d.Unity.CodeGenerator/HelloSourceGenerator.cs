@@ -22,9 +22,6 @@ namespace BlazorWith3d.Unity.CodeGenerator
             if (!(context.SyntaxContextReceiver is SyntaxReceiver receiver))
                 return;
 
-            //TODO MessageToUnityTypes are methods in with implmented handling of sending messages
-            //TODO MessageToBlazorTypes creates an interface, which has to be implemented and set via ctor to the main class along with TypedApi instance
-
             CreateApiForSendingMessages(context, receiver);
         }
 
