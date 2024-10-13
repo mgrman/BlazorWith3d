@@ -9,9 +9,6 @@ on:
       - main
   workflow_dispatch:
 
-env:
-  PROJECT_WEB_APP_PATH: 'samples/BlazorWith3d.ExampleApp/BlazorWith3d.ExampleApp.csproj'
-  WEBGL_BUILD_PATH: 'samples/BlazorWith3d.ExampleApp.Client/wwwroot/'
 
 jobs:
   build:
@@ -70,10 +67,10 @@ jobs:
 
 
       - name: Build with dotnet
-        run: dotnet build "${{vars.PROJECT_WEB_APP_PATH}}" -c Release -f net9.0
+        run: dotnet build "samples/BlazorWith3d.ExampleApp/BlazorWith3d.ExampleApp.csproj" -c Release
 
       - name: dotnet publish
-        run: dotnet publish "${{vars.PROJECT_WEB_APP_PATH}}" -c Release -f net9.0 -o ${{env.DOTNET_ROOT}}/myapp
+        run: dotnet publish "samples/BlazorWith3d.ExampleApp/BlazorWith3d.ExampleApp.csproj" -c Release -f net9.0 -o ${{env.DOTNET_ROOT}}/myapp
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
