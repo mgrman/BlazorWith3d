@@ -30,6 +30,29 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
     }
 #endif
     
+    
+    [MemoryPackable]
+    public partial class PerfCheckRequest : IMessageToUnity
+    {
+        public int Id;
+
+        public float aaa;
+        public double bbb;
+        public decimal ccc; 
+        public string ddd;
+    }
+
+    [MemoryPackable]
+    public partial class PerfCheckResponse : IMessageToBlazor
+    {
+        public int Id;
+        public float aaa;
+        public double bbb;
+        public decimal ccc; 
+        public string ddd;
+    }
+
+    
     [MemoryPackable]
     public partial class AppInitialized : IMessageToBlazor
     {

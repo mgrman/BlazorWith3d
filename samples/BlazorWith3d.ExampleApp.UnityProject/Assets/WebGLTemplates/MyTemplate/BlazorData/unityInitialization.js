@@ -12,12 +12,12 @@ export function InitializeUnityApi (unityInstance, onMessageReceivedCallback ) {
     }
   };
 
-  if(Module["BlazorApi_OnMessageFromUnityHandler_Buffer"]){
-    for(var buffer in Module["BlazorApi_OnMessageFromUnityHandler_Buffer"]){
+  if(unityInstance.Module["BlazorApi_OnMessageFromUnityHandler_Buffer"]){
+    for(var buffer in unityInstance.Module["BlazorApi_OnMessageFromUnityHandler_Buffer"]){
       messageReceivedCallback(buffer);
     }
 
-    Module["BlazorApi_OnMessageFromUnityHandler_Buffer"]=null;
+    unityInstance.Module["BlazorApi_OnMessageFromUnityHandler_Buffer"]=null;
   }
   
   // void BlazorApi_OnMessageFromUnityHandler(byte[] message)

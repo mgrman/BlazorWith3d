@@ -1,0 +1,13 @@
+﻿@rendermode InteractiveAuto
+<InputCheckbox @bind-Value="Is3DVisible" ></InputCheckbox>
+
+@if (Is3DVisible)
+{
+    <UnityForBlazor></UnityForBlazor>
+}
+
+@code{
+
+    public bool Is3DVisible { get; set; }
+
+}

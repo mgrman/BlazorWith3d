@@ -65,6 +65,18 @@ namespace ExampleApp
             simulatorTypedApi.SendMessage(new AddBlockInstanceMessage()
                 { BlockId = 0, TemplateId = 0, PositionX = 0, PositionY = 0, RotationZ = 0 });
 #endif
+
+            _appApi.OnPerfCheckRequest += (request) =>
+            {
+                _appApi.InvokePerfCheckResponse(new PerfCheckResponse()
+                {
+                    Id = request.Id,
+                    aaa = request.aaa,
+                    bbb = request.bbb,
+                    ccc = request.ccc,
+                    ddd = request.ddd
+                });
+            };
         }
 
         private void OnBlockPoseChangingResponse(BlockPoseChangingResponse obj)
