@@ -21,6 +21,11 @@ export function InitializeUnityApi (unityInstance, onMessageReceivedCallback ) {
       console.error(err);
     }
   };
+  
+  unityApi.Quit=async function (){
+   await unityInstance.Quit()
+   
+  }
 
   return unityApi;
 }
@@ -89,13 +94,13 @@ export function showUnity(buildUrl,container, dotnetObject, onMessageReceivedMet
     var script = document.createElement("script");
     script.src = loaderUrl;
     script.onload = () => {
+      script.onload=null;
       createUnityInstance(canvas, config, (progress) => {
         container.querySelector("#unity-progress-bar-full").style.width = 100 * progress + "%";
       }).then((unityInstance) => {
         container.querySelector("#unity-loading-bar").style.display = "none";
 
 
-        ;
         
         var unityApi = InitializeUnityApi(unityInstance, function(msgBytes){
           dotnetObject.invokeMethodAsync(onMessageReceivedMethodName, msgBytes)

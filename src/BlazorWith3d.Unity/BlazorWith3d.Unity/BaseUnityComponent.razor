@@ -3,10 +3,12 @@
 @using System.Text
 @using Microsoft.Extensions.Logging
 @using Microsoft.JSInterop
+@using Microsoft.AspNetCore.Components.Forms
 @implements IUnityApi
-@implements IDisposable
+@implements IAsyncDisposable
 
 <div @ref="_containerElementReference" class="unity-container">
+
     <canvas id="unity-canvas" width="960" height="600" tabindex="-1"></canvas>
     <div id="unity-loading-bar">
         <div id="unity-logo"></div>
@@ -17,8 +19,16 @@
     <div id="unity-warning"> </div>
 </div>
 
+
+
+
 @code
 {
+    // TODO mark down to build Unity with emscriptenArgs set tp -sMIN_SAFARI_VERSION=-1
+    // TOOD mark down that threads should not be used, as they cause memory leaks due to Unity not unloading workers TBD to investigate more as it could be also due to development build
+    
+    
+    
     private IJSObjectReference? _unityApi;
 
     private ElementReference _containerElementReference;
@@ -27,10 +37,15 @@
     [Parameter, EditorRequired] 
     public string UnityBuildFilePath { get; set; } = "";
 
-    private List<byte[]> _unsentMessages = new List<byte[]>();
+    private List<byte[]> _unsentMessages = new ();
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
+        await _unityApi.InvokeVoidAsync("Quit");
+        
+        await _unityApi.DisposeAsync();
+        _unityApi = null;
+        
         _messageReceiverProxyReference?.Dispose();
     }
     
@@ -39,6 +54,7 @@
         _messageReceiverProxyReference = DotNetObjectReference.Create(new JsMessageReceiverProxy(OnMessageBytesReceived));
         base.OnInitialized();
     }
+
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -52,7 +68,7 @@
         var module = await moduleTask.Value;
 
         _unityApi= await module.InvokeAsync<IJSObjectReference>("showUnity", UnityBuildFilePath, _containerElementReference, _messageReceiverProxyReference, nameof(JsMessageReceiverProxy.OnMessageBytesReceived));
-
+   
         foreach (var msg in _unsentMessages)
         {
             SendMessageToUnity(msg);
