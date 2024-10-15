@@ -3,30 +3,18 @@
 export function InitializeUnityApi (unityInstance, onMessageReceivedCallback ) {
 
   let unityApi = {}
-  
-  var messageReceivedCallback=function (msgBytes) {
+
+  // void BlazorApi_OnMessageFromUnityHandler(byte[] message)
+  unityInstance.Module["BlazorApi_OnMessageFromUnityHandler"] = function (msgBytes) {
     try {
       onMessageReceivedCallback(msgBytes);
     } catch (err) {
       console.error(err);
     }
-  };
-
-  if(unityInstance.Module["BlazorApi_OnMessageFromUnityHandler_Buffer"]){
-    for(var buffer in unityInstance.Module["BlazorApi_OnMessageFromUnityHandler_Buffer"]){
-      messageReceivedCallback(buffer);
-    }
-
-    unityInstance.Module["BlazorApi_OnMessageFromUnityHandler_Buffer"]=null;
   }
-  
-  // void BlazorApi_OnMessageFromUnityHandler(byte[] message)
-  unityInstance.Module["BlazorApi_OnMessageFromUnityHandler"] = messageReceivedCallback;
 
   unityApi.SendMessage = function (msgBytes) {
-    // void BlazorApi_SendMessageToUnity(byte[] msgBytes)
-    
-    console.log("SendMessage " + msgBytes);
+    // void BlazorApi_SendMessageToUnity(byte[] message)
     try {
       unityInstance.Module["BlazorApi_SendMessageToUnity"](msgBytes);
     } catch (err) {
@@ -34,8 +22,11 @@ export function InitializeUnityApi (unityInstance, onMessageReceivedCallback ) {
     }
   };
 
-  
-  
+  unityApi.Quit=async function (){
+    await unityInstance.Quit()
+
+  }
+
   return unityApi;
 }
 
@@ -103,16 +94,17 @@ export function showUnity(buildUrl,container, dotnetObject, onMessageReceivedMet
     var script = document.createElement("script");
     script.src = loaderUrl;
     script.onload = () => {
+      script.onload=null;
       createUnityInstance(canvas, config, (progress) => {
         container.querySelector("#unity-progress-bar-full").style.width = 100 * progress + "%";
       }).then((unityInstance) => {
         container.querySelector("#unity-loading-bar").style.display = "none";
 
 
-        ;
-
-        var unityApi = InitializeUnityApi(unityInstance, function(msgBytes){
-          dotnetObject.invokeMethodAsync(onMessageReceivedMethodName, msgBytes)
+        var previousMessage=Promise.resolve();
+        var unityApi = InitializeUnityApi(unityInstance, async function(msgBytes){
+          await previousMessage;
+          previousMessage=dotnetObject.invokeMethodAsync(onMessageReceivedMethodName, msgBytes)
         });
         resolve(unityApi);
 

@@ -101,9 +101,10 @@ export function showUnity(buildUrl,container, dotnetObject, onMessageReceivedMet
         container.querySelector("#unity-loading-bar").style.display = "none";
 
 
-        
-        var unityApi = InitializeUnityApi(unityInstance, function(msgBytes){
-          dotnetObject.invokeMethodAsync(onMessageReceivedMethodName, msgBytes)
+        var previousMessage=Promise.resolve();
+        var unityApi = InitializeUnityApi(unityInstance, async function(msgBytes){
+          await previousMessage;
+          previousMessage=dotnetObject.invokeMethodAsync(onMessageReceivedMethodName, msgBytes)
         });
         resolve(unityApi);
 
