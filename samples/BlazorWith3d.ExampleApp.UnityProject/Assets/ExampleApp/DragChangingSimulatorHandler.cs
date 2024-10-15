@@ -17,6 +17,7 @@ namespace ExampleApp
 
             UnityApi.SendMessage(new BlockPoseChangingResponse()
             {
+                BlockId = message.BlockId,
                 IsValid = true,
                 NewPositionX = message.PositionX,
                 NewPositionY = (float)Math.Round(message.PositionY, 0),
