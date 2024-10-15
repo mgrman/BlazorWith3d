@@ -21,7 +21,4 @@
         <None Remove="*.meta"/>
         <Content Remove="*.meta"/>
     </ItemGroup>
-    <ItemGroup>
-        <PackageReference Include="MemoryPack.Core" Version="1.21.3"/>
-    </ItemGroup>
 </Project>

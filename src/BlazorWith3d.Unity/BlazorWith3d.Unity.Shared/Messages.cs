@@ -1,5 +1,4 @@
 ﻿using System;
-using MemoryPack;
 
 namespace BlazorWith3d.Unity.Shared
 {
@@ -13,13 +12,11 @@ namespace BlazorWith3d.Unity.Shared
     {
     }
 
-    [MemoryPackable(GenerateType.NoGenerate)]
-    public partial interface IMessageToBlazor
+    public interface IMessageToBlazor
     {
     }
 
-    [MemoryPackable(GenerateType.NoGenerate)]
-    public partial interface IMessageToUnity
+    public interface IMessageToUnity
     {
     }
 #if COMMON_DOTNET

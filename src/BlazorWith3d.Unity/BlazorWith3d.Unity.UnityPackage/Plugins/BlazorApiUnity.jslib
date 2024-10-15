@@ -8,13 +8,7 @@ var BlazorApiUnity = {
             var id = Math.floor(Math.random() * 500);
 
             Module["BlazorApi_MessageBuffer"][id] = bytes;
-            {
-                {
-                    {
-                        makeDynCall('vii', 'instantiateByteArrayCallback')
-                    }
-                }
-            }
+            {{{ makeDynCall('vii', 'instantiateByteArrayCallback') }}}(bytes.length, id);
             (bytes.length, id);
         };
     },

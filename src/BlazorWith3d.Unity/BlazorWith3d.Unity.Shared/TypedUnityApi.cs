@@ -13,7 +13,7 @@ namespace BlazorWith3d.Unity.Shared
         public TypedUnityApi(IUnityApi unityApi)
         {
             _unityApi = unityApi;
-            _unityApi.OnMessageFromUnity = OnMessageBytesReceived;
+            _unityApi.OnMessageFromUnity = OnMessageReceived;
         }
 
         protected abstract void LogError(Exception exception, string msg);
@@ -52,7 +52,7 @@ namespace BlazorWith3d.Unity.Shared
             };
         }
 
-        protected void OnMessageBytesReceived(byte[] messageBytes)
+        protected void OnMessageReceived(byte[] messageBytes)
         {
             var decoded = DeserializeObject(messageBytes);
             if (decoded == null) throw new InvalidOperationException($"Non-encoded message received! {messageBytes}");

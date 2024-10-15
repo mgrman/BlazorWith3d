@@ -2,11 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 using BlazorWith3d.Unity.Shared;
-using MemoryPack;
 
 namespace BlazorWith3d.Unity
 {
-    // not in Shared package, as it uses too many Unity specific APIs, mainly Awaitables
     public abstract class TypedBlazorApi
     {
         private readonly IBlazorApi _blazorApi;
@@ -59,12 +57,7 @@ namespace BlazorWith3d.Unity
             };
         }
 
-        protected void SendMessageFromUnity(string msg)
-        {
-            _blazorApi.SendMessageToBlazor(Encoding.Unicode.GetBytes(msg));
-        }
-
-        protected async void OnMessageReceived(byte[] messageBytes)
+        protected void OnMessageReceived(byte[] messageBytes)
         {
             var decoded = DeserializeObject(messageBytes);
             if (decoded == null) throw new InvalidOperationException($"Non-encoded message received! {messageBytes}");

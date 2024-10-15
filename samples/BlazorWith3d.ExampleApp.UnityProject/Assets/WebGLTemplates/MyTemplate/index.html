@@ -10,7 +10,6 @@
     <link rel="stylesheet" href="<<<TemplateData/diagnostics.css>>>">
       <script src="<<<TemplateData/diagnostics.js>>>"></script>
 #endif
-      <script src="BlazorData/unityInitialization.js" type="module"></script>
   </head>
   <body>
     <div id="unity-container" class="unity-desktop">
@@ -130,53 +129,13 @@
 #endif
       document.querySelector("#unity-loading-bar").style.display = "block";
 
-
-      import { InitializeUnityApi } from './BlazorData/unityInitialization.js'
-      
-      
       var script = document.createElement("script");
       script.src = loaderUrl;
       script.onload = () => {
         createUnityInstance(canvas, config, (progress) => {
           document.querySelector("#unity-progress-bar-full").style.width = 100 * progress + "%";
             }).then((unityInstance) => {
-                
-                var dec=new TextDecoder('utf-16le');
-
-            function strEncodeUTF16(str) {
-                var buf = new ArrayBuffer(str.length*2);
-                var bufView = new Uint16Array(buf);
-                for (var i=0, strLen=str.length; i < strLen; i++) {
-                    bufView[i] = str.charCodeAt(i);
-                }
-                return new Uint8Array(buf);
-            }
-
-            var arr = strEncodeUTF16('€13,56');
-            
-                var initializedPromise= new Promise((resolve, reject) => {
-                    var unityApi=InitializeUnityApi(unityInstance, function(message){
-    
-                        // Create a temporary ArrayBuffer and copy the contents of the shared buffer
-                        // into it.
-                        const tempView = new Uint8Array(buffer.length)
-    
-                        tempView.set(buffer)
-
-                        var dec=new TextDecoder('utf-16le');
-                        console.log("received message: "+dec.decode(tempView.buffer))
-
-                        resolve(unityApi);
-                    });
-
-                }).then(function (unityApi){
-                    
-                    var bytes=strEncodeUTF16("JS_INITIALIZED");
-                    
-                    unityApi.SendMessage(bytes);
-                });
-
-                  
+                                  
                 document.querySelector("#unity-loading-bar").style.display = "none";
 #if SHOW_DIAGNOSTICS
                 document.getElementById("diagnostics-icon").onclick = () => {
