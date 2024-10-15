@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 
 namespace BlazorWith3d.Unity;
 
-
 // TODO double check catching of exceptions as they happen in "native" code and do not always propagate properly
 
 // TODO consider some generic reactive dictionary or patch requests on object support
@@ -19,14 +18,13 @@ namespace BlazorWith3d.Unity;
 
 public class TypedMessageUnityComponent : BaseUnityComponent
 {
-    [Inject] 
-    private ILogger<TypedMessageUnityComponent> Logger { get; set; } = null!;
+    [Inject] private ILogger<TypedMessageUnityComponent> Logger { get; set; } = null!;
 
     public BlazorTypedUnityApi TypedUnityApi { get; set; } = null!;
-    
+
     protected override void OnInitialized()
     {
-        TypedUnityApi = new BlazorTypedUnityApi(this, Logger); ;
+        TypedUnityApi = new BlazorTypedUnityApi(this, Logger);
         base.OnInitialized();
     }
 }

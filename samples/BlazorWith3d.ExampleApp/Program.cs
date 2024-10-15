@@ -1,5 +1,6 @@
 using Blazored.LocalStorage;
 using BlazorWith3d.Components;
+using _Imports = BlazorWith3d.Client._Imports;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,7 +11,7 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddBlazoredLocalStorage(c =>
 {
-    c.JsonSerializerOptions.IncludeFields= true;
+    c.JsonSerializerOptions.IncludeFields = true;
     c.JsonSerializerOptions.IgnoreReadOnlyFields = false;
     c.JsonSerializerOptions.IgnoreReadOnlyProperties = false;
 });
@@ -24,7 +25,7 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
+    app.UseExceptionHandler("/Error", true);
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
@@ -49,6 +50,6 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
     .AddInteractiveWebAssemblyRenderMode()
-    .AddAdditionalAssemblies(typeof(BlazorWith3d.Client._Imports).Assembly);
+    .AddAdditionalAssemblies(typeof(_Imports).Assembly);
 
 app.Run();

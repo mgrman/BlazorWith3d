@@ -1,35 +1,28 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using BlazorWith3d.ExampleApp.Client.Unity.Shared;
 using BlazorWith3d.Unity;
 using BlazorWith3d.Unity.Shared;
-using MemoryPack;
-using MemoryPack.Formatters;
 using UnityEngine;
-using UnityEngine.EventSystems;
-using UnityEngine.InputSystem;
 
 namespace ExampleApp
 {
     public class ExampleAppInitializer : MonoBehaviour
     {
-        private readonly Dictionary<int, BlockController> _templates = new();
+        [SerializeField] private BlockController _templatePrefab;
+
+        [SerializeField] private GameObject _backgroundPlane;
+
         private readonly Dictionary<int, BlockController> _blocks = new();
+        private readonly Dictionary<int, BlockController> _templates = new();
+        private MyBlazorApi _appApi;
+        private IBlazorApi _blazorApi;
         private GameObject _templateRoot;
 
-        [SerializeField] 
-        private BlockController _templatePrefab;
-
-        [SerializeField] 
-        private GameObject _backgroundPlane;
-        
         private TypedBlazorApi _typedApi;
-        private IBlazorApi _blazorApi;
-        private MyBlazorApi _appApi;
 
         public void Start()
         {
-            _templateRoot = new GameObject($"BlockTemplateRoot");
+            _templateRoot = new GameObject("BlockTemplateRoot");
             _templateRoot.SetActive(false);
             _templateRoot.transform.parent = transform;
 
@@ -43,7 +36,7 @@ namespace ExampleApp
 #else
             _blazorApi = new UnityBlazorApi();
 #endif
-            _typedApi = new TypedBlazorApi(_blazorApi);
+            _typedApi = new UnityTypedBlazorApi(_blazorApi);
 
             _appApi = new MyBlazorApi(_typedApi);
 
@@ -57,24 +50,24 @@ namespace ExampleApp
 
 #if UNITY_EDITOR
 
-            simulatorTypedApi.SendMessage(new AddBlockTemplateMessage()
+            simulatorTypedApi.SendMessage(new AddBlockTemplateMessage
             {
                 TemplateId = 0,
                 SizeX = 1, SizeY = 1, SizeZ = 1, VisualsUri = null
             });
-            simulatorTypedApi.SendMessage(new AddBlockInstanceMessage()
+            simulatorTypedApi.SendMessage(new AddBlockInstanceMessage
                 { BlockId = 0, TemplateId = 0, PositionX = 0, PositionY = 0, RotationZ = 0 });
 #endif
 
-            _appApi.OnPerfCheckRequest += (request) =>
+            _appApi.OnPerfCheckRequest += request =>
             {
-                _appApi.InvokePerfCheckResponse(new PerfCheckResponse()
+                _appApi.InvokePerfCheckResponse(new PerfCheckResponse
                 {
                     Id = request.Id,
-                    aaa = request.aaa,
-                    bbb = request.bbb,
-                    ccc = request.ccc,
-                    ddd = request.ddd
+                    Aaa = request.Aaa,
+                    Bbb = request.Bbb,
+                    Ccc = request.Ccc,
+                    Ddd = request.Ddd
                 });
             };
         }
@@ -84,17 +77,12 @@ namespace ExampleApp
             _blocks[obj.BlockId].OnBlockPoseChangingResponse(obj);
         }
 
-        private void Update()
-        {
-            //  Debug.Log(EventSystem.current.currentSelectedGameObject);
-        }
-
         private void OnAddBlockTemplateMessage(AddBlockTemplateMessage msg)
         {
             Debug.Log($"Adding block template: {JsonUtility.ToJson(msg)}");
 
 
-            var meshGo = GameObject.Instantiate(_templatePrefab, _templateRoot.transform);
+            var meshGo = Instantiate(_templatePrefab, _templateRoot.transform);
 
             meshGo.Initialize(msg, gameObject, _typedApi);
 
@@ -125,7 +113,7 @@ namespace ExampleApp
         {
             Debug.Log($"Removing block template: {JsonUtility.ToJson(msg)}");
             var blockGo = _blocks[msg.BlockId];
-            GameObject.Destroy(blockGo);
+            Destroy(blockGo);
             _blocks.Remove(msg.BlockId);
 
             Debug.Log($"Removed block template: {JsonUtility.ToJson(msg)}");

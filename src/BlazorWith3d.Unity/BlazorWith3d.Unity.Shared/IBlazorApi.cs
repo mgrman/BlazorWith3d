@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace BlazorWith3d.Unity
+namespace BlazorWith3d.Unity.Shared
 {
     public interface IBlazorApi
     {

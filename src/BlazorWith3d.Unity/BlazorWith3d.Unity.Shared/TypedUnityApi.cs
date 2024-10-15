@@ -1,17 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
-using BlazorWith3d.Unity.Shared;
 
-namespace BlazorWith3d.Unity
+namespace BlazorWith3d.Unity.Shared
 {
-
     public abstract class TypedUnityApi
     {
         private readonly IUnityApi _unityApi;
 
-        private IDictionary<Type, Action<object>> _handlers = new Dictionary<Type, Action<object>>();
+        private readonly IDictionary<Type, Action<object>> _handlers = new Dictionary<Type, Action<object>>();
 
         public TypedUnityApi(IUnityApi unityApi)
         {
@@ -19,13 +16,12 @@ namespace BlazorWith3d.Unity
             _unityApi.OnMessageFromUnity = OnMessageBytesReceived;
         }
 
-
         protected abstract void LogError(Exception exception, string msg);
         protected abstract void LogError(string msg);
         protected abstract void LogWarning(string msg);
         protected abstract void Log(string msg);
         protected abstract byte[] SerializeObject<T>(T obj) where T : IMessageToUnity;
-        protected abstract object DeserializeObject(byte[] json);
+        protected abstract object? DeserializeObject(byte[] json);
 
         public async Task SendMessage<TMessage>(TMessage message) where TMessage : IMessageToUnity
         {
@@ -49,10 +45,8 @@ namespace BlazorWith3d.Unity
             {
                 var messageObject = (TMessage)objectJson;
                 if (messageObject == null)
-                {
                     throw new InvalidOperationException(
                         $"Message for {typeof(TMessage).Name} was not deserializable into {typeof(TMessage).Name}");
-                }
 
                 messageHandler(messageObject);
             };
@@ -61,10 +55,7 @@ namespace BlazorWith3d.Unity
         protected void OnMessageBytesReceived(byte[] messageBytes)
         {
             var decoded = DeserializeObject(messageBytes);
-            if (decoded == null)
-            {
-                throw new InvalidOperationException($"Non-encoded message received! {messageBytes}");
-            }
+            if (decoded == null) throw new InvalidOperationException($"Non-encoded message received! {messageBytes}");
 
             if (!_handlers.TryGetValue(decoded.GetType(), out var handler))
             {
@@ -73,19 +64,6 @@ namespace BlazorWith3d.Unity
             }
 
             handler(decoded);
-        }
-        
-
-        private bool TryHandleKnownMessages(string msg)
-        {
-            switch (msg)
-            {
-                case "UNITY_INITIALIZED":
-                    Log($"UNITY_INITIALIZED received");
-                    return true;
-                default:
-                    return false;
-            }
         }
     }
 }

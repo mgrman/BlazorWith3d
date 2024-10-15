@@ -17,7 +17,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\BlazorWith3d.Unity.Shared\BlazorWith3d.Unity.Shared.csproj" />
+        <ProjectReference Include="..\BlazorWith3d.Unity.Shared\BlazorWith3d.Unity.Shared.csproj"/>
     </ItemGroup>
 
 </Project>

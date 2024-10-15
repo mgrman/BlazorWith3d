@@ -1,16 +1,16 @@
 {
-    "name": "BlazorWith3d.Unity.Shared",
-    "rootNamespace": "BlazorWith3d.Unity.Shared",
-    "references": [],
-    "includePlatforms": [],
-    "excludePlatforms": [],
-    "allowUnsafeCode": false,
-    "overrideReferences": true,
-    "precompiledReferences": [
-        "MemoryPack.Core.dll"
-    ],
-    "autoReferenced": true,
-    "defineConstraints": [],
-    "versionDefines": [],
-    "noEngineReferences": true
+  "name": "BlazorWith3d.Unity.Shared",
+  "rootNamespace": "BlazorWith3d.Unity.Shared",
+  "references": [],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": true,
+  "precompiledReferences": [
+    "MemoryPack.Core.dll"
+  ],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": true
 }

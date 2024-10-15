@@ -8,35 +8,34 @@ public sealed class IndentedStringBuilder
 {
     private readonly StringBuilder _sb;
 
+    private int _indentationLevel;
+
     public IndentedStringBuilder()
     {
         _sb = new StringBuilder();
     }
 
-    private int _indentationLevel;
-
     public IDisposable Indent()
     {
         return new EmptyIndentation(this);
     }
+
     public IDisposable IndentWithCurlyBrackets()
     {
         return new CurlyBracketIndentation(this);
     }
-    
+
     public void AppendLine(string line)
     {
         _sb.Append(' ', _indentationLevel * 4);
         _sb.AppendLine(line);
     }
+
     public void AppendLines(IEnumerable<string> lines)
     {
-        foreach (var line in lines)
-        {
-            AppendLine(line);
-        }
+        foreach (var line in lines) AppendLine(line);
     }
-    
+
     public void AppendLine()
     {
         _sb.AppendLine();

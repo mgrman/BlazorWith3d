@@ -5,7 +5,7 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
 builder.Services.AddBlazoredLocalStorage(c =>
 {
-    c.JsonSerializerOptions.IncludeFields= true;
+    c.JsonSerializerOptions.IncludeFields = true;
     c.JsonSerializerOptions.IgnoreReadOnlyFields = false;
     c.JsonSerializerOptions.IgnoreReadOnlyProperties = false;
 });

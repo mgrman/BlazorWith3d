@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 
 namespace BlazorWith3d.Unity;
 
-public class BlazorTypedUnityApi:TypedUnityApi
+public class BlazorTypedUnityApi : TypedUnityApi
 {
     private readonly ILogger _logger;
 
@@ -20,17 +20,17 @@ public class BlazorTypedUnityApi:TypedUnityApi
 
     protected override void LogError(string msg)
     {
-        _logger.LogError( msg);
+        _logger.LogError(msg);
     }
 
     protected override void LogWarning(string msg)
     {
-        _logger.LogWarning( msg);
+        _logger.LogWarning(msg);
     }
 
     protected override void Log(string msg)
     {
-        _logger.LogInformation( msg);
+        _logger.LogInformation(msg);
     }
 
     protected override byte[] SerializeObject<T>(T obj)
@@ -38,7 +38,7 @@ public class BlazorTypedUnityApi:TypedUnityApi
         return MemoryPackSerializer.Serialize<IMessageToUnity>(obj);
     }
 
-    protected override object DeserializeObject(byte[] obj)
+    protected override object? DeserializeObject(byte[] obj)
     {
         return MemoryPackSerializer.Deserialize<IMessageToBlazor>(obj);
     }

@@ -2,20 +2,21 @@
 using System;
 using BlazorWith3d.ExampleApp.Client.Unity.Shared;
 using BlazorWith3d.Unity;
+using BlazorWith3d.Unity.Shared;
 using UnityEngine;
 
 namespace ExampleApp
 {
-    public class DragChangingSimulatorHandler: MonoBehaviour,IBlazorSimulatorMessageHandler 
+    public class DragChangingSimulatorHandler : MonoBehaviour, IBlazorSimulatorMessageHandler
     {
         public Type MessageType => typeof(BlockPoseChangingMessage);
         public TypedUnityApi UnityApi { get; set; }
 
         public void HandleMessage(object messageObject)
         {
-            var message=(BlockPoseChangingMessage)messageObject;
+            var message = (BlockPoseChangingMessage)messageObject;
 
-            UnityApi.SendMessage(new BlockPoseChangingResponse()
+            UnityApi.SendMessage(new BlockPoseChangingResponse
             {
                 BlockId = message.BlockId,
                 IsValid = true,

@@ -11,17 +11,17 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
+        <PackageReference Include="Blazored.LocalStorage" Version="4.5.0"/>
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.0-rc.1.24452.1"/>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\src\BlazorWith3d.Unity\BlazorWith3d.Unity\BlazorWith3d.Unity.csproj" />
-      <ProjectReference Include="..\BlazorWith3d.ExampleApp.Client.Unity.Shared\BlazorWith3d.ExampleApp.Client.Unity.Shared.csproj" />
+        <ProjectReference Include="..\..\src\BlazorWith3d.Unity\BlazorWith3d.Unity\BlazorWith3d.Unity.csproj"/>
+        <ProjectReference Include="..\BlazorWith3d.ExampleApp.Client.Unity.Shared\BlazorWith3d.ExampleApp.Client.Unity.Shared.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <_ContentIncludedByDefault Remove="Pages\Counter.razor" />
+        <_ContentIncludedByDefault Remove="Pages\Counter.razor"/>
     </ItemGroup>
 
 </Project>

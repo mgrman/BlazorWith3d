@@ -6,22 +6,22 @@
         <DefineConstants>$(DefineConstants);COMMON_DOTNET</DefineConstants>
         <TargetFrameworks>net9.0;netstandard2.1</TargetFrameworks>
     </PropertyGroup>
-    
-    <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+
+    <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk"/>
 
     <PropertyGroup>
         <Nullable>enable</Nullable>
         <IntermediateOutputPath>.obj</IntermediateOutputPath>
         <LangVersion>10</LangVersion>
-      <OutputPath>.bin\$(Configuration)\</OutputPath>
+        <OutputPath>.bin\$(Configuration)\</OutputPath>
     </PropertyGroup>
 
-    <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+    <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk"/>
     <ItemGroup>
-        <None Remove="*.meta" />
-        <Content Remove="*.meta" />
+        <None Remove="*.meta"/>
+        <Content Remove="*.meta"/>
     </ItemGroup>
     <ItemGroup>
-      <PackageReference Include="MemoryPack.Core" Version="1.21.3" />
+        <PackageReference Include="MemoryPack.Core" Version="1.21.3"/>
     </ItemGroup>
 </Project>

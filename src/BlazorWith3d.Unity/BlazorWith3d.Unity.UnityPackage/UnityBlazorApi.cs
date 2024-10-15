@@ -1,28 +1,53 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
 using AOT;
+using BlazorWith3d.Unity.Shared;
 using UnityEngine;
 
 namespace BlazorWith3d.Unity
 {
     public class UnityBlazorApi : IBlazorApi
     {
-        private static List<byte[]> messageBuffer = new();
+        private static readonly List<byte[]> messageBuffer = new();
 
         private static Action<byte[]> _onHandleReceivedMessages;
 
+
+        public Action<byte[]> OnMessageFromBlazor
+        {
+            get => _onHandleReceivedMessages;
+            set
+            {
+#if !(UNITY_WEBGL && !UNITY_EDITOR)
+                throw new NotImplementedException();
+#endif
+                _onHandleReceivedMessages = value;
+                if (value != null)
+                {
+                    foreach (var msg in messageBuffer) value(msg);
+                    messageBuffer.Clear();
+                }
+            }
+        }
+
+        public void SendMessageToBlazor(byte[] bytes)
+        {
+#if !(UNITY_WEBGL && !UNITY_EDITOR)
+            throw new NotImplementedException();
+#endif
+            _SendMessageFromUnity(bytes, bytes.Length);
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSplashScreen)]
-        static void OnBeforeSplashScreen()
+        private static void OnBeforeSplashScreen()
         {
 #if !(UNITY_WEBGL && !UNITY_EDITOR)
             return;
 #endif
             WebGLInput.captureAllKeyboardInput = false;
 
-            Debug.Log($"On before BlazorApiUnity.InitializeApi");
+            Debug.Log("On before BlazorApiUnity.InitializeApi");
             _InitializeApi(_InstantiateByteArray);
         }
 
@@ -37,34 +62,9 @@ namespace BlazorWith3d.Unity
 
             //Debug.Log($"Received message ({string.Join(", ",bytes)})");
             if (_onHandleReceivedMessages == null)
-            {
                 messageBuffer.Add(bytes);
-            }
             else
-            {
                 _onHandleReceivedMessages?.Invoke(bytes);
-            }
-        }
-
-
-        public Action<byte[]> OnMessageFromBlazor
-        {
-            get => _onHandleReceivedMessages;
-            set
-            {
-#if !(UNITY_WEBGL && !UNITY_EDITOR)
-                throw new NotImplementedException();
-#endif
-                _onHandleReceivedMessages = value;
-                if (value != null)
-                {
-                    foreach (var msg in messageBuffer)
-                    {
-                        value(msg);
-                    }
-                    messageBuffer.Clear();
-                }
-            }
         }
 
         [DllImport("__Internal")]
@@ -75,13 +75,5 @@ namespace BlazorWith3d.Unity
 
         [DllImport("__Internal")]
         private static extern string _InitializeApi(Action<int, int> instantiateByteArrayCallback);
-
-        public void SendMessageToBlazor(byte[] bytes)
-        {
-#if !(UNITY_WEBGL && !UNITY_EDITOR)
-            throw new NotImplementedException();
-#endif
-            _SendMessageFromUnity(bytes, bytes.Length);
-        }
     }
 }

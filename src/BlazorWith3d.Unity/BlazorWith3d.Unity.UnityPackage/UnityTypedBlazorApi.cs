@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Text;
 using BlazorWith3d.Unity.Shared;
 using MemoryPack;
 using UnityEngine;
@@ -6,10 +8,25 @@ using UnityEngine;
 namespace BlazorWith3d.Unity
 {
     // not in Shared package, as it uses too many Unity specific APIs, mainly Awaitables
-    public class UnityTypedUnityApi : TypedUnityApi
+    public class UnityTypedBlazorApi : TypedBlazorApi
     {
-        public UnityTypedUnityApi(IUnityApi unityApi) : base(unityApi)
+        private readonly IBlazorApi _blazorApi;
+
+        private readonly IDictionary<Type, Action<object>> _handlers = new Dictionary<Type, Action<object>>();
+
+        public UnityTypedBlazorApi(IBlazorApi blazorApi)
+            : base(blazorApi)
         {
+        }
+
+        protected override byte[] SerializeObject<T>(T obj)
+        {
+            return MemoryPackSerializer.Serialize<IMessageToBlazor>(obj);
+        }
+
+        protected override object DeserializeObject(byte[] obj)
+        {
+            return MemoryPackSerializer.Deserialize<IMessageToUnity>(obj);
         }
 
         protected override void LogError(Exception exception, string msg)
@@ -31,16 +48,6 @@ namespace BlazorWith3d.Unity
         protected override void Log(string msg)
         {
             Debug.Log(msg);
-        }
-
-        protected override byte[] SerializeObject<T>(T obj)
-        {
-            return MemoryPackSerializer.Serialize<IMessageToUnity>(obj);
-        }
-
-        protected override object DeserializeObject(byte[] obj)
-        {
-            return MemoryPackSerializer.Deserialize<IMessageToBlazor>(obj);
         }
     }
 }

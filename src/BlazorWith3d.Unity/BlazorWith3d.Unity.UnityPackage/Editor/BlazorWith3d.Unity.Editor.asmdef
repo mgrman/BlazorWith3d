@@ -1,20 +1,20 @@
 {
-    "name": "BlazorWith3d.Unity.Editor",
-    "rootNamespace": "BlazorWith3d.Unity.Editor",
-    "references": [
-        "GUID:f163fe17560e40a8ba1f360c16bd7561",
-        "GUID:a96e3ead8f8f2014cbba2589ab938ff8",
-        "GUID:756335c0388f7114790e504ed368ae1d"
-    ],
-    "includePlatforms": [
-        "Editor"
-    ],
-    "excludePlatforms": [],
-    "allowUnsafeCode": false,
-    "overrideReferences": false,
-    "precompiledReferences": [],
-    "autoReferenced": true,
-    "defineConstraints": [],
-    "versionDefines": [],
-    "noEngineReferences": false
+  "name": "BlazorWith3d.Unity.Editor",
+  "rootNamespace": "BlazorWith3d.Unity.Editor",
+  "references": [
+    "GUID:f163fe17560e40a8ba1f360c16bd7561",
+    "GUID:a96e3ead8f8f2014cbba2589ab938ff8",
+    "GUID:756335c0388f7114790e504ed368ae1d"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
 }
