@@ -16,6 +16,9 @@ namespace BlazorWith3d.Unity;
 
 // TODO inverse generation, define interface and then generate implementation and messages for it. As the highlevel interface will be the one for interop with other 3d libs (though the messages could be as well, but we should start at interface)
 
+// TODO Add Maui Blazor version with WebGL Unity
+// TODO Add Maui Blazor with Native android Unity as library
+
 public class TypedMessageUnityComponent : BaseUnityComponent
 {
     [Inject] private ILogger<TypedMessageUnityComponent> Logger { get; set; } = null!;
