@@ -170,7 +170,7 @@
     private List<(int id, float sizeX, float sizeY, float sizeZ)> _templates = new();
     private List<(int blockId, float positionX, float positionY, float rotationZ, int templateId)> _blocks = new();
 
-    private MyUnityApi? _unityAppApi;
+    private BlocksOnGrid3DApp? _unityAppApi;
 
     protected override async Task OnInitializedAsync()
     {
@@ -189,7 +189,7 @@
     {
         if (firstRender)
         {
-            _unityAppApi = new MyUnityApi(_unityComponent.TypedUnityApi);
+            _unityAppApi = new BlocksOnGrid3DApp(_unityComponent.TypedUnityApi);
 
             _unityAppApi.OnAppInitialized += OnAppInitialized;
             _unityAppApi.OnBlockPoseChangingMessage += OnBlockPoseChanging;

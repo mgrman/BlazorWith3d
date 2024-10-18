@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace BlazorWith3d.Unity.CodeGenerator;
@@ -20,146 +21,312 @@ public class HelloSourceGenerator : ISourceGenerator
         if (!(context.SyntaxContextReceiver is SyntaxReceiver receiver)) return;
 
         if (!receiver.ShouldGenerate) return;
-
-        var sb = new IndentedStringBuilder();
-
-
-        sb.AppendLine("var messageMethodFormatter = new DynamicUnionFormatter<IMessageToBlazor>(");
-        using (sb.Indent())
+        
+    
+        #error generate based on Unity3DAppAttribute, so there can be inverse class for Unity
+        
+        foreach (var typeDeclaration in receiver.Blazor3DAppTypes)
         {
-            for (var i = 0; i < receiver.MessageToBlazorTypes.Count; i++)
-            {
-                var (type, _) = receiver.MessageToBlazorTypes[i];
-                sb.AppendLine($"({i},typeof({type})){(i != receiver.MessageToBlazorTypes.Count - 1 ? "," : "")}");
-            }
-        }
+            var sb = new IndentedStringBuilder();
+            var semanticModel = context.Compilation.GetSemanticModel(typeDeclaration.SyntaxTree);
 
-        sb.AppendLine(");");
+            var typeSymbol=semanticModel.GetDeclaredSymbol(typeDeclaration) as INamedTypeSymbol;
+            
+            var interfaceTypeName = typeSymbol.Name;
+            var typeName = interfaceTypeName.TrimStart('I');
+            var namespaceName=typeSymbol.ContainingNamespace.ToDisplayString();
 
-        sb.AppendLine("var messageToUnityFormatter = new DynamicUnionFormatter<IMessageToUnity>(");
-        using (sb.Indent())
-        {
-            for (var i = 0; i < receiver.MessageToUnityTypes.Count; i++)
-            {
-                var (type, _) = receiver.MessageToUnityTypes[i];
-                sb.AppendLine($"({i},typeof({type})){(i != receiver.MessageToUnityTypes.Count - 1 ? "," : "")}");
-            }
-        }
+            var methods = typeDeclaration.Members
+                .Where(m => m.IsKind(SyntaxKind.MethodDeclaration)).OfType<MethodDeclarationSyntax>()
+                .Select(methodDeclaration =>
+                {
+                    // if (methodDeclaration.ParameterList.Parameters.Count != 1 ||
+                    //     methodDeclaration.ReturnType.ToString() != "Task")
+                    // {
+                    //     sb.AppendLine($"#error {methodDeclaration.ToString()} is not supported");
+                    //     continue;
+                    // }
 
-        sb.AppendLine(");");
+                    var inputType = methodDeclaration.ParameterList.Parameters[0];
+                    var methodName = methodDeclaration.Identifier.ToString();
+                    var inputTypeName = inputType.Type.ToString();
+                    var inputTypeVarName = inputType.Identifier.ToString();
+                    
+                    return (inputType, methodName, inputTypeName, inputTypeVarName);
+                }).ToList();
 
-        sb.AppendLine("MemoryPackFormatterProvider.Register(messageMethodFormatter);");
-        sb.AppendLine("MemoryPackFormatterProvider.Register(messageToUnityFormatter);");
 
-        var memPack = sb.ToString();
+            var events = typeDeclaration.Members.Where(m => m.IsKind(SyntaxKind.EventFieldDeclaration))
+                .OfType<EventFieldDeclarationSyntax>()
+                .Select(eventDeclaration =>
+                {
+                    var eventName = eventDeclaration.Declaration.Variables[0].ToString();
 
-        foreach (var (unityApiType, unityApiTypeNamespace) in receiver.UnityApiTypes)
-        {
-            var text = CreateApiForSendingMessages(receiver.MessageToUnityTypes, receiver.MessageToBlazorTypes, memPack,
-                unityApiType, unityApiTypeNamespace, "TypedUnityApi", "Task");
-            context.AddSource($"{unityApiType}.g.cs", text);
-        }
+                    var eventInvokeMethodName = $"Invoke_{eventName}_Event";
+                    var messageType = 
+                        (eventDeclaration.Declaration.Type as GenericNameSyntax).TypeArgumentList
+                        .Arguments[0].ToString(); 
+                        
 
-        foreach (var (blazorApiType, blazorApiTypeNamespace) in receiver.BlazorApiTypes)
-        {
-            var text = CreateApiForSendingMessages(receiver.MessageToBlazorTypes, receiver.MessageToUnityTypes, memPack,
-                blazorApiType, blazorApiTypeNamespace, "TypedBlazorApi", "void");
-            context.AddSource($"{blazorApiType}.g.cs", text);
-        }
-    }
+                    return (eventName, eventInvokeMethodName, messageType);
+                }).ToList();
 
-    private static string CreateApiForSendingMessages(List<(string messageType, string namespac)> methodTypes,
-        List<(string messageType, string namespac)> eventTypes, string memoryPackInitialization, string apiType,
-        string apiTypeNamespace, string typedApiName, string sendMessageReturnType)
-    {
-        var sb = new IndentedStringBuilder();
-        var namespaces = methodTypes.Concat(eventTypes).Select(o => o.namespac)
-            .Distinct()
-            .ToList();
+            var typesFromBlazor = new List<string>();
+            var typesToBlazor = events.Select(o=>o.messageType).ToList();
 
-        sb.AppendLine("// <auto-generated/>");
-        sb.AppendLine("");
-        sb.AppendLine("using System;");
-        sb.AppendLine("using System.Threading.Tasks;");
-        sb.AppendLines(namespaces.Select(o => $"using {o};"));
-        sb.AppendLine("using MemoryPack;");
-        sb.AppendLine("using MemoryPack.Formatters;");
-        sb.AppendLine("using BlazorWith3d.Unity;");
-        sb.AppendLine("using BlazorWith3d.Unity.Shared;");
-        sb.AppendLine($"namespace {apiTypeNamespace}");
-        using (sb.IndentWithCurlyBrackets())
-        {
-            sb.AppendLine($"public partial class {apiType}");
+            sb.AppendLine("// <auto-generated/>");
+            sb.AppendLine("");
+            sb.AppendLine("using System;");
+            sb.AppendLine("using System.Threading.Tasks;");
+            //sb.AppendLines(namespaces.Select(o => $"using {o};"));
+            sb.AppendLine("using MemoryPack;");
+            sb.AppendLine("using MemoryPack.Formatters;");
+            sb.AppendLine("using BlazorWith3d.Unity;");
+            sb.AppendLine("using BlazorWith3d.Unity.Shared;");
+            sb.AppendLine($"namespace {namespaceName}");
             using (sb.IndentWithCurlyBrackets())
             {
-                sb.AppendLine($"static {apiType}()");
+                sb.AppendLine($"public partial class {typeName}: {interfaceTypeName}");
                 using (sb.IndentWithCurlyBrackets())
                 {
-                    sb.AppendLine(memoryPackInitialization);
-                }
+                    #error implement own IDs in messages, consider even adding an extra parameter to the communication method. Otherwise you always need to prepend a byte or somethign
+                    // as then this generator knows nothing about memory pack, and different messages can be serialized differently
+                    // add support for multiple app interfaces (either count in one assembly, or have an offset in the attribute)
+                    
+                    // sb.AppendLine($"static {typeName}()");
+                    // using (sb.IndentWithCurlyBrackets())
+                    // {
+                    //     
+                    //     sb.AppendLine("var messageMethodFormatter = new DynamicUnionFormatter<IMessageToBlazor>(");
+                    //     using (sb.Indent())
+                    //     {
+                    //         for (var i = 0; i < events.Count; i++)
+                    //         {
+                    //             var e = events[i];
+                    //             sb.AppendLine($"({i},typeof({e.messageType})){(i != events.Count - 1 ? "," : "")}");
+                    //         }
+                    //     }
+                    //     
+                    //     sb.AppendLine(");");
+                    //     
+                    //     sb.AppendLine("var messageToUnityFormatter = new DynamicUnionFormatter<IMessageToUnity>(");
+                    //     using (sb.Indent())
+                    //     {
+                    //         for (var i = 0; i < methods.Count; i++)
+                    //         {
+                    //             var m = methods[i];
+                    //             sb.AppendLine($"({i},typeof({m.inputTypeName})){(i != methods.Count - 1 ? "," : "")}");
+                    //         }
+                    //     }
+                    //     
+                    //     sb.AppendLine(");");
+                    //     
+                    //     sb.AppendLine("MemoryPackFormatterProvider.Register(messageMethodFormatter);");
+                    //     sb.AppendLine("MemoryPackFormatterProvider.Register(messageToUnityFormatter);");
+                    //     
+                    // }
 
-                sb.AppendLine($"private readonly {typedApiName} _typedApi;");
-                sb.AppendLine();
-                sb.AppendLine($"public {apiType}({typedApiName} typedApi)");
-                using (sb.IndentWithCurlyBrackets())
-                {
-                    sb.AppendLine("_typedApi = typedApi;");
-
-
-                    foreach (var (messageType, _) in eventTypes)
-                    {
-                        var eventInvokeMethodName = $"Invoke{messageType}Event";
-                        var callbackMethodName = "AddMessageProcessCallback";
-                        var callbackMethodGenericArguments = messageType;
-                        sb.AppendLine(
-                            $"_typedApi.{callbackMethodName}<{callbackMethodGenericArguments}>(this.{eventInvokeMethodName});");
-                    }
-                }
-
-                sb.AppendLine();
-
-                foreach (var (messageType, _) in eventTypes)
-                {
-                    var eventType = $"Action<{messageType}>";
-
-                    var eventName = $"On{messageType}";
-
-                    sb.AppendLine($"public event {eventType} {eventName};");
-                }
-
-                sb.AppendLine();
-                foreach (var (messageType, _) in methodTypes)
-                {
-                    var arguments = new[] { $"{messageType} msg" };
-                    var methodName = $"Invoke{messageType}";
-                    var sendMethodName = "SendMessage";
-
-                    sb.AppendLine($"public {sendMessageReturnType} {methodName}({string.Join(", ", arguments)})");
+                    sb.AppendLine($"private readonly TypedUnityApi _typedApi;");
+                    sb.AppendLine();
+                    sb.AppendLine($"public {typeName}(TypedUnityApi typedApi)");
                     using (sb.IndentWithCurlyBrackets())
                     {
+                        sb.AppendLine("_typedApi = typedApi;");
+
+
+                        foreach (var e in events)
+                        {
+                            sb.AppendLine(
+                                $"_typedApi.AddMessageProcessCallback<{e.messageType}>(this.{e.eventInvokeMethodName});");
+                        }
+                    }
+
+                    sb.AppendLine();
+
+                    foreach (var e in events)
+                    {
+                        sb.AppendLine($"public event Action<{e.messageType}> {e.eventName};");
+                    }
+
+                    sb.AppendLine();
+                    foreach (var m in methods)
+                    {
+
+
+                        typesFromBlazor.Add(m.inputTypeName);
+
+                        sb.AppendLine($"public Task {m.methodName}({m.inputTypeName} {m.inputTypeVarName})");
+
+                        using (sb.IndentWithCurlyBrackets())
+                        {
+                            sb.AppendLine($"return _typedApi.SendMessage({m.inputTypeVarName});");
+                        }
+                    }
+                    sb.AppendLine();
+
+
+
+                    foreach (var e in events)
+                    {
                         sb.AppendLine(
-                            $"{(sendMessageReturnType == "void" ? "" : "return ")}_typedApi.{sendMethodName}(msg);");
+                            $"private void {e.eventInvokeMethodName}({e.messageType} msg)=> {e.eventName}?.Invoke(msg);");
                     }
                 }
 
-                sb.AppendLine();
-
-
-                foreach (var (messageType, _) in eventTypes)
+                foreach (var msgType in typesToBlazor)
                 {
-                    var methodReturnType = "void";
-
-                    var arguments = new[] { $"{messageType} msg" };
-                    var eventInvokeMethodName = $"Invoke{messageType}Event";
-                    var eventName = $"On{messageType}";
-
-                    sb.AppendLine(
-                        $"private {methodReturnType} {eventInvokeMethodName}({string.Join(", ", arguments)})=> {eventName}?.Invoke(msg);");
+                    sb.AppendLine($"public partial class {msgType}: IMessageToBlazor {{}}");
+                }
+                foreach (var msgType in typesFromBlazor)
+                {
+                    sb.AppendLine($"public partial class {msgType}: IMessageToUnity {{}}");
                 }
             }
-        }
 
-        return sb.ToString();
+            
+            
+            context.AddSource($"{typeName}.g.cs", sb.ToString());
+        }
+        
+        
+    //
+    //
+    //     sb.AppendLine("var messageMethodFormatter = new DynamicUnionFormatter<IMessageToBlazor>(");
+    //     using (sb.Indent())
+    //     {
+    //         for (var i = 0; i < receiver.MessageToBlazorTypes.Count; i++)
+    //         {
+    //             var (type, _) = receiver.MessageToBlazorTypes[i];
+    //             sb.AppendLine($"({i},typeof({type})){(i != receiver.MessageToBlazorTypes.Count - 1 ? "," : "")}");
+    //         }
+    //     }
+    //
+    //     sb.AppendLine(");");
+    //
+    //     sb.AppendLine("var messageToUnityFormatter = new DynamicUnionFormatter<IMessageToUnity>(");
+    //     using (sb.Indent())
+    //     {
+    //         for (var i = 0; i < receiver.MessageToUnityTypes.Count; i++)
+    //         {
+    //             var (type, _) = receiver.MessageToUnityTypes[i];
+    //             sb.AppendLine($"({i},typeof({type})){(i != receiver.MessageToUnityTypes.Count - 1 ? "," : "")}");
+    //         }
+    //     }
+    //
+    //     sb.AppendLine(");");
+    //
+    //     sb.AppendLine("MemoryPackFormatterProvider.Register(messageMethodFormatter);");
+    //     sb.AppendLine("MemoryPackFormatterProvider.Register(messageToUnityFormatter);");
+    //
+    //     var memPack = sb.ToString();
+    //
+    //     foreach (var (unityApiType, unityApiTypeNamespace) in receiver.UnityApiTypes)
+    //     {
+    //         var text = CreateApiForSendingMessages(receiver.MessageToUnityTypes, receiver.MessageToBlazorTypes, memPack,
+    //             unityApiType, unityApiTypeNamespace, "TypedUnityApi", "Task");
+    //         context.AddSource($"{unityApiType}.g.cs", text);
+    //     }
+    //
+    //     foreach (var (blazorApiType, blazorApiTypeNamespace) in receiver.BlazorApiTypes)
+    //     {
+    //         var text = CreateApiForSendingMessages(receiver.MessageToBlazorTypes, receiver.MessageToUnityTypes, memPack,
+    //             blazorApiType, blazorApiTypeNamespace, "TypedBlazorApi", "void");
+    //         context.AddSource($"{blazorApiType}.g.cs", text);
+    //     }
+    // }
+    //
+    // private static string CreateApiForSendingMessages(List<(string messageType, string namespac)> methodTypes,
+    //     List<(string messageType, string namespac)> eventTypes, string memoryPackInitialization, string apiType,
+    //     string apiTypeNamespace, string typedApiName, string sendMessageReturnType)
+    // {
+    //     var sb = new IndentedStringBuilder();
+    //     var namespaces = methodTypes.Concat(eventTypes).Select(o => o.namespac)
+    //         .Distinct()
+    //         .ToList();
+    //
+    //     sb.AppendLine("// <auto-generated/>");
+    //     sb.AppendLine("");
+    //     sb.AppendLine("using System;");
+    //     sb.AppendLine("using System.Threading.Tasks;");
+    //     sb.AppendLines(namespaces.Select(o => $"using {o};"));
+    //     sb.AppendLine("using MemoryPack;");
+    //     sb.AppendLine("using MemoryPack.Formatters;");
+    //     sb.AppendLine("using BlazorWith3d.Unity;");
+    //     sb.AppendLine("using BlazorWith3d.Unity.Shared;");
+    //     sb.AppendLine($"namespace {apiTypeNamespace}");
+    //     using (sb.IndentWithCurlyBrackets())
+    //     {
+    //         sb.AppendLine($"public partial class {apiType}");
+    //         using (sb.IndentWithCurlyBrackets())
+    //         {
+    //             sb.AppendLine($"static {apiType}()");
+    //             using (sb.IndentWithCurlyBrackets())
+    //             {
+    //                 sb.AppendLine(memoryPackInitialization);
+    //             }
+    //
+    //             sb.AppendLine($"private readonly {typedApiName} _typedApi;");
+    //             sb.AppendLine();
+    //             sb.AppendLine($"public {apiType}({typedApiName} typedApi)");
+    //             using (sb.IndentWithCurlyBrackets())
+    //             {
+    //                 sb.AppendLine("_typedApi = typedApi;");
+    //
+    //
+    //                 foreach (var (messageType, _) in eventTypes)
+    //                 {
+    //                     var eventInvokeMethodName = $"Invoke{messageType}Event";
+    //                     var callbackMethodName = "AddMessageProcessCallback";
+    //                     var callbackMethodGenericArguments = messageType;
+    //                     sb.AppendLine(
+    //                         $"_typedApi.{callbackMethodName}<{callbackMethodGenericArguments}>(this.{eventInvokeMethodName});");
+    //                 }
+    //             }
+    //
+    //             sb.AppendLine();
+    //
+    //             foreach (var (messageType, _) in eventTypes)
+    //             {
+    //                 var eventType = $"Action<{messageType}>";
+    //
+    //                 var eventName = $"On{messageType}";
+    //
+    //                 sb.AppendLine($"public event {eventType} {eventName};");
+    //             }
+    //
+    //             sb.AppendLine();
+    //             foreach (var (messageType, _) in methodTypes)
+    //             {
+    //                 var arguments = new[] { $"{messageType} msg" };
+    //                 var methodName = $"Invoke{messageType}";
+    //                 var sendMethodName = "SendMessage";
+    //
+    //                 sb.AppendLine($"public {sendMessageReturnType} {methodName}({string.Join(", ", arguments)})");
+    //                 using (sb.IndentWithCurlyBrackets())
+    //                 {
+    //                     sb.AppendLine(
+    //                         $"{(sendMessageReturnType == "void" ? "" : "return ")}_typedApi.{sendMethodName}(msg);");
+    //                 }
+    //             }
+    //
+    //             sb.AppendLine();
+    //
+    //
+    //             foreach (var (messageType, _) in eventTypes)
+    //             {
+    //                 var methodReturnType = "void";
+    //
+    //                 var arguments = new[] { $"{messageType} msg" };
+    //                 var eventInvokeMethodName = $"Invoke{messageType}Event";
+    //                 var eventName = $"On{messageType}";
+    //
+    //                 sb.AppendLine(
+    //                     $"private {methodReturnType} {eventInvokeMethodName}({string.Join(", ", arguments)})=> {eventName}?.Invoke(msg);");
+    //             }
+    //         }
+    //     }
+
+      //  return sb.ToString();
     }
 
 
@@ -168,13 +335,9 @@ public class HelloSourceGenerator : ISourceGenerator
     /// </summary>
     private class SyntaxReceiver : ISyntaxContextReceiver
     {
-        public bool ShouldGenerate => (MessageToUnityTypes.Count > 0 || MessageToBlazorTypes.Count > 0) &&
-                                      (UnityApiTypes.Count > 0 || BlazorApiTypes.Count > 0);
+        public bool ShouldGenerate => Blazor3DAppTypes.Count > 0;
 
-        public List<(string apiType, string namespac)> UnityApiTypes { get; } = new();
-        public List<(string apiType, string namespac)> BlazorApiTypes { get; } = new();
-        public List<(string messageType, string namespac)> MessageToUnityTypes { get; } = new();
-        public List<(string messageType, string namespac)> MessageToBlazorTypes { get; } = new();
+        public List<InterfaceDeclarationSyntax > Blazor3DAppTypes { get; } = new();
 
         /// <summary>
         ///     Called for every syntax node in the compilation, we can inspect the nodes and save any information useful for
@@ -183,18 +346,12 @@ public class HelloSourceGenerator : ISourceGenerator
         public void OnVisitSyntaxNode(GeneratorSyntaxContext context)
         {
             // any field with at least one attribute is a candidate for property generation
-            if (context.Node is TypeDeclarationSyntax typeDeclarationSyntax)
+            if (context.Node is InterfaceDeclarationSyntax typeDeclarationSyntax)
             {
-                var symbol = context.SemanticModel.GetDeclaredSymbol(context.Node) as INamedTypeSymbol;
-
-                if (symbol.GetAttributes().Any(ad => ad.AttributeClass.Name == "UnityApiAttribute"))
-                    UnityApiTypes.Add((symbol.Name, symbol.ContainingNamespace.ToDisplayString()));
-                if (symbol.GetAttributes().Any(ad => ad.AttributeClass.Name == "BlazorApiAttribute"))
-                    BlazorApiTypes.Add((symbol.Name, symbol.ContainingNamespace.ToDisplayString()));
-                if (symbol.AllInterfaces.Any(i => i.Name == "IMessageToUnity"))
-                    MessageToUnityTypes.Add((symbol.Name, symbol.ContainingNamespace.ToDisplayString()));
-                if (symbol.AllInterfaces.Any(i => i.Name == "IMessageToBlazor"))
-                    MessageToBlazorTypes.Add((symbol.Name, symbol.ContainingNamespace.ToDisplayString()));
+                if ( typeDeclarationSyntax.AttributeLists.SelectMany(e => e.Attributes).Any(e=>e.Name.NormalizeWhitespace().ToFullString() == "Blazor3DApp"))
+                {
+                    Blazor3DAppTypes.Add(typeDeclarationSyntax);
+                }
             }
         }
     }
