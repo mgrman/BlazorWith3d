@@ -27,11 +27,12 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
     }
 
 
+#if COMMON_UNITY
     [Unity3DApp(typeof(IBlocksOnGrid3DApp))]
     public partial interface IBlocksOnGridUnityApi
     {
     }
-
+#endif
     [MemoryPackable]
      public partial class PerfCheckRequest 
      {

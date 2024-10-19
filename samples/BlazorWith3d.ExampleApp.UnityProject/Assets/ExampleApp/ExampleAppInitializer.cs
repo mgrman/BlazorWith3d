@@ -14,7 +14,7 @@ namespace ExampleApp
 
         private readonly Dictionary<int, BlockController> _blocks = new();
         private readonly Dictionary<int, BlockController> _templates = new();
-        private MyBlazorApi _appApi;
+        private IBlocksOnGridUnityApi _appApi;
         private IBlazorApi _blazorApi;
         private GameObject _templateRoot;
 
@@ -38,15 +38,14 @@ namespace ExampleApp
 #endif
             _typedApi = new UnityTypedBlazorApi(_blazorApi);
 
-            _appApi = new MyBlazorApi(_typedApi);
+            _appApi = new BlocksOnGridUnityApi(_typedApi);
 
-            _typedApi.AddMessageProcessCallback<AddBlockTemplateMessage>(OnAddBlockTemplateMessage);
-            _typedApi.AddMessageProcessCallback<RemoveBlockTemplateMessage>(OnRemoveBlockTemplateMessage);
-            _typedApi.AddMessageProcessCallback<AddBlockInstanceMessage>(OnAddBlockInstanceMessage);
-            _typedApi.AddMessageProcessCallback<RemoveBlockMessage>(OnRemoveBlockMessage);
-            _typedApi.AddMessageProcessCallback<BlockPoseChangingResponse>(OnBlockPoseChangingResponse);
-
-            _typedApi.SendMessage(new AppInitialized());
+            _appApi.OnAppInitialized(new AppInitialized());
+            _appApi.InvokeAddBlockTemplateMessage += OnAddBlockTemplateMessage;
+            _appApi.InvokeRemoveBlockTemplateMessage += OnRemoveBlockTemplateMessage;
+            _appApi.InvokeAddBlockInstanceMessage += OnAddBlockInstanceMessage;
+            _appApi.InvokeRemoveBlockMessage += OnRemoveBlockMessage;
+            _appApi.InvokeBlockPoseChangingResponse += OnBlockPoseChangingResponse;
 
 #if UNITY_EDITOR
 
@@ -59,9 +58,9 @@ namespace ExampleApp
                 { BlockId = 0, TemplateId = 0, PositionX = 0, PositionY = 0, RotationZ = 0 });
 #endif
 
-            _appApi.OnPerfCheckRequest += request =>
+            _appApi.InvokePerfCheckRequest += request =>
             {
-                _appApi.InvokePerfCheckResponse(new PerfCheckResponse
+                _appApi.OnPerfCheckResponse(new PerfCheckResponse
                 {
                     Id = request.Id,
                     Aaa = request.Aaa,

@@ -17,7 +17,24 @@ namespace BlazorWith3d.Unity;
 // TODO inverse generation, define interface and then generate implementation and messages for it. As the highlevel interface will be the one for interop with other 3d libs (though the messages could be as well, but we should start at interface)
 
 // TODO Add Maui Blazor version with WebGL Unity
+// https://learn.microsoft.com/en-us/aspnet/core/blazor/hybrid/tutorials/maui-blazor-web-app?view=aspnetcore-9.0
+
 // TODO Add Maui Blazor with Native android Unity as library
+//  https://github.com/Unity-Technologies/uaal-example
+
+
+// TODO Incremental source gen
+
+// TODO consider dev mode using only Unity's JSON serialization, as that is faster to build (less dlls), also to test switching serialization options 
+
+// TODO Blazorwith3d - add purely 2d view, as for block movement we can have 2d only backend without gpu
+
+// TODO  implement own IDs in messages, consider even adding an extra parameter to the communication method. Otherwise you always need to prepend a byte or somethign
+// as then this generator knows nothing about memory pack, and different messages can be serialized differently
+// add support for multiple app interfaces (either count in one assembly, or have an offset in the attribute)
+
+// TODO even generate structs for message arguments!
+
 
 public class TypedMessageUnityComponent : BaseUnityComponent
 {
