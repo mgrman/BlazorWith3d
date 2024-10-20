@@ -178,6 +178,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        BlocksOnGrid3DApp.InitializeMemoryPack();
         if (OperatingSystem.IsBrowser())
         {
             _templates = await LocalStorage.GetItemAsync<List<(int id, float sizeX, float sizeY, float sizeZ)>>("_templates") ?? new List<(int id, float sizeX, float sizeY, float sizeZ)>();

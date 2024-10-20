@@ -150,9 +150,12 @@ public class HelloSourceGenerator : ISourceGenerator
             using (sb.IndentWithCurlyBrackets())
             {
                     
-                sb.AppendLine($"static {info.typeName}()");
+                sb.AppendLine($"private static bool _memoryPackInitialized;");
+                sb.AppendLine($"public static void InitializeMemoryPack()");
                 using (sb.IndentWithCurlyBrackets())
                 {
+                    sb.AppendLine($"if(_memoryPackInitialized){{return;}}");
+                    sb.AppendLine($"_memoryPackInitialized = true;");
                     var messageToBlazorTypes = info.messageTypes.Where(o => o.intefaces.Contains("IMessageToBlazor"))
                         .Select(o => o.msgType)
                         .ToList();
@@ -188,6 +191,8 @@ public class HelloSourceGenerator : ISourceGenerator
                     sb.AppendLine("MemoryPackFormatterProvider.Register(messageToUnityFormatter);");
                         
                 }
+                
+                
 
                 sb.AppendLine($"private readonly {typedApiName} _typedApi;");
                 sb.AppendLine();

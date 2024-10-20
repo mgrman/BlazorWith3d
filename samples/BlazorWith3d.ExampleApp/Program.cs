@@ -48,35 +48,37 @@ app.Use(async (context, next) =>
     await next();
 });
 
-var webSocketOptions = new WebSocketOptions
+if (app.Environment.IsDevelopment())
 {
-    KeepAliveInterval = TimeSpan.FromMinutes(2)
-};
-
-app.UseWebSockets(webSocketOptions);
-
-app.Use(async (context, next) =>
-{
-    if (context.Request.Path == "/debug-relay-unity-ws")
+    var webSocketOptions = new WebSocketOptions
     {
-        if (context.WebSockets.IsWebSocketRequest)
+        KeepAliveInterval = TimeSpan.FromMinutes(2)
+    };
+
+    app.UseWebSockets(webSocketOptions);
+
+    app.Use(async (context, next) =>
+    {
+        if (context.Request.Path == "/debug-relay-unity-ws")
         {
-            var debugRelay = context.RequestServices.GetRequiredService<DebugRelayUnityApi>();
-            
-            using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-            await debugRelay.HandleWebSocket(webSocket);
+            if (context.WebSockets.IsWebSocketRequest)
+            {
+                var debugRelay = context.RequestServices.GetRequiredService<DebugRelayUnityApi>();
+
+                using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
+                await debugRelay.HandleWebSocket(webSocket);
+            }
+            else
+            {
+                context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            }
         }
         else
         {
-            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            await next(context);
         }
-    }
-    else
-    {
-        await next(context);
-    }
-
-});
+    });
+}
 
 app.MapStaticAssets();
 

@@ -36,7 +36,7 @@ namespace ExampleApp
             _templateRoot.SetActive(false);
             _templateRoot.transform.parent = transform;
 
-            
+            BlocksOnGridUnityApi.InitializeMemoryPack();
 #if UNITY_EDITOR
             
             if (string.IsNullOrEmpty(_backendWebsocketUrl))
@@ -57,6 +57,7 @@ namespace ExampleApp
 #else
             _blazorApi = new UnityBlazorApi();
 #endif
+            
             _typedApi = new UnityTypedBlazorApi(_blazorApi);
 
             _appApi = new BlocksOnGridUnityApi(_typedApi);

@@ -5,7 +5,7 @@ using MemoryPack;
 
 namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
 {
-#if COMMON_DOTNET || UNITY_EDITOR
+#if COMMON_DOTNET
     [Blazor3DApp]
 #endif
     public partial interface IBlocksOnGrid3DApp
