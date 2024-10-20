@@ -36,6 +36,8 @@ namespace BlazorWith3d.Unity;
 // TODO even generate structs for message arguments!
 
 
+// TODO cleanup, refactor generator, too many things seemingly hardcoded and edge cases not handled
+
 public class TypedMessageUnityComponent : BaseUnityComponent
 {
     [Inject] private ILogger<TypedMessageUnityComponent> Logger { get; set; } = null!;
