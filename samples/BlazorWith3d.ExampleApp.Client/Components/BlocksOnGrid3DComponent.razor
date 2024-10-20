@@ -2,11 +2,12 @@
 @using Blazored.LocalStorage
 @using BlazorWith3d.ExampleApp.Client.Unity.Shared
 @using BlazorWith3d.Unity
+@using BlazorWith3d.Unity.Shared
 @rendermode InteractiveAuto
 @inject ILocalStorageService LocalStorage
 @inject IServiceProvider Services
-@inject ILogger<UnityForBlazor> Logger
-
+@inject ILogger<BlocksOnGrid3DComponent> Logger
+@implements I3DAppComponent
 
 <text>@(OperatingSystem.IsBrowser() ? "WASM" : "Serverside")</text>
 
@@ -146,13 +147,16 @@
         @_perfResponse
     </div>
 }
+<CascadingValue Value="this" IsFixed="true">
+    @ChildContent
 
-<TypedMessageUnityComponent @ref="_unityComponent" UnityBuildFilePath="@Assets[""]"></TypedMessageUnityComponent>
-
+</CascadingValue>
 
 @code {
-    private TypedMessageUnityComponent _unityComponent=null!;
 
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+    
     int _newIdCounter;
 
     float _newTemplateSizeX = 1;
@@ -185,18 +189,14 @@
         await base.OnInitializedAsync();
     }
 
-    protected override void OnAfterRender(bool firstRender)
+    public void InitializeRenderer(IUnityApi unityApi)
     {
-        if (firstRender)
-        {
-            _unityAppApi = new BlocksOnGrid3DApp(_unityComponent.TypedUnityApi);
+        var typedUnityApi = new BlazorTypedUnityApi(unityApi, Logger);
+        _unityAppApi = new BlocksOnGrid3DApp(typedUnityApi);
 
-            _unityAppApi.OnAppInitialized += OnAppInitialized;
-            _unityAppApi.OnBlockPoseChangingMessage += OnBlockPoseChanging;
-            _unityAppApi.OnBlockPoseChangedMessage += OnBlockPoseChanged;
-        }
-
-        base.OnAfterRender(firstRender);
+        _unityAppApi.AppInitialized += OnAppInitialized;
+        _unityAppApi.BlockPoseChanging += OnBlockPoseChanging;
+        _unityAppApi.BlockPoseChanged += OnBlockPoseChanged;
     }
 
     private void OnBlockPoseChanged(BlockPoseChangedMessage obj)
@@ -211,7 +211,7 @@
 
     private void OnBlockPoseChanging(BlockPoseChangingMessage arg)
     {
-        _unityAppApi.InvokeBlockPoseChangingResponse(new BlockPoseChangingResponse
+        _unityAppApi.BlockPoseChangingResponse(new BlockPoseChangingResponse
         {
             BlockId = arg.BlockId,
             IsValid = true,
@@ -232,20 +232,20 @@
         foreach (var template in _templates)
         {
             var msg = new AddBlockTemplateMessage { TemplateId = template.id, SizeX = template.sizeX, SizeY = template.sizeY, SizeZ = template.sizeZ };
-            await _unityAppApi.InvokeAddBlockTemplateMessage(msg);
+            await _unityAppApi.AddBlockTemplate(msg);
         }
 
         foreach (var block in _blocks)
         {
             var msg = new AddBlockInstanceMessage { BlockId = block.blockId, PositionX = block.positionX, PositionY = block.positionY, RotationZ = block.rotationZ, TemplateId = block.templateId };
-            await _unityAppApi.InvokeAddBlockInstanceMessage(msg);
+            await _unityAppApi.AddBlockInstance(msg);
         }
     }
 
     private async Task AddTemplate()
     {
         var msg = new AddBlockTemplateMessage { TemplateId = _newIdCounter++, SizeX = _newTemplateSizeX, SizeY = _newTemplateSizeY, SizeZ = _newTemplateSizeZ };
-        await _unityAppApi.InvokeAddBlockTemplateMessage(msg);
+        await _unityAppApi.AddBlockTemplate(msg);
         _templates.Add((msg.TemplateId, msg.SizeX, msg.SizeY, msg.SizeZ));
         SaveToLocalStorage();
     }
@@ -261,7 +261,7 @@
 
     private async Task RemoveTemplate(int id)
     {
-        await _unityAppApi.InvokeRemoveBlockTemplateMessage(new RemoveBlockTemplateMessage { TemplateId = id });
+        await _unityAppApi.RemoveBlockTemplate(new RemoveBlockTemplateMessage { TemplateId = id });
         _templates.RemoveAll(o => o.id == id);
         SaveToLocalStorage();
     }
@@ -269,14 +269,14 @@
     private async Task AddBlock()
     {
         var msg = new AddBlockInstanceMessage { BlockId = _newIdCounter++, PositionX = _newBlockPositionX, PositionY = _newBlockPositionY, RotationZ = _newBlockRotationZ, TemplateId = _newBlockTemplateId };
-        await _unityAppApi.InvokeAddBlockInstanceMessage(msg);
+        await _unityAppApi.AddBlockInstance(msg);
         _blocks.Add((msg.BlockId, msg.PositionX, msg.PositionY, msg.RotationZ, msg.TemplateId));
         SaveToLocalStorage();
     }
 
     private async Task RemoveBlock(int id)
     {
-        await _unityAppApi.InvokeRemoveBlockMessage(new RemoveBlockMessage { BlockId = id });
+        await _unityAppApi.RemoveBlock(new RemoveBlockMessage { BlockId = id });
         _blocks.RemoveAll(o => o.blockId == id);
         SaveToLocalStorage();
     }
@@ -291,12 +291,12 @@
         var tcs = new TaskCompletionSource();
         var avgStopwatch = new Stopwatch();
 
-        _unityAppApi.OnPerfCheckResponse += Process;
+        _unityAppApi.PerfCheckResponse += Process;
 
         avgStopwatch.Start();
         for (var i = 0; i < testCount; i++)
         {
-            await _unityAppApi.InvokePerfCheckRequest(new PerfCheckRequest
+            await _unityAppApi.PerfCheckRequest(new PerfCheckRequest
             {
                 Id = i,
                 Aaa = 12,
@@ -308,7 +308,7 @@
 
         await tcs.Task;
 
-        _unityAppApi.OnPerfCheckResponse -= Process;
+        _unityAppApi.PerfCheckResponse -= Process;
 
         _perfResponse = $"{testCount} messages there and back, took {avgStopwatch.ElapsedMilliseconds:F2} ms (avg {(decimal)avgStopwatch.ElapsedMilliseconds / testCount:F2} ms)";
 

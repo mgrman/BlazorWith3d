@@ -1,5 +1,7 @@
 using Blazored.LocalStorage;
 using BlazorWith3d.Components;
+using BlazorWith3d.Unity;
+using Microsoft.AspNetCore.Mvc;
 using _Imports = BlazorWith3d.Client._Imports;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,6 +17,8 @@ builder.Services.AddBlazoredLocalStorage(c =>
     c.JsonSerializerOptions.IgnoreReadOnlyFields = false;
     c.JsonSerializerOptions.IgnoreReadOnlyProperties = false;
 });
+
+builder.Services.AddSingleton<DebugRelayUnityApi>();
 
 var app = builder.Build();
 
@@ -44,6 +48,35 @@ app.Use(async (context, next) =>
     await next();
 });
 
+var webSocketOptions = new WebSocketOptions
+{
+    KeepAliveInterval = TimeSpan.FromMinutes(2)
+};
+
+app.UseWebSockets(webSocketOptions);
+
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path == "/debug-relay-unity-ws")
+    {
+        if (context.WebSockets.IsWebSocketRequest)
+        {
+            var debugRelay = context.RequestServices.GetRequiredService<DebugRelayUnityApi>();
+            
+            using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
+            await debugRelay.HandleWebSocket(webSocket);
+        }
+        else
+        {
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+        }
+    }
+    else
+    {
+        await next(context);
+    }
+
+});
 
 app.MapStaticAssets();
 

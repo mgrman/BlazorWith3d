@@ -20,19 +20,24 @@ namespace ExampleApp
 
         private TypedBlazorApi _typedApi;
 
-        public void Start()
+        public async void Start()
         {
             _templateRoot = new GameObject("BlockTemplateRoot");
             _templateRoot.SetActive(false);
             _templateRoot.transform.parent = transform;
 
+            
 #if UNITY_EDITOR
-            var simulatorApi = new SimulatorApi();
-            var simulatorTypedApi = new UnityTypedUnityApi(simulatorApi);
-            var simulator = gameObject.AddComponent<BlazorSimulator>();
-            gameObject.AddComponent<DragChangingSimulatorHandler>();
-            simulator.Initialize(simulatorTypedApi, typeof(AppInitialized).Assembly);
-            _blazorApi = simulatorApi;
+            // var simulatorApi = new SimulatorApi();
+            // var simulatorTypedApi = new UnityTypedUnityApi(simulatorApi);
+            // var simulator = gameObject.AddComponent<BlazorSimulator>();
+            // gameObject.AddComponent<DragChangingSimulatorHandler>();
+            // simulator.Initialize(simulatorTypedApi, typeof(AppInitialized).Assembly);
+            // _blazorApi = simulatorApi;
+
+            var ws = new WsClient();
+            _blazorApi = ws;
+           await ws.ConnectAsync("ws://localhost:5292/debug-relay-unity-ws");
 #else
             _blazorApi = new UnityBlazorApi();
 #endif
@@ -40,27 +45,27 @@ namespace ExampleApp
 
             _appApi = new BlocksOnGridUnityApi(_typedApi);
 
-            _appApi.OnAppInitialized(new AppInitialized());
-            _appApi.InvokeAddBlockTemplateMessage += OnAddBlockTemplateMessage;
-            _appApi.InvokeRemoveBlockTemplateMessage += OnRemoveBlockTemplateMessage;
-            _appApi.InvokeAddBlockInstanceMessage += OnAddBlockInstanceMessage;
-            _appApi.InvokeRemoveBlockMessage += OnRemoveBlockMessage;
-            _appApi.InvokeBlockPoseChangingResponse += OnBlockPoseChangingResponse;
+            _appApi.AppInitialized(new AppInitialized());
+            _appApi.AddBlockTemplate += OnAddBlockTemplateMessage;
+            _appApi.RemoveBlockTemplate += OnRemoveBlockTemplateMessage;
+            _appApi.AddBlockInstance += OnAddBlockInstanceMessage;
+            _appApi.RemoveBlock += OnRemoveBlockMessage;
+            _appApi.BlockPoseChangingResponse += OnBlockPoseChangingResponse;
 
-#if UNITY_EDITOR
+// #if UNITY_EDITOR
+//
+//             simulatorTypedApi.SendMessage(new AddBlockTemplateMessage
+//             {
+//                 TemplateId = 0,
+//                 SizeX = 1, SizeY = 1, SizeZ = 1, VisualsUri = null
+//             });
+//             simulatorTypedApi.SendMessage(new AddBlockInstanceMessage
+//                 { BlockId = 0, TemplateId = 0, PositionX = 0, PositionY = 0, RotationZ = 0 });
+// #endif
 
-            simulatorTypedApi.SendMessage(new AddBlockTemplateMessage
+            _appApi.PerfCheckRequest += request =>
             {
-                TemplateId = 0,
-                SizeX = 1, SizeY = 1, SizeZ = 1, VisualsUri = null
-            });
-            simulatorTypedApi.SendMessage(new AddBlockInstanceMessage
-                { BlockId = 0, TemplateId = 0, PositionX = 0, PositionY = 0, RotationZ = 0 });
-#endif
-
-            _appApi.InvokePerfCheckRequest += request =>
-            {
-                _appApi.OnPerfCheckResponse(new PerfCheckResponse
+                _appApi.PerfCheckResponse(new PerfCheckResponse
                 {
                     Id = request.Id,
                     Aaa = request.Aaa,

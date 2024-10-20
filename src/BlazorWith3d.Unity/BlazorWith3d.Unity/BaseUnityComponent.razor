@@ -1,6 +1,7 @@
 ﻿@inject IJSRuntime JsRuntime
 @inject ILogger<BaseUnityComponent> Logger
 @implements BlazorWith3d.Unity.Shared.IUnityApi
+@using System.ComponentModel
 @using Microsoft.Extensions.Logging
 @using Microsoft.JSInterop
 @implements IAsyncDisposable
@@ -20,19 +21,19 @@
 
 @code
 {
+    [CascadingParameter] public I3DAppComponent ParentApp { get; set; }
+    
     private IJSObjectReference? _unityApi;
 
     private ElementReference _containerElementReference;
     private DotNetObjectReference<JsMessageReceiverProxy>? _messageReceiverProxyReference;
 
-    [Parameter] 
-    [EditorRequired] 
-    public string UnityBuildFilePath { get; set; } = "";
-
+    public virtual string UnityBuildFilesRootPath { get;  } 
     private readonly List<byte[]> _unsentMessages = new();
 
     public async ValueTask DisposeAsync()
     {
+        
         if (_unityApi != null)
         {
             await _unityApi.InvokeVoidAsync("Quit");
@@ -57,11 +58,12 @@
             await base.OnAfterRenderAsync(firstRender);
             return;
         }
+        ParentApp.InitializeRenderer(this);
 
         var moduleTask = new Lazy<Task<IJSObjectReference>>(() => JsRuntime.InvokeAsync<IJSObjectReference>("import", "./_content/BlazorWith3d.Unity/unityInitialization.js").AsTask());
         var module = await moduleTask.Value;
 
-        _unityApi = await module.InvokeAsync<IJSObjectReference>("showUnity", UnityBuildFilePath, _containerElementReference, _messageReceiverProxyReference, nameof(JsMessageReceiverProxy.OnMessageBytesReceived));
+        _unityApi = await module.InvokeAsync<IJSObjectReference>("showUnity", UnityBuildFilesRootPath, _containerElementReference, _messageReceiverProxyReference, nameof(JsMessageReceiverProxy.OnMessageBytesReceived));
 
         foreach (var msg in _unsentMessages)
         {

@@ -12,11 +12,11 @@ namespace ExampleApp
         public Type MessageType => typeof(BlockPoseChangingMessage);
         public TypedUnityApi UnityApi { get; set; }
 
-        public void HandleMessage(object messageObject)
+        public async void HandleMessage(object messageObject)
         {
             var message = (BlockPoseChangingMessage)messageObject;
 
-            UnityApi.SendMessage(new BlockPoseChangingResponse
+            await UnityApi.SendMessage(new BlockPoseChangingResponse
             {
                 BlockId = message.BlockId,
                 IsValid = true,

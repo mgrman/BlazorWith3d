@@ -1,5 +1,7 @@
 ﻿@page "/"
 @using BlazorWith3d.Client.Components
+@using BlazorWith3d.Unity
+@rendermode InteractiveServer
 
 <PageTitle>Home</PageTitle>
 
@@ -7,4 +9,17 @@
 
 Welcome to your BlazorWith3d app.
 
-<TestWrapper></TestWrapper>
+<InputCheckbox @bind-Value="Is3DVisible"></InputCheckbox>
+
+@if (Is3DVisible)
+{
+    <BlocksOnGrid3DComponent >
+         <BlocksOnGridUnityComponent></BlocksOnGridUnityComponent> 
+    </BlocksOnGrid3DComponent>
+}
+
+@code{
+
+    public bool Is3DVisible { get; set; }
+    
+}

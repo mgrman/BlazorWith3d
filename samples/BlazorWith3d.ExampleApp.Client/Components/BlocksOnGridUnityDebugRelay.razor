@@ -1,0 +1,28 @@
+﻿@using System.Diagnostics
+@using Blazored.LocalStorage
+@using BlazorWith3d.ExampleApp.Client.Unity.Shared
+@using BlazorWith3d.Unity
+@using BlazorWith3d.Unity.Shared
+@rendermode InteractiveServer
+@inject DebugRelayUnityApi unityApi
+
+@code {
+
+    [CascadingParameter] 
+    public I3DAppComponent ParentApp { get; set; }
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            await base.OnAfterRenderAsync(firstRender);
+            return;
+        }
+
+        unityApi.HandleThread(InvokeAsync);
+        
+        ParentApp.InitializeRenderer(unityApi);
+    }
+
+}
