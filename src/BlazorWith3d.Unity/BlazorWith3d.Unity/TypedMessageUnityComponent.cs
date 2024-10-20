@@ -14,8 +14,6 @@ namespace BlazorWith3d.Unity;
 
 // TODO add benchmarking of speed, e.g. a dedicated project with just benchamarks (method only, string message, binary string message, memory pack message)
 
-// TODO inverse generation, define interface and then generate implementation and messages for it. As the highlevel interface will be the one for interop with other 3d libs (though the messages could be as well, but we should start at interface)
-
 // TODO Add Maui Blazor version with WebGL Unity
 // https://learn.microsoft.com/en-us/aspnet/core/blazor/hybrid/tutorials/maui-blazor-web-app?view=aspnetcore-9.0
 
