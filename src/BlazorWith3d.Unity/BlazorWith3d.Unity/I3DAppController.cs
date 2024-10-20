@@ -2,7 +2,7 @@
 
 namespace BlazorWith3d.Unity;
 
-public interface I3DAppComponent
+public interface I3DAppController
 {
     void InitializeRenderer(IUnityApi unityApi);
 }

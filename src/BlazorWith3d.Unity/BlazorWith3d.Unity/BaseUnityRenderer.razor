@@ -1,5 +1,5 @@
 ﻿@inject IJSRuntime JsRuntime
-@inject ILogger<BaseUnityComponent> Logger
+@inject ILogger<BaseUnityRenderer> Logger
 @implements BlazorWith3d.Unity.Shared.IUnityApi
 @using System.ComponentModel
 @using Microsoft.Extensions.Logging
@@ -21,7 +21,7 @@
 
 @code
 {
-    [CascadingParameter] public I3DAppComponent ParentApp { get; set; }
+    [CascadingParameter] public I3DAppController ParentApp { get; set; }
     
     private IJSObjectReference? _unityApi;
 

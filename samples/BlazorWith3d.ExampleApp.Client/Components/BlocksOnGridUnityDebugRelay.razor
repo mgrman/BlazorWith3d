@@ -4,12 +4,12 @@
 @using BlazorWith3d.Unity
 @using BlazorWith3d.Unity.Shared
 @rendermode InteractiveServer
-@inject DebugRelayUnityApi unityApi
+@inject DebugRelayUnityApi debugRelayUnityApi
 
 @code {
 
     [CascadingParameter] 
-    public I3DAppComponent ParentApp { get; set; }
+    public I3DAppController ParentApp { get; set; }
 
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -20,9 +20,8 @@
             return;
         }
 
-        unityApi.HandleThread(InvokeAsync);
+        debugRelayUnityApi.HandleThread(InvokeAsync);
         
-        ParentApp.InitializeRenderer(unityApi);
+        ParentApp.InitializeRenderer(debugRelayUnityApi);
     }
-
 }

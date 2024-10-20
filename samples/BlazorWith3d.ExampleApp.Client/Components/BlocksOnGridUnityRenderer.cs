@@ -2,7 +2,7 @@
 
 namespace BlazorWith3d.Client.Components;
 
-public class BlocksOnGridUnityComponent:BaseUnityComponent
+public class BlocksOnGridUnityRenderer:BaseUnityRenderer
 {
     public override string UnityBuildFilesRootPath => Assets[""];
 

@@ -7,7 +7,7 @@
 @inject ILocalStorageService LocalStorage
 @inject IServiceProvider Services
 @inject ILogger<BlocksOnGrid3DComponent> Logger
-@implements I3DAppComponent
+@implements I3DAppController
 
 <text>@(OperatingSystem.IsBrowser() ? "WASM" : "Serverside")</text>
 
@@ -197,6 +197,8 @@
         _unityAppApi.AppInitialized += OnAppInitialized;
         _unityAppApi.BlockPoseChanging += OnBlockPoseChanging;
         _unityAppApi.BlockPoseChanged += OnBlockPoseChanged;
+        
+        _unityAppApi.ControllerInitialized(new ControllerInitializedRequest());
     }
 
     private void OnBlockPoseChanged(BlockPoseChangedMessage obj)
@@ -229,6 +231,7 @@
 
     private async ValueTask ReplayState()
     {
+        
         foreach (var template in _templates)
         {
             var msg = new AddBlockTemplateMessage { TemplateId = template.id, SizeX = template.sizeX, SizeY = template.sizeY, SizeZ = template.sizeZ };

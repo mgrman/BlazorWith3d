@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using BlazorWith3d.ExampleApp.Client.Unity.Shared;
 using BlazorWith3d.Unity;
 using BlazorWith3d.Unity.Shared;
@@ -19,7 +20,16 @@ namespace ExampleApp
         private GameObject _templateRoot;
 
         private TypedBlazorApi _typedApi;
+        
+        private List<IDisposable> _disposables=new List<IDisposable>();
+        private List<IAsyncDisposable> _asyncDisposables=new List<IAsyncDisposable>();
 
+
+        [Tooltip("If none is set, will use simulator")] 
+        [SerializeField]
+        private string _backendWebsocketUrl = "ws://localhost:5292/debug-relay-unity-ws";
+
+        
         public async void Start()
         {
             _templateRoot = new GameObject("BlockTemplateRoot");
@@ -28,16 +38,22 @@ namespace ExampleApp
 
             
 #if UNITY_EDITOR
-            // var simulatorApi = new SimulatorApi();
-            // var simulatorTypedApi = new UnityTypedUnityApi(simulatorApi);
-            // var simulator = gameObject.AddComponent<BlazorSimulator>();
-            // gameObject.AddComponent<DragChangingSimulatorHandler>();
-            // simulator.Initialize(simulatorTypedApi, typeof(AppInitialized).Assembly);
-            // _blazorApi = simulatorApi;
-
-            var ws = new WsClient();
-            _blazorApi = ws;
-           await ws.ConnectAsync("ws://localhost:5292/debug-relay-unity-ws");
+            
+            if (string.IsNullOrEmpty(_backendWebsocketUrl))
+            {
+                var simulatorApi = new SimulatorApi();
+                var simulatorTypedApi = new UnityTypedUnityApi(simulatorApi);
+                var simulator = gameObject.AddComponent<BlazorSimulator>();
+                gameObject.AddComponent<DragChangingSimulatorHandler>();
+                simulator.Initialize(simulatorTypedApi, typeof(AppInitialized).Assembly);
+                _blazorApi = simulatorApi;
+            }
+            else
+            {
+                var relay = new BlazorWebSocketRelay(_backendWebsocketUrl);
+                _asyncDisposables.Add(relay);
+                _blazorApi = relay;
+            }
 #else
             _blazorApi = new UnityBlazorApi();
 #endif
@@ -51,18 +67,8 @@ namespace ExampleApp
             _appApi.AddBlockInstance += OnAddBlockInstanceMessage;
             _appApi.RemoveBlock += OnRemoveBlockMessage;
             _appApi.BlockPoseChangingResponse += OnBlockPoseChangingResponse;
-
-// #if UNITY_EDITOR
-//
-//             simulatorTypedApi.SendMessage(new AddBlockTemplateMessage
-//             {
-//                 TemplateId = 0,
-//                 SizeX = 1, SizeY = 1, SizeZ = 1, VisualsUri = null
-//             });
-//             simulatorTypedApi.SendMessage(new AddBlockInstanceMessage
-//                 { BlockId = 0, TemplateId = 0, PositionX = 0, PositionY = 0, RotationZ = 0 });
-// #endif
-
+            _appApi.ControllerInitialized += OnControllerInitialized;
+            
             _appApi.PerfCheckRequest += request =>
             {
                 _appApi.PerfCheckResponse(new PerfCheckResponse
@@ -74,6 +80,36 @@ namespace ExampleApp
                     Ddd = request.Ddd
                 });
             };
+        }
+
+        private async Awaitable OnDestroy()
+        {
+            foreach (var disposable in _disposables)
+            {
+                disposable.Dispose();
+            }
+
+            foreach (var disposable in _asyncDisposables)
+            {
+                await disposable.DisposeAsync();
+            }
+        }
+
+        private void OnControllerInitialized(ControllerInitializedRequest _)
+        {
+            foreach (var block in _templates.Values)
+            {
+                GameObject.Destroy(block.gameObject);
+            }
+
+            _templates.Clear();
+            
+            foreach (var block in _blocks.Values)
+            {
+                GameObject.Destroy(block.gameObject);
+            }
+
+            _blocks.Clear();
         }
 
         private void OnBlockPoseChangingResponse(BlockPoseChangingResponse obj)
@@ -98,7 +134,10 @@ namespace ExampleApp
         private void OnRemoveBlockTemplateMessage(RemoveBlockTemplateMessage msg)
         {
             Debug.Log($"Removing block template: {JsonUtility.ToJson(msg)}");
+            
+            GameObject.Destroy(_templates[msg.TemplateId].gameObject);
             _templates.Remove(msg.TemplateId);
+            
             Debug.Log($"Removed block template: {JsonUtility.ToJson(msg)}");
         }
 
@@ -115,12 +154,11 @@ namespace ExampleApp
 
         private void OnRemoveBlockMessage(RemoveBlockMessage msg)
         {
-            Debug.Log($"Removing block template: {JsonUtility.ToJson(msg)}");
-            var blockGo = _blocks[msg.BlockId];
-            Destroy(blockGo);
+            Debug.Log($"Removing block: {JsonUtility.ToJson(msg)}");
+            Destroy( _blocks[msg.BlockId].gameObject);
             _blocks.Remove(msg.BlockId);
 
-            Debug.Log($"Removed block template: {JsonUtility.ToJson(msg)}");
+            Debug.Log($"Removed block: {JsonUtility.ToJson(msg)}");
         }
     }
 }

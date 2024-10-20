@@ -16,6 +16,7 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
         public event Action<BlockPoseChangedMessage> BlockPoseChanged;
 
         Task PerfCheckRequest(PerfCheckRequest request);
+        Task ControllerInitialized(ControllerInitializedRequest request);
         Task AddBlockTemplate(AddBlockTemplateMessage request);
         Task AddBlockInstance(AddBlockInstanceMessage request);
         Task RemoveBlock(RemoveBlockMessage request);
@@ -31,6 +32,11 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
     {
     }
 #endif
+    [MemoryPackable]
+    public partial class ControllerInitializedRequest 
+    {
+    }
+    
     [MemoryPackable]
      public partial class PerfCheckRequest 
      {
