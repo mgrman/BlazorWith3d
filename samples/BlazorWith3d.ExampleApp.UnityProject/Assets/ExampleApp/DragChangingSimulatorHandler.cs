@@ -9,14 +9,14 @@ namespace ExampleApp
 {
     public class DragChangingSimulatorHandler : MonoBehaviour, IBlazorSimulatorMessageHandler
     {
-        public Type MessageType => typeof(BlockPoseChangingMessage);
+        public Type MessageType => typeof(BlockPoseChanging);
         public TypedUnityApi UnityApi { get; set; }
 
         public async void HandleMessage(object messageObject)
         {
-            var message = (BlockPoseChangingMessage)messageObject;
+            var message = (BlockPoseChanging)messageObject;
 
-            await UnityApi.SendMessage(new BlockPoseChangingResponse
+            await UnityApi.SendMessage(new BlockPoseChangeValidated()
             {
                 BlockId = message.BlockId,
                 IsValid = true,

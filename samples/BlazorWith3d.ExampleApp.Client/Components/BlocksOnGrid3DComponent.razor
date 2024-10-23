@@ -195,14 +195,14 @@
         var typedUnityApi = new BlazorTypedUnityApi(unityApi, Logger);
         _unityAppApi = new BlocksOnGrid3DApp(typedUnityApi);
 
-        _unityAppApi.AppInitialized += OnAppInitialized;
-        _unityAppApi.BlockPoseChanging += OnBlockPoseChanging;
-        _unityAppApi.BlockPoseChanged += OnBlockPoseChanged;
+        _unityAppApi.OnUnityAppInitialized += OnAppInitialized;
+        _unityAppApi.OnBlockPoseChanging += OnBlockPoseChanging;
+        _unityAppApi.OnBlockPoseChanged += OnBlockPoseChanged;
         
-        _unityAppApi.ControllerInitialized(new ControllerInitializedRequest());
+        _unityAppApi.InvokeBlazorControllerInitialized(new BlazorControllerInitialized());
     }
 
-    private void OnBlockPoseChanged(BlockPoseChangedMessage obj)
+    private void OnBlockPoseChanged(BlockPoseChanged obj)
     {
         var blockIndex = _blocks.FindIndex(o => o.blockId == obj.BlockId);
         var block = _blocks[blockIndex];
@@ -212,9 +212,9 @@
         StateHasChanged();
     }
 
-    private void OnBlockPoseChanging(BlockPoseChangingMessage arg)
+    private void OnBlockPoseChanging(BlockPoseChanging arg)
     {
-        _unityAppApi.BlockPoseChangingResponse(new BlockPoseChangingResponse
+        _unityAppApi.InvokeBlockPoseChangeValidated(new BlockPoseChangeValidated
         {
             BlockId = arg.BlockId,
             IsValid = true,
@@ -225,7 +225,7 @@
         });
     }
 
-    private async void OnAppInitialized(AppInitialized arg)
+    private async void OnAppInitialized(UnityAppInitialized arg)
     {
         await ReplayState();
     }
@@ -235,21 +235,21 @@
         
         foreach (var template in _templates)
         {
-            var msg = new AddBlockTemplateMessage { TemplateId = template.id, SizeX = template.sizeX, SizeY = template.sizeY, SizeZ = template.sizeZ };
-            await _unityAppApi.AddBlockTemplate(msg);
+            var msg = new AddBlockTemplate { TemplateId = template.id, SizeX = template.sizeX, SizeY = template.sizeY, SizeZ = template.sizeZ };
+            await _unityAppApi.InvokeAddBlockTemplate(msg);
         }
 
         foreach (var block in _blocks)
         {
-            var msg = new AddBlockInstanceMessage { BlockId = block.blockId, PositionX = block.positionX, PositionY = block.positionY, RotationZ = block.rotationZ, TemplateId = block.templateId };
-            await _unityAppApi.AddBlockInstance(msg);
+            var msg = new AddBlockInstance { BlockId = block.blockId, PositionX = block.positionX, PositionY = block.positionY, RotationZ = block.rotationZ, TemplateId = block.templateId };
+            await _unityAppApi.InvokeAddBlockInstance(msg);
         }
     }
 
     private async Task AddTemplate()
     {
-        var msg = new AddBlockTemplateMessage { TemplateId = _newIdCounter++, SizeX = _newTemplateSizeX, SizeY = _newTemplateSizeY, SizeZ = _newTemplateSizeZ };
-        await _unityAppApi.AddBlockTemplate(msg);
+        var msg = new AddBlockTemplate { TemplateId = _newIdCounter++, SizeX = _newTemplateSizeX, SizeY = _newTemplateSizeY, SizeZ = _newTemplateSizeZ };
+        await _unityAppApi.InvokeAddBlockTemplate(msg);
         _templates.Add((msg.TemplateId, msg.SizeX, msg.SizeY, msg.SizeZ));
         SaveToLocalStorage();
     }
@@ -265,22 +265,22 @@
 
     private async Task RemoveTemplate(int id)
     {
-        await _unityAppApi.RemoveBlockTemplate(new RemoveBlockTemplateMessage { TemplateId = id });
+        await _unityAppApi.InvokeRemoveBlockTemplate(new RemoveBlockTemplate { TemplateId = id });
         _templates.RemoveAll(o => o.id == id);
         SaveToLocalStorage();
     }
 
     private async Task AddBlock()
     {
-        var msg = new AddBlockInstanceMessage { BlockId = _newIdCounter++, PositionX = _newBlockPositionX, PositionY = _newBlockPositionY, RotationZ = _newBlockRotationZ, TemplateId = _newBlockTemplateId };
-        await _unityAppApi.AddBlockInstance(msg);
+        var msg = new AddBlockInstance { BlockId = _newIdCounter++, PositionX = _newBlockPositionX, PositionY = _newBlockPositionY, RotationZ = _newBlockRotationZ, TemplateId = _newBlockTemplateId };
+        await _unityAppApi.InvokeAddBlockInstance(msg);
         _blocks.Add((msg.BlockId, msg.PositionX, msg.PositionY, msg.RotationZ, msg.TemplateId));
         SaveToLocalStorage();
     }
 
     private async Task RemoveBlock(int id)
     {
-        await _unityAppApi.RemoveBlock(new RemoveBlockMessage { BlockId = id });
+        await _unityAppApi.InvokeRemoveBlock(new RemoveBlock { BlockId = id });
         _blocks.RemoveAll(o => o.blockId == id);
         SaveToLocalStorage();
     }
@@ -295,12 +295,12 @@
         var tcs = new TaskCompletionSource();
         var avgStopwatch = new Stopwatch();
 
-        _unityAppApi.PerfCheckResponse += Process;
+        _unityAppApi.OnPerfCheck += Process;
 
         avgStopwatch.Start();
         for (var i = 0; i < testCount; i++)
         {
-            await _unityAppApi.PerfCheckRequest(new PerfCheckRequest
+            await _unityAppApi.InvokePerfCheck(new PerfCheck
             {
                 Id = i,
                 Aaa = 12,
@@ -312,11 +312,11 @@
 
         await tcs.Task;
 
-        _unityAppApi.PerfCheckResponse -= Process;
+        _unityAppApi.OnPerfCheck -= Process;
 
         _perfResponse = $"{testCount} messages there and back, took {avgStopwatch.ElapsedMilliseconds:F2} ms (avg {(decimal)avgStopwatch.ElapsedMilliseconds / testCount:F2} ms)";
 
-        void Process(PerfCheckResponse response)
+        void Process(PerfCheck response)
         {
             responses[response.Id] = true;
             responsesRemaining--;

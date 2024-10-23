@@ -82,7 +82,7 @@
         OnMessageFromUnity?.Invoke(messageBytes);
     }
 
-    public async Task SendMessageToUnity(byte[] messageBytes)
+    public async ValueTask SendMessageToUnity(byte[] messageBytes)
     {
         if (_unityApi == null)
         {

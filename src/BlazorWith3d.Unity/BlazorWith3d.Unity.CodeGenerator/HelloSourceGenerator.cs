@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Xml.Serialization;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -18,135 +19,97 @@ public class HelloSourceGenerator : ISourceGenerator
     public void Execute(GeneratorExecutionContext context) // Implement Execute method
     {
         // retrieve the populated receiver 
-        if (!(context.SyntaxContextReceiver is SyntaxReceiver receiver)) return;
+        if (!(context.SyntaxContextReceiver is SyntaxReceiver receiver))
+        {
+            return;
+        }
 
-        if (!receiver.ShouldGenerate) return;
+        if (!receiver.ShouldGenerate)
+        {
+            return;
+        }
         
     
-        //#error generate based on Unity3DAppAttribute, so there can be inverse class for Unity
-
+        var methodInfo = GetMethodsInfo(receiver);
+        
         foreach (var typeDeclaration in receiver.Blazor3DAppTypes)
         {
-            var semanticModel = context.Compilation.GetSemanticModel(typeDeclaration.SyntaxTree);
-            var typeSymbol = semanticModel.GetDeclaredSymbol(typeDeclaration) as INamedTypeSymbol;
-            var interfaceInfo = GetInterfaceInfo(typeSymbol);
-            var text = GenerateClass("TypedUnityApi","Task",interfaceInfo);
-            context.AddSource($"{interfaceInfo.typeName}.g.cs", text);
+            var (typeName,namespaceName) = GetTypeAndNamespace(typeDeclaration);
+
+            var appInfo= new AppInfo(typeName, namespaceName, "TypedUnityApi","ValueTask", methodInfo.messagesToUnity, methodInfo.messagesToBlazor, methodInfo);
+            
+            var text = GenerateClass(appInfo);
+            context.AddSource($"{typeName}.g.cs", text);
         }
-        
-        foreach (var unityTypeDeclaration in receiver.Unity3DAppTypes)
+
+        foreach (var typeDeclaration in receiver.Unity3DAppTypes)
         {
-            var semanticModel = context.Compilation.GetSemanticModel(unityTypeDeclaration.SyntaxTree);
-            var unityTypeSymbol = semanticModel.GetDeclaredSymbol(unityTypeDeclaration) as INamedTypeSymbol;
+            var (typeName,namespaceName) = GetTypeAndNamespace(typeDeclaration);
 
-            var interfaceTypeName = unityTypeSymbol.Name;
-            var attrDeclaration = unityTypeDeclaration.AttributeLists.SelectMany(e => e.Attributes).FirstOrDefault(e => e.Name.NormalizeWhitespace().ToFullString() == "Unity3DApp");
+            var appInfo= new AppInfo(typeName, namespaceName, "TypedBlazorApi","void", methodInfo.messagesToBlazor, methodInfo.messagesToUnity, methodInfo);
 
-            var typeDeclaration = (attrDeclaration.ArgumentList.Arguments[0].Expression as TypeOfExpressionSyntax).Type as IdentifierNameSyntax;
-
-
-
-            var referencedTypeSymbol = semanticModel.GetTypeInfo(typeDeclaration).Type as INamedTypeSymbol;
-
-
-            var interfaceInfo = GetInterfaceInfo(referencedTypeSymbol);
-
-
-            var typeName = interfaceTypeName.ToString().TrimStart('I');
-            var namespaceName = unityTypeSymbol.ContainingNamespace.ToDisplayString();
-            var invertedTypeInfo = new InterfaceInfo(unityTypeSymbol.Name, typeName, namespaceName,interfaceInfo.events.Select(e=>(e.eventName, e.messageType,"arg")).ToList(),interfaceInfo.methods.Select(m=>(m.methodName, "On"+m.methodName, m.messageType)
-            ).ToList(), interfaceInfo.messageTypes);
-
-     
-
-              var text = GenerateClass("TypedBlazorApi","void",invertedTypeInfo);
+            var text = GenerateClass(appInfo);
 
             context.AddSource($"{typeName}.g.cs", text);
-            
-            
-            var text2 = GenerateInterface("void",invertedTypeInfo);
-
-            context.AddSource($"{interfaceTypeName}.g.cs", text2);
         }
     }
 
-    private record InterfaceInfo(
-        string interfaceTypeName,
+    private static (string type, string @namespace) GetTypeAndNamespace(TypeDeclarationSyntax typeDeclaration)
+    {
+        var typeName = typeDeclaration.Identifier.ToString();
+        var namespaceName = (typeDeclaration.Parent as NamespaceDeclarationSyntax).Name.ToString();
+        return (typeName,namespaceName);
+    }
+
+    private record AppInfo(
         string typeName,
-        string namespaceName,
-        IReadOnlyList<(string methodName, string messageType, string inputTypeVarName)> methods,
-        IReadOnlyList<(string eventName, string eventInvokeMethodName, string messageType)> events,
-        IEnumerable<(string msgType, IEnumerable<string> intefaces)> messageTypes)
+        string @namespace,
+        string typedApiName,
+        string sendMessageReturnType,
+        IReadOnlyList<(string typeName, string @namespace)> methods,
+        IReadOnlyList<(string typeName, string @namespace)> events,
+        MessageInfo allMessages)
+    {
+    }
+    private record MessageInfo(
+        IReadOnlyList<(string typeName, string @namespace)> messagesToUnity,
+        IReadOnlyList<(string typeName, string @namespace)> messagesToBlazor)
     {
     }
 
-    private static InterfaceInfo GetInterfaceInfo(INamedTypeSymbol typeSymbol)
-    {
-            
-        var interfaceTypeName = typeSymbol.Name;
-        var typeName = interfaceTypeName.TrimStart('I');
-        var namespaceName = typeSymbol.ContainingNamespace.ToDisplayString();
-
-            
-        var methods = typeSymbol.GetMembers()
-             .OfType<IMethodSymbol>()
-             .Where(o=>!o.IsImplicitlyDeclared)
-            .Select(methodDeclaration =>
-            {
-                // if (methodDeclaration.ParameterList.Parameters.Count != 1 ||
-                //     methodDeclaration.ReturnType.ToString() != "Task")
-                // {
-                //     sb.AppendLine($"#error {methodDeclaration.ToString()} is not supported");
-                //     continue;
-                // }
-
-                
-
-                var inputType = methodDeclaration.Parameters[0];
-                var methodName = methodDeclaration.Name.ToString();
-                var messageType = inputType.Type.ToString();
-                var inputTypeVarName = inputType.Name.ToString();
-                    
-                return (methodName, messageType, inputTypeVarName);
-            }).ToList();
-
-
-       var  events = typeSymbol.GetMembers()
-             .OfType<IEventSymbol>()
-            .Select(eventDeclaration =>
-            {
-                var eventName = eventDeclaration.Name.ToString();
-
-                var eventInvokeMethodName = $"Invoke_{eventName}_Event";
-                var messageType = (eventDeclaration.Type as INamedTypeSymbol).TypeArguments[0].ToString();
-                        
-
-                return (eventName, eventInvokeMethodName, messageType);
-            }).ToList();
-       
-       
-       var typesFromBlazor = methods.Select(o => (o.messageType, i: "IMessageToUnity"));
-       var typesToBlazor = events.Select(o => (o.messageType, i: "IMessageToBlazor"));
-       var messageTypes = typesFromBlazor.Concat(typesToBlazor).GroupBy(o => o.messageType).Select(o => (msgType: o.Key, intefaces: o.Select(o1 => o1.i)));
-        return new InterfaceInfo(interfaceTypeName, typeName, namespaceName, methods, events,messageTypes);
-    }
-
-    private static string GenerateClass( string typedApiName, string sendMessageReturnType, InterfaceInfo info)
+    private static string GenerateClass( AppInfo info)
     {
         var sb = new IndentedStringBuilder();
         sb.AppendLine("// <auto-generated/>");
         sb.AppendLine("");
         sb.AppendLine("using System;");
         sb.AppendLine("using System.Threading.Tasks;");
-        //sb.AppendLines(namespaces.Select(o => $"using {o};"));
+        sb.AppendLines(info.allMessages.messagesToUnity.Concat(info.allMessages.messagesToBlazor).Select(o=>o.@namespace).Distinct().Select(o => $"using {o};"));
+        sb.AppendLine("using BlazorWith3d.Unity.Shared;");
         sb.AppendLine("using MemoryPack;");
         sb.AppendLine("using MemoryPack.Formatters;");
-        sb.AppendLine("using BlazorWith3d.Unity;");
-        sb.AppendLine("using BlazorWith3d.Unity.Shared;");
-        sb.AppendLine($"namespace {info.namespaceName}");
+        sb.AppendLine($"namespace {info.@namespace}");
         using (sb.IndentWithCurlyBrackets())
         {
-            sb.AppendLine($"public partial class {info.typeName}: {info.interfaceTypeName}");
+            sb.AppendLine($"public partial interface I{info.typeName}");
+            using (sb.IndentWithCurlyBrackets())
+            {
+
+                foreach (var e in info.events)
+                {
+                    sb.AppendLine($"event Action<{e.typeName}> On{e.typeName};");
+                }
+
+                sb.AppendLine();
+                foreach (var m in info.methods)
+                {
+                    sb.AppendLine($"{info.sendMessageReturnType} Invoke{m.typeName}({m.typeName} msg);");
+
+                }
+
+            }
+            
+            sb.AppendLine($"public partial class {info.typeName}: I{info.typeName}");
             using (sb.IndentWithCurlyBrackets())
             {
                     
@@ -156,20 +119,14 @@ public class HelloSourceGenerator : ISourceGenerator
                 {
                     sb.AppendLine($"if(_memoryPackInitialized){{return;}}");
                     sb.AppendLine($"_memoryPackInitialized = true;");
-                    var messageToBlazorTypes = info.messageTypes.Where(o => o.intefaces.Contains("IMessageToBlazor"))
-                        .Select(o => o.msgType)
-                        .ToList();
-                    var messageToUnityTypes = info.messageTypes.Where(o => o.intefaces.Contains("IMessageToUnity"))
-                        .Select(o => o.msgType)
-                        .ToList();
                         
                     sb.AppendLine("var messageMethodFormatter = new DynamicUnionFormatter<IMessageToBlazor>(");
                     using (sb.Indent())
                     {
-                        for (var i = 0; i < messageToBlazorTypes.Count; i++)
+                        for (var i = 0; i < info.allMessages.messagesToBlazor.Count; i++)
                         {
-                            var m = messageToBlazorTypes[i];
-                            sb.AppendLine($"({i},typeof({m})){(i != messageToBlazorTypes.Count - 1 ? "," : "")}");
+                            var m = info.allMessages.messagesToBlazor[i].typeName;
+                            sb.AppendLine($"({i},typeof({m})){(i != info.allMessages.messagesToBlazor.Count - 1 ? "," : "")}");
                         }
                     }
                         
@@ -178,10 +135,10 @@ public class HelloSourceGenerator : ISourceGenerator
                     sb.AppendLine("var messageToUnityFormatter = new DynamicUnionFormatter<IMessageToUnity>(");
                     using (sb.Indent())
                     {
-                        for (var i = 0; i < messageToUnityTypes.Count; i++)
+                        for (var i = 0; i < info.allMessages.messagesToUnity.Count; i++)
                         {
-                            var m = messageToUnityTypes[i];
-                            sb.AppendLine($"({i},typeof({m})){(i != messageToUnityTypes.Count - 1 ? "," : "")}");
+                            var m = info.allMessages.messagesToUnity[i].typeName;
+                            sb.AppendLine($"({i},typeof({m})){(i != info.allMessages.messagesToUnity.Count - 1 ? "," : "")}");
                         }
                     }
                         
@@ -194,9 +151,9 @@ public class HelloSourceGenerator : ISourceGenerator
                 
                 
 
-                sb.AppendLine($"private readonly {typedApiName} _typedApi;");
+                sb.AppendLine($"private readonly {info.typedApiName} _typedApi;");
                 sb.AppendLine();
-                sb.AppendLine($"public {info.typeName}({typedApiName} typedApi)");
+                sb.AppendLine($"public {info.typeName}({info.typedApiName} typedApi)");
                 using (sb.IndentWithCurlyBrackets())
                 {
                     sb.AppendLine("_typedApi = typedApi;");
@@ -204,7 +161,7 @@ public class HelloSourceGenerator : ISourceGenerator
                     foreach (var e in info.events)
                     {
                         sb.AppendLine(
-                            $"_typedApi.AddMessageProcessCallback<{e.messageType}>(this.{e.eventInvokeMethodName});");
+                            $"_typedApi.AddMessageProcessCallback<{e.typeName}>(this.On{e.typeName}Internal);");
                     }
                 }
 
@@ -212,17 +169,17 @@ public class HelloSourceGenerator : ISourceGenerator
 
                 foreach (var e in info.events)
                 {
-                    sb.AppendLine($"public event Action<{e.messageType}> {e.eventName};");
+                    sb.AppendLine($"public event Action<{e.typeName}> On{e.typeName};");
                 }
 
                 sb.AppendLine();
                 foreach (var m in info.methods)
                 {
-                    sb.AppendLine($"public {sendMessageReturnType} {m.methodName}({m.messageType} {m.inputTypeVarName})");
+                    sb.AppendLine($"public {info.sendMessageReturnType} Invoke{m.typeName}({m.typeName} msg)");
 
                     using (sb.IndentWithCurlyBrackets())
                     {
-                        sb.AppendLine($"{(sendMessageReturnType=="void"?"":"return ")}_typedApi.SendMessage({m.inputTypeVarName});");
+                        sb.AppendLine($"{(info.sendMessageReturnType=="void"?"":"return ")}_typedApi.SendMessage(msg);");
                     }
                 }
                 sb.AppendLine();
@@ -230,62 +187,29 @@ public class HelloSourceGenerator : ISourceGenerator
                 foreach (var e in info.events)
                 {
                     sb.AppendLine(
-                        $"private void {e.eventInvokeMethodName}({e.messageType} msg)=> {e.eventName}?.Invoke(msg);");
+                        $"private void On{e.typeName}Internal({e.typeName} msg)=> On{e.typeName}?.Invoke(msg);");
                 }
             }
         }
         
-        
-        foreach (var msgType in info.messageTypes)
-        { 
-            var @namespace = msgType.msgType.Substring(0, msgType.msgType.LastIndexOf("."));
-            var @type = msgType.msgType.Substring(msgType.msgType.LastIndexOf(".")+1 );
-            sb.AppendLine($"namespace {@namespace}");
-            using (sb.IndentWithCurlyBrackets())
-            {
-                sb.AppendLine($"public partial class {@type}: {string.Join(", ", msgType.intefaces)} {{}}");
-            }
-        }
-            
         return sb.ToString();
     }
 
-    private static string GenerateInterface( string sendMessageReturnType, InterfaceInfo info)
+    private static MessageInfo GetMethodsInfo(SyntaxReceiver receiver)
     {
-        var sb = new IndentedStringBuilder();
-        sb.AppendLine("// <auto-generated/>");
-        sb.AppendLine("");
-        sb.AppendLine("using System;");
-        sb.AppendLine("using System.Threading.Tasks;");
-        //sb.AppendLines(namespaces.Select(o => $"using {o};"));
-        sb.AppendLine("using MemoryPack;");
-        sb.AppendLine("using MemoryPack.Formatters;");
-        sb.AppendLine("using BlazorWith3d.Unity;");
-        sb.AppendLine("using BlazorWith3d.Unity.Shared;");
-        sb.AppendLine($"namespace {info.namespaceName}");
-        using (sb.IndentWithCurlyBrackets())
-        {
-            sb.AppendLine($"public partial interface {info.interfaceTypeName}");
-            using (sb.IndentWithCurlyBrackets())
-            {
-
-                foreach (var e in info.events)
-                {
-                    sb.AppendLine($"event Action<{e.messageType}> {e.eventName};");
-                }
-
-                sb.AppendLine();
-                foreach (var m in info.methods)
-                {
-                    sb.AppendLine($"{sendMessageReturnType} {m.methodName}({m.messageType} {m.inputTypeVarName});");
-
-                }
-
-            }
-        }
-        
             
-        return sb.ToString();
+        var messagesToUnity = receiver.MessagesToUnity
+            .Select(typeDeclaration =>
+            {
+                return GetTypeAndNamespace(typeDeclaration);
+            }).ToList();
+        var messagesToBlazor = receiver.MessagesToBlazor
+            .Select(typeDeclaration =>
+            {
+                return GetTypeAndNamespace(typeDeclaration);
+            }).ToList();
+        
+        return new MessageInfo(messagesToUnity, messagesToBlazor);
     }
 
 
@@ -296,9 +220,13 @@ public class HelloSourceGenerator : ISourceGenerator
     {
         public bool ShouldGenerate => Blazor3DAppTypes.Count > 0 || Unity3DAppTypes.Count>0;
 
-        public List<InterfaceDeclarationSyntax > Blazor3DAppTypes { get; } = new();
+        public List<TypeDeclarationSyntax > Blazor3DAppTypes { get; } = new();
 
-        public List<InterfaceDeclarationSyntax > Unity3DAppTypes { get; } = new();
+        public List<TypeDeclarationSyntax > Unity3DAppTypes { get; } = new();
+
+        public List<TypeDeclarationSyntax > MessagesToUnity { get; } = new();
+
+        public List<TypeDeclarationSyntax > MessagesToBlazor { get; } = new();
 
         /// <summary>
         ///     Called for every syntax node in the compilation, we can inspect the nodes and save any information useful for
@@ -307,15 +235,30 @@ public class HelloSourceGenerator : ISourceGenerator
         public void OnVisitSyntaxNode(GeneratorSyntaxContext context)
         {
             // any field with at least one attribute is a candidate for property generation
-            if (context.Node is InterfaceDeclarationSyntax typeDeclarationSyntax)
+            if (context.Node is TypeDeclarationSyntax typeDeclarationSyntax)
             {
-                if ( typeDeclarationSyntax.AttributeLists.SelectMany(e => e.Attributes).Any(e=>e.Name.NormalizeWhitespace().ToFullString() == "Blazor3DApp"))
+                if (typeDeclarationSyntax.AttributeLists.SelectMany(e => e.Attributes)
+                    .Any(e => e.Name.NormalizeWhitespace().ToFullString() == "Blazor3DApp"))
                 {
                     Blazor3DAppTypes.Add(typeDeclarationSyntax);
                 }
-                if ( typeDeclarationSyntax.AttributeLists.SelectMany(e => e.Attributes).Any(e=>e.Name.NormalizeWhitespace().ToFullString() == "Unity3DApp"))
+
+                if (typeDeclarationSyntax.AttributeLists.SelectMany(e => e.Attributes)
+                    .Any(e => e.Name.NormalizeWhitespace().ToFullString() == "Unity3DApp"))
                 {
                     Unity3DAppTypes.Add(typeDeclarationSyntax);
+                }
+           
+                if (typeDeclarationSyntax.AttributeLists.SelectMany(e => e.Attributes).Any(e =>
+                        e.Name.NormalizeWhitespace().ToFullString() == "MemoryPackable") && (typeDeclarationSyntax.BaseList?.Types.Any(o=>o.Type.ToString() == "IMessageToUnity") ?? false))
+                {
+                    MessagesToUnity.Add(typeDeclarationSyntax);
+                }
+
+                if (typeDeclarationSyntax.AttributeLists.SelectMany(e => e.Attributes).Any(e =>
+                        e.Name.NormalizeWhitespace().ToFullString() == "MemoryPackable") && (typeDeclarationSyntax.BaseList?.Types.Any(o=>o.Type.ToString() == "IMessageToBlazor") ?? false))
+                {
+                    MessagesToBlazor.Add(typeDeclarationSyntax);
                 }
             }
         }

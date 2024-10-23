@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using BlazorWith3d.Unity.Shared;
 
-namespace BlazorWith3d.Unity
+namespace BlazorWith3d.Unity.Shared
 {
     public abstract class TypedBlazorApi
     {

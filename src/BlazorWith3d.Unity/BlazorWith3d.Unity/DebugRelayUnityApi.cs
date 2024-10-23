@@ -43,7 +43,7 @@ public class DebugRelayUnityApi:IUnityApi
         _handleThread = action;
     }
     
-    public async Task SendMessageToUnity(byte[] bytes)
+    public async ValueTask SendMessageToUnity(byte[] bytes)
     {
         if (_webSocket?.State != WebSocketState.Open)
         {

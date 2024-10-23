@@ -23,7 +23,7 @@ namespace BlazorWith3d.Unity.Shared
         protected abstract byte[] SerializeObject<T>(T obj) where T : IMessageToUnity;
         protected abstract object? DeserializeObject(byte[] json);
 
-        public async Task SendMessage<TMessage>(TMessage message) where TMessage : IMessageToUnity
+        public async ValueTask SendMessage<TMessage>(TMessage message) where TMessage : IMessageToUnity
         {
             var encodedMessage = SerializeObject(message);
 

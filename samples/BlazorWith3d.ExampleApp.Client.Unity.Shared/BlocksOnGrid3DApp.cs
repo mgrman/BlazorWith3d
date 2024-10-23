@@ -8,126 +8,107 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
 #if COMMON_DOTNET
     [Blazor3DApp]
 #endif
-    public partial interface IBlocksOnGrid3DApp
+    public partial class BlocksOnGrid3DApp
     {
-        public event Action<PerfCheckResponse> PerfCheckResponse;
-        public event Action<AppInitialized> AppInitialized;
-        public event Action<BlockPoseChangingMessage> BlockPoseChanging;
-        public event Action<BlockPoseChangedMessage> BlockPoseChanged;
-
-        Task PerfCheckRequest(PerfCheckRequest request);
-        Task ControllerInitialized(ControllerInitializedRequest request);
-        Task AddBlockTemplate(AddBlockTemplateMessage request);
-        Task AddBlockInstance(AddBlockInstanceMessage request);
-        Task RemoveBlock(RemoveBlockMessage request);
-        Task RemoveBlockTemplate(RemoveBlockTemplateMessage request);
-        Task StartDraggingBlock(StartDraggingBlockMessage request);
-        Task BlockPoseChangingResponse(BlockPoseChangingResponse request);
     }
 
 
 #if COMMON_UNITY
-    [Unity3DApp(typeof(IBlocksOnGrid3DApp))]
-    public partial interface IBlocksOnGridUnityApi
+    [Unity3DApp]
+    public partial class BlocksOnGridUnityApi
     {
     }
 #endif
+
     [MemoryPackable]
-    public partial class ControllerInitializedRequest 
+    public partial class BlazorControllerInitialized : IMessageToUnity
     {
     }
-    
-    [MemoryPackable]
-     public partial class PerfCheckRequest 
-     {
-         public float Aaa;
-         public double Bbb;
-         public decimal Ccc;
-         public string? Ddd;
-         public int Id;
-     }
 
     [MemoryPackable]
-     public partial class PerfCheckResponse 
-     {
-         public float Aaa;
-         public double Bbb;
-         public decimal Ccc;
-         public string? Ddd;
-         public int Id;
-     }
+    public partial class PerfCheck : IMessageToUnity, IMessageToBlazor
+    {
+        public float Aaa;
+        public double Bbb;
+        public decimal Ccc;
+        public string? Ddd;
+        public int Id;
+    }
+
 
     [MemoryPackable]
-     public partial class AppInitialized 
-     {
-     }
+    public partial class UnityAppInitialized : IMessageToBlazor
+    {
+    }
 
     [MemoryPackable]
-     public partial class AddBlockTemplateMessage 
-     {
-         public float SizeX;
-         public float SizeY;
-         public float SizeZ;
-         public int TemplateId;
-         public string? VisualsUri;
-     }
-     
-    [MemoryPackable]
-     public partial class AddBlockInstanceMessage 
-     {
-         public int BlockId;
-         public float PositionX;
-         public float PositionY;
-         public float RotationZ;
-         public int TemplateId;
-     }
+    public partial class AddBlockTemplate : IMessageToUnity
+    {
+        public float SizeX;
+        public float SizeY;
+        public float SizeZ;
+        public int TemplateId;
+        public string? VisualsUri;
+    }
 
     [MemoryPackable]
-     public partial class RemoveBlockMessage 
-     {
-         public int BlockId;
-     }
+    public partial class AddBlockInstance : IMessageToUnity
+    {
+        public int BlockId;
+        public float PositionX;
+        public float PositionY;
+        public float RotationZ;
+        public int TemplateId;
+    }
 
     [MemoryPackable]
-     public partial class RemoveBlockTemplateMessage 
-     {
-         public int TemplateId;
-     }
+    public partial class RemoveBlock : IMessageToUnity
+    {
+        public int BlockId;
+    }
 
     [MemoryPackable]
-     public partial class StartDraggingBlockMessage 
-     {
-         public int BlockId;
-         public int TemplateId;
-     }
+    public partial class RemoveBlockTemplate : IMessageToUnity
+    {
+        public int TemplateId;
+    }
 
     [MemoryPackable]
-     public partial class BlockPoseChangingResponse 
-     {
-         public int BlockId;
-         public int ChangingRequestId;
-         public bool IsValid;
-         public float NewPositionX;
-         public float NewPositionY;
-         public float NewRotationZ;
-     }
+    public partial class StartDraggingBlock : IMessageToUnity
+    {
+        public int BlockId;
+        public int TemplateId;
+    }
 
     [MemoryPackable]
-     public partial class BlockPoseChangingMessage 
-     {
-         public int BlockId;
-         public int ChangingRequestId;
-         public float PositionX;
-         public float PositionY;
-         public float RotationZ;
-     }
+    public partial class BlockPoseChangeValidated : IMessageToUnity
+    {
+        public int BlockId;
+        public int ChangingRequestId;
+        public bool IsValid;
+        public float NewPositionX;
+        public float NewPositionY;
+        public float NewRotationZ;
+    }
 
     [MemoryPackable]
-     public partial class BlockPoseChangedMessage 
-     {
-         public int BlockId;
-         public float PositionX;
-         public float PositionY;
-         public float RotationZ;
-     }
+    public partial class BlockPoseChanging : IMessageToBlazor
+    {
+        public int BlockId;
+        public int ChangingRequestId;
+        public float PositionX;
+        public float PositionY;
+        public float RotationZ;
+    }
+
+    [MemoryPackable]
+    public partial class BlockPoseChanged : IMessageToBlazor
+    {
+        public int BlockId;
+        public float PositionX;
+        public float PositionY;
+        public float RotationZ;
+    }
 }
+
+

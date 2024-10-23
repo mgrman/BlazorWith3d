@@ -15,10 +15,10 @@ namespace BlazorWith3d.Unity
 
         public Action<byte[]> OnMessageFromUnity { get; set; }
 
-        public Task SendMessageToUnity(byte[] bytes)
+        public ValueTask SendMessageToUnity(byte[] bytes)
         {
             OnMessageFromBlazor?.Invoke(bytes);
-            return Task.CompletedTask;
+            return default;
         }
     }
 }

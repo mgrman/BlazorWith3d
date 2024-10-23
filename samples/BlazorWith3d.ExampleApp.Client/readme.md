@@ -1,5 +1,10 @@
 ﻿# TODOs
 
+## Prio 0
+
+- Add BabylonJS/ThreeJS version of 3d renderer
+  - One version using Blazor interop
+  - One version using own JS app and memorypack typescript generator
 
 ## Prio 1
 
@@ -8,7 +13,6 @@
 
 - Blazorwith3d - add purely 2d view, as for block movement we can have 2d only backend without gpu
 
-- Add BabylonJS/ThreeJS version of 3d renderer
 
 ## Prio 2
 
@@ -18,18 +22,6 @@
 
 - split unity packages/libraries by abstraction level (raw message, then typed message, then generated API)
 
--  implement own IDs in messages, consider even adding an extra parameter to the communication method. Otherwise you always need to prepend a byte or somethign
-  - as then this generator knows nothing about memory pack, and different messages can be serialized differently
-  - add support for multiple app interfaces (either count in one assembly, or have an offset in the attribute)
-  - Use array segments, encode which message it is using first byte, but add own system as MemoryPack's generator cannot operate on top of mine. Try to keep typed message abstraction layer
-  - Hmm, due to limitations of JS interop (seems only byte[] is correctly marshaled, memory ends up base64, span does not work, arraySEgment as number array)
-  - it might be best to postpone until stronger need, as only other option is to break abstraction of base layer and add an extra parameter, not worth it now.
-  - maybe the ArrayBufferWriter would be still usable here as it still seems faster
-
-| Method            | Mean     | Error    | StdDev    | Median   |
-|------------------ |---------:|---------:|----------:|---------:|
-| ByteArray         | 49.65 ns | 4.785 ns | 14.109 ns | 43.82 ns |
-| ArrayBufferWriter | 34.29 ns | 0.441 ns |  0.413 ns | 34.28 ns |
 
 ## Prio 3
 
@@ -53,3 +45,18 @@
 
 - even generate structs for message arguments!
   - RESOLUTION not usable until Code generators can be chained (ie then the code can be memorypack usable)
+
+
+-  implement own IDs in messages, consider even adding an extra parameter to the communication method. Otherwise you always need to prepend a byte or somethign
+- as then this generator knows nothing about memory pack, and different messages can be serialized differently
+- add support for multiple app interfaces (either count in one assembly, or have an offset in the attribute)
+- Use array segments, encode which message it is using first byte, but add own system as MemoryPack's generator cannot operate on top of mine. Try to keep typed message abstraction layer
+- Hmm, due to limitations of JS interop (seems only byte[] is correctly marshaled, memory ends up base64, span does not work, arraySEgment as number array)
+- it might be best to postpone until stronger need, as only other option is to break abstraction of base layer and add an extra parameter, not worth it now.
+- maybe the ArrayBufferWriter would be still usable here as it still seems faster
+
+| Method            | Mean     | Error    | StdDev    | Median   |
+|------------------ |---------:|---------:|----------:|---------:|
+| ByteArray         | 49.65 ns | 4.785 ns | 14.109 ns | 43.82 ns |
+| ArrayBufferWriter | 34.29 ns | 0.441 ns |  0.413 ns | 34.28 ns |
+- sadly without chaining source generators, this does not work. As none of the types generated can be them MemoryPack compatible (as it uses own source gen)

@@ -6,6 +6,6 @@ namespace BlazorWith3d.Unity.Shared
     public interface IUnityApi
     {
         Action<byte[]>? OnMessageFromUnity { get; set; }
-        Task SendMessageToUnity(byte[] bytes);
+        ValueTask SendMessageToUnity(byte[] bytes);
     }
 }

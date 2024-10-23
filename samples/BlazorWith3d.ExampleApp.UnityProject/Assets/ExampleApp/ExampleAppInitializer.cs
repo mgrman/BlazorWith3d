@@ -45,7 +45,7 @@ namespace ExampleApp
                 var simulatorTypedApi = new UnityTypedUnityApi(simulatorApi);
                 var simulator = gameObject.AddComponent<BlazorSimulator>();
                 gameObject.AddComponent<DragChangingSimulatorHandler>();
-                simulator.Initialize(simulatorTypedApi, typeof(AppInitialized).Assembly);
+                simulator.Initialize(simulatorTypedApi, typeof(UnityAppInitialized).Assembly);
                 _blazorApi = simulatorApi;
             }
             else
@@ -62,17 +62,17 @@ namespace ExampleApp
 
             _appApi = new BlocksOnGridUnityApi(_typedApi);
 
-            _appApi.AppInitialized(new AppInitialized());
-            _appApi.AddBlockTemplate += OnAddBlockTemplateMessage;
-            _appApi.RemoveBlockTemplate += OnRemoveBlockTemplateMessage;
-            _appApi.AddBlockInstance += OnAddBlockInstanceMessage;
-            _appApi.RemoveBlock += OnRemoveBlockMessage;
-            _appApi.BlockPoseChangingResponse += OnBlockPoseChangingResponse;
-            _appApi.ControllerInitialized += OnControllerInitialized;
+            _appApi.InvokeUnityAppInitialized(new UnityAppInitialized());
+            _appApi.OnAddBlockTemplate += OnAddBlockTemplateMessage;
+            _appApi.OnRemoveBlockTemplate += OnRemoveBlockTemplateMessage;
+            _appApi.OnAddBlockInstance += OnAddBlockInstanceMessage;
+            _appApi.OnRemoveBlock += OnRemoveBlockMessage;
+            _appApi.OnBlockPoseChangeValidated += OnBlockPoseChangingResponse;
+            _appApi.OnBlazorControllerInitialized += OnControllerInitialized;
             
-            _appApi.PerfCheckRequest += request =>
+            _appApi.OnPerfCheck += request =>
             {
-                _appApi.PerfCheckResponse(new PerfCheckResponse
+                _appApi.InvokePerfCheck(new PerfCheck
                 {
                     Id = request.Id,
                     Aaa = request.Aaa,
@@ -96,7 +96,7 @@ namespace ExampleApp
             }
         }
 
-        private void OnControllerInitialized(ControllerInitializedRequest _)
+        private void OnControllerInitialized(BlazorControllerInitialized _)
         {
             foreach (var block in _templates.Values)
             {
@@ -113,26 +113,26 @@ namespace ExampleApp
             _blocks.Clear();
         }
 
-        private void OnBlockPoseChangingResponse(BlockPoseChangingResponse obj)
+        private void OnBlockPoseChangingResponse(BlockPoseChangeValidated obj)
         {
             _blocks[obj.BlockId].OnBlockPoseChangingResponse(obj);
         }
 
-        private void OnAddBlockTemplateMessage(AddBlockTemplateMessage msg)
+        private void OnAddBlockTemplateMessage(AddBlockTemplate msg)
         {
             Debug.Log($"Adding block template: {JsonUtility.ToJson(msg)}");
 
 
             var meshGo = Instantiate(_templatePrefab, _templateRoot.transform);
 
-            meshGo.Initialize(msg, gameObject, _typedApi);
+            meshGo.Initialize(msg, gameObject, _appApi);
 
             _templates.Add(msg.TemplateId, meshGo);
 
             Debug.Log($"Added block template: {JsonUtility.ToJson(msg)}");
         }
 
-        private void OnRemoveBlockTemplateMessage(RemoveBlockTemplateMessage msg)
+        private void OnRemoveBlockTemplateMessage(RemoveBlockTemplate msg)
         {
             Debug.Log($"Removing block template: {JsonUtility.ToJson(msg)}");
             
@@ -142,7 +142,7 @@ namespace ExampleApp
             Debug.Log($"Removed block template: {JsonUtility.ToJson(msg)}");
         }
 
-        private void OnAddBlockInstanceMessage(AddBlockInstanceMessage msg)
+        private void OnAddBlockInstanceMessage(AddBlockInstance msg)
         {
             Debug.Log($"Adding block : {JsonUtility.ToJson(msg)}");
             var template = _templates[msg.TemplateId];
@@ -153,7 +153,7 @@ namespace ExampleApp
             Debug.Log($"Added block : {JsonUtility.ToJson(msg)}");
         }
 
-        private void OnRemoveBlockMessage(RemoveBlockMessage msg)
+        private void OnRemoveBlockMessage(RemoveBlock msg)
         {
             Debug.Log($"Removing block: {JsonUtility.ToJson(msg)}");
             Destroy( _blocks[msg.BlockId].gameObject);

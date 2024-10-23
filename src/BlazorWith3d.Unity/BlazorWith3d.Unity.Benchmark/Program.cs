@@ -19,7 +19,7 @@ public class Serialization
     }
 
     [Benchmark]
-    public byte[] ByteArray() => MemoryPackSerializer.Serialize<PerfCheckRequest>(new  PerfCheckRequest 
+    public byte[] ByteArray() => MemoryPackSerializer.Serialize<PerfCheck>(new  PerfCheck 
     {
         Id = 1009,
         Aaa = 12,
@@ -32,7 +32,7 @@ public class Serialization
     public byte[] ArrayBufferWriter()
     {
         writer.Clear();
-        MemoryPackSerializer.Serialize<PerfCheckRequest, ArrayBufferWriter<byte>>(writer, new PerfCheckRequest
+        MemoryPackSerializer.Serialize<PerfCheck, ArrayBufferWriter<byte>>(writer, new PerfCheck
         {
             Id = 1009,
             Aaa = 12,

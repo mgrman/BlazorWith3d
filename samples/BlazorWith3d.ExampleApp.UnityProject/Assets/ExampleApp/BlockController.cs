@@ -21,7 +21,7 @@ namespace ExampleApp
         [SerializeField] private string? VisualsUri;
         private readonly AwaitableCompletionSource _dragMessageCounter = new();
 
-        private TypedBlazorApi _blazorApi;
+        private IBlocksOnGridUnityApi _appApi;
         private Vector3 _dragOffset;
 
         private Plane _dragPlane;
@@ -81,8 +81,8 @@ namespace ExampleApp
             _lastRequestedValidatioId = newValidationId;
             _dragMessageCounter.Reset();
 
-            _blazorApi.SendMessage(
-                new BlockPoseChangingMessage
+            _appApi.InvokeBlockPoseChanging(
+                new BlockPoseChanging
                 {
                     BlockId = BlockId,
                     PositionX = newPosition.x,
@@ -97,8 +97,8 @@ namespace ExampleApp
             Debug.Log($"OnEndDrag  {BlockId}");
 
             await _dragMessageCounter.Awaitable;
-            _blazorApi.SendMessage(
-                new BlockPoseChangedMessage
+            _appApi.InvokeBlockPoseChanged(
+                new BlockPoseChanged
                 {
                     BlockId = BlockId,
                     PositionX = Position.x,
@@ -124,30 +124,30 @@ namespace ExampleApp
             _lastRequestedValidatioId = -1;
         }
 
-        public void Initialize(AddBlockTemplateMessage msg, GameObject backgroundPlane, TypedBlazorApi blazorApi)
+        public void Initialize(AddBlockTemplate msg, GameObject backgroundPlane, IBlocksOnGridUnityApi appApi)
         {
             TemplateId = msg.TemplateId;
             Size = new Vector3(msg.SizeX, msg.SizeY, msg.SizeZ);
             VisualsUri = msg.VisualsUri;
             _backgroundPlane = backgroundPlane;
 
-            _blazorApi = blazorApi;
+            _appApi = appApi;
 
             _cubePlaceholderVisuals.transform.localScale = Size;
             _cubePlaceholderVisuals.transform.localPosition = new Vector3(0, 0, Size.z / 2);
         }
 
-        public BlockController CreateInstance(AddBlockInstanceMessage msg)
+        public BlockController CreateInstance(AddBlockInstance msg)
         {
             var blockGo = Instantiate(this, _backgroundPlane.transform);
-            blockGo._blazorApi = _blazorApi;
+            blockGo._appApi = _appApi;
 
             blockGo.InitializeInstance(msg);
 
             return blockGo;
         }
 
-        private void InitializeInstance(AddBlockInstanceMessage msg)
+        private void InitializeInstance(AddBlockInstance msg)
         {
             BlockId = msg.BlockId;
             Position = new Vector3(msg.PositionX, msg.PositionY, 0);
@@ -162,7 +162,7 @@ namespace ExampleApp
             transform.localRotation = Quaternion.Euler(0, 0, RotationZ);
         }
 
-        public void OnBlockPoseChangingResponse(BlockPoseChangingResponse newPose)
+        public void OnBlockPoseChangingResponse(BlockPoseChangeValidated newPose)
         {
             if (newPose.ChangingRequestId < _lastAppliedValidationResponse) return;
 
