@@ -13,6 +13,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\BlazorWith3d.ExampleApp.Client.Unity\BlazorWith3d.ExampleApp.Client.Unity.csproj" />
         <ProjectReference Include="..\BlazorWith3d.ExampleApp.Client\BlazorWith3d.ExampleApp.Client.csproj"/>
     </ItemGroup>
 

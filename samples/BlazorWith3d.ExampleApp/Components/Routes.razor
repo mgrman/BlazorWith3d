@@ -1,5 +1,5 @@
 ﻿@using BlazorWith3d.Components.Layout
-<Router AppAssembly="typeof(Program).Assembly" AdditionalAssemblies="new[] { typeof(Client._Imports).Assembly }">
+<Router AppAssembly="typeof(Program).Assembly" AdditionalAssemblies="new[] { typeof(BlazorWith3d.ExampleApp.Client.Unity._Imports).Assembly,typeof(BlazorWith3d.ExampleApp.Client._Imports).Assembly }">
     <Found Context="routeData">
         <RouteView RouteData="routeData" DefaultLayout="typeof(MainLayout)"/>
         <FocusOnNavigate RouteData="routeData" Selector="h1"/>

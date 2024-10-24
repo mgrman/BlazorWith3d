@@ -1,0 +1,35 @@
+﻿@using BlazorWith3d.ExampleApp.Client.Unity.Shared
+@using BlazorWith3d.Unity
+@using Microsoft.Extensions.Logging
+@rendermode InteractiveServer
+@inject DebugRelayUnityApi DebugRelayUnityApi
+@inject ILogger<BlocksOnGridUnityDebugRelay> Logger
+
+@code {
+
+    [CascadingParameter] 
+    public I3DAppController ParentApp { get; set; }
+
+
+    protected override void OnInitialized()
+    {
+        BlocksOnGrid3DApp.InitializeMemoryPack();
+        base.OnInitialized();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            await base.OnAfterRenderAsync(firstRender);
+            return;
+        }
+
+        DebugRelayUnityApi.HandleThread(InvokeAsync);
+        
+        
+        var typedUnityApi = new BlazorTypedUnityApi(DebugRelayUnityApi, Logger);
+        var unityAppApi = new BlocksOnGrid3DApp(typedUnityApi);
+        ParentApp.InitializeRenderer(unityAppApi);
+    }
+}

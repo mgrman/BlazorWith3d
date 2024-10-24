@@ -1,8 +1,6 @@
 using Blazored.LocalStorage;
 using BlazorWith3d.Components;
 using BlazorWith3d.Unity;
-using Microsoft.AspNetCore.Mvc;
-using _Imports = BlazorWith3d.Client._Imports;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -85,6 +83,7 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
     .AddInteractiveWebAssemblyRenderMode()
-    .AddAdditionalAssemblies(typeof(_Imports).Assembly);
+    .AddAdditionalAssemblies(typeof(BlazorWith3d.ExampleApp.Client._Imports).Assembly)
+    .AddAdditionalAssemblies(typeof(BlazorWith3d.ExampleApp.Client.Unity._Imports).Assembly);
 
 app.Run();

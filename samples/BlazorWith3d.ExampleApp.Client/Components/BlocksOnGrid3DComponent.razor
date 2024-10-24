@@ -174,11 +174,10 @@
     private List<(int id, float sizeX, float sizeY, float sizeZ)> _templates = new();
     private List<(int blockId, float positionX, float positionY, float rotationZ, int templateId)> _blocks = new();
 
-    private BlocksOnGrid3DApp? _unityAppApi;
+    private IBlocksOnGrid3DApp? _unityAppApi;
 
     protected override async Task OnInitializedAsync()
     {
-        BlocksOnGrid3DApp.InitializeMemoryPack();
         if (OperatingSystem.IsBrowser())
         {
             _templates = await LocalStorage.GetItemAsync<List<(int id, float sizeX, float sizeY, float sizeZ)>>("_templates") ?? new List<(int id, float sizeX, float sizeY, float sizeZ)>();
@@ -190,11 +189,9 @@
         await base.OnInitializedAsync();
     }
 
-    public void InitializeRenderer(IUnityApi unityApi)
+    public void InitializeRenderer(IBlocksOnGrid3DApp rendererApi)
     {
-        var typedUnityApi = new BlazorTypedUnityApi(unityApi, Logger);
-        _unityAppApi = new BlocksOnGrid3DApp(typedUnityApi);
-
+        _unityAppApi = rendererApi;
         _unityAppApi.OnUnityAppInitialized += OnAppInitialized;
         _unityAppApi.OnBlockPoseChanging += OnBlockPoseChanging;
         _unityAppApi.OnBlockPoseChanged += OnBlockPoseChanged;

@@ -21,7 +21,6 @@
 
 @code
 {
-    [CascadingParameter] public I3DAppController ParentApp { get; set; }
     
     private IJSObjectReference? _unityApi;
 
@@ -58,7 +57,6 @@
             await base.OnAfterRenderAsync(firstRender);
             return;
         }
-        ParentApp.InitializeRenderer(this);
 
         var moduleTask = new Lazy<Task<IJSObjectReference>>(() => JsRuntime.InvokeAsync<IJSObjectReference>("import", "./_content/BlazorWith3d.Unity/unityInitialization.js").AsTask());
         var module = await moduleTask.Value;
