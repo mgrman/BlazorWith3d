@@ -21,27 +21,31 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
 #endif
 
     [MemoryPackable]
+    [GenerateTypeScript]
     public partial class BlazorControllerInitialized : IMessageToUnity
     {
     }
 
     [MemoryPackable]
+    [GenerateTypeScript]
     public partial class PerfCheck : IMessageToUnity, IMessageToBlazor
     {
         public float Aaa;
         public double Bbb;
-        public decimal Ccc;
+        public long Ccc;
         public string? Ddd;
         public int Id;
     }
 
 
     [MemoryPackable]
+    [GenerateTypeScript]
     public partial class UnityAppInitialized : IMessageToBlazor
     {
     }
 
     [MemoryPackable]
+    [GenerateTypeScript]
     public partial class AddBlockTemplate : IMessageToUnity
     {
         public float SizeX;
@@ -52,6 +56,7 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
     }
 
     [MemoryPackable]
+    [GenerateTypeScript]
     public partial class AddBlockInstance : IMessageToUnity
     {
         public int BlockId;
@@ -62,18 +67,21 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
     }
 
     [MemoryPackable]
+    [GenerateTypeScript]
     public partial class RemoveBlock : IMessageToUnity
     {
         public int BlockId;
     }
 
     [MemoryPackable]
+    [GenerateTypeScript]
     public partial class RemoveBlockTemplate : IMessageToUnity
     {
         public int TemplateId;
     }
 
     [MemoryPackable]
+    [GenerateTypeScript]
     public partial class StartDraggingBlock : IMessageToUnity
     {
         public int BlockId;
@@ -81,6 +89,7 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
     }
 
     [MemoryPackable]
+    [GenerateTypeScript]
     public partial class BlockPoseChangeValidated : IMessageToUnity
     {
         public int BlockId;
@@ -92,6 +101,7 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
     }
 
     [MemoryPackable]
+    [GenerateTypeScript]
     public partial class BlockPoseChanging : IMessageToBlazor
     {
         public int BlockId;
@@ -102,6 +112,7 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
     }
 
     [MemoryPackable]
+    [GenerateTypeScript]
     public partial class BlockPoseChanged : IMessageToBlazor
     {
         public int BlockId;

@@ -24,7 +24,7 @@ public class Serialization
         Id = 1009,
         Aaa = 12,
         Bbb = 12.12,
-        Ccc = 13.13m,
+        Ccc = 13888888888888,
         Ddd = "https://aaaa.cc/erekwn/sdas?adsasd=asda"
     });
 
@@ -37,7 +37,7 @@ public class Serialization
             Id = 1009,
             Aaa = 12,
             Bbb = 12.12,
-            Ccc = 13.13m,
+            Ccc = 13888888888888,
             Ddd = "https://aaaa.cc/erekwn/sdas?adsasd=asda"
         });
         return writer.WrittenSpan.ToArray();
