@@ -12,25 +12,14 @@ with potentially another source gen to generate the pure JS wrapper (as sending 
 
 ## Prio 0
 
-- optimization: if message has fields, generete singleton for it and ignore it in method/event parameters
-- to consider: the methods to invoke, do not need force the message, maybe create a overload where the fields themselves can be provided instead
-
-- TEST first if in typescript based implementation, it is better to use direct JS method interop or rather set up message passing channel
-- due to callback not being directly supported in invocation, I am leaning a bit towards using messages and the T4 generate the types 
- 
-
-- interface for all renderers defined
-- use T4 to generate the message types from arguments
-- and either via T4 or via code gen, the interface implementation using those messages
-- therefore messages become part of Unity specific implemetation
-
-
-
-
-
 - Add BabylonJS/ThreeJS version of 3d renderer
   - One version using Blazor interop https://github.com/HomagGroup/Blazor3D-Core
+  - One version using own JS with direct interop
   - One version using own JS app and memorypack typescript generator
+
+- Benchmark if in typescript based implementation, it is better to use direct JS method interop or rather set up message passing channel
+  - another source gen to generate the pure JS wrapper (as sending messages back to .NET needs some boilerplate)
+
 
 ## Prio 1
 
@@ -50,6 +39,9 @@ with potentially another source gen to generate the pure JS wrapper (as sending 
 
 
 ## Prio 3
+
+- optimization: if message has fields, generete singleton for it and ignore it in method/event parameters
+- to consider: the methods to invoke, do not need force the message, maybe create a overload where the fields themselves can be provided instead
 
 - add support for defining messages from other assemblies
 
