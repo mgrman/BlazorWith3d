@@ -1,4 +1,5 @@
 ﻿@using System.Diagnostics
+@using System.Diagnostics.CodeAnalysis
 @using Blazored.LocalStorage
 @using BlazorWith3d.ExampleApp.Client.Unity.Shared
 @using BlazorWith3d.Unity
@@ -149,13 +150,12 @@
 }
 <CascadingValue Value="this" IsFixed="true">
     @ChildContent
-
 </CascadingValue>
 
 @code {
 
     [Parameter]
-    public RenderFragment ChildContent { get; set; }
+    public RenderFragment? ChildContent { get; set; }
     
     int _newIdCounter;
 
@@ -174,7 +174,7 @@
     private List<(int id, float sizeX, float sizeY, float sizeZ)> _templates = new();
     private List<(int blockId, float positionX, float positionY, float rotationZ, int templateId)> _blocks = new();
 
-    private IBlocksOnGrid3DApp? _unityAppApi;
+    private IBlocksOnGrid3DApp? _rendererApi;
 
     protected override async Task OnInitializedAsync()
     {
@@ -191,12 +191,12 @@
 
     public void InitializeRenderer(IBlocksOnGrid3DApp rendererApi)
     {
-        _unityAppApi = rendererApi;
-        _unityAppApi.OnUnityAppInitialized += OnAppInitialized;
-        _unityAppApi.OnBlockPoseChanging += OnBlockPoseChanging;
-        _unityAppApi.OnBlockPoseChanged += OnBlockPoseChanged;
+        _rendererApi = rendererApi;
+        _rendererApi.OnUnityAppInitialized += OnAppInitialized;
+        _rendererApi.OnBlockPoseChanging += OnBlockPoseChanging;
+        _rendererApi.OnBlockPoseChanged += OnBlockPoseChanged;
         
-        _unityAppApi.InvokeBlazorControllerInitialized(new BlazorControllerInitialized());
+        _rendererApi.InvokeBlazorControllerInitialized(new BlazorControllerInitialized());
     }
 
     private void OnBlockPoseChanged(BlockPoseChanged obj)
@@ -211,7 +211,8 @@
 
     private void OnBlockPoseChanging(BlockPoseChanging arg)
     {
-        _unityAppApi.InvokeBlockPoseChangeValidated(new BlockPoseChangeValidated
+        ValidateAppApi();  
+        _rendererApi.InvokeBlockPoseChangeValidated(new BlockPoseChangeValidated
         {
             BlockId = arg.BlockId,
             IsValid = true,
@@ -222,6 +223,15 @@
         });
     }
 
+    [MemberNotNull(nameof(_rendererApi))]
+    private void ValidateAppApi()
+    {
+        if (_rendererApi == null)
+        {
+            throw new InvalidOperationException("Renderer is not initialized yet!");
+        }
+    }
+
     private async void OnAppInitialized(UnityAppInitialized arg)
     {
         await ReplayState();
@@ -229,24 +239,26 @@
 
     private async ValueTask ReplayState()
     {
+        ValidateAppApi();  
         
         foreach (var template in _templates)
         {
             var msg = new AddBlockTemplate { TemplateId = template.id, SizeX = template.sizeX, SizeY = template.sizeY, SizeZ = template.sizeZ };
-            await _unityAppApi.InvokeAddBlockTemplate(msg);
+            await _rendererApi.InvokeAddBlockTemplate(msg);
         }
 
         foreach (var block in _blocks)
         {
             var msg = new AddBlockInstance { BlockId = block.blockId, PositionX = block.positionX, PositionY = block.positionY, RotationZ = block.rotationZ, TemplateId = block.templateId };
-            await _unityAppApi.InvokeAddBlockInstance(msg);
+            await _rendererApi.InvokeAddBlockInstance(msg);
         }
     }
 
     private async Task AddTemplate()
     {
+        ValidateAppApi();  
         var msg = new AddBlockTemplate { TemplateId = _newIdCounter++, SizeX = _newTemplateSizeX, SizeY = _newTemplateSizeY, SizeZ = _newTemplateSizeZ };
-        await _unityAppApi.InvokeAddBlockTemplate(msg);
+        await _rendererApi.InvokeAddBlockTemplate(msg);
         _templates.Add((msg.TemplateId, msg.SizeX, msg.SizeY, msg.SizeZ));
         SaveToLocalStorage();
     }
@@ -262,28 +274,32 @@
 
     private async Task RemoveTemplate(int id)
     {
-        await _unityAppApi.InvokeRemoveBlockTemplate(new RemoveBlockTemplate { TemplateId = id });
+        ValidateAppApi();  
+        await _rendererApi.InvokeRemoveBlockTemplate(new RemoveBlockTemplate { TemplateId = id });
         _templates.RemoveAll(o => o.id == id);
         SaveToLocalStorage();
     }
 
     private async Task AddBlock()
     {
+        ValidateAppApi();  
         var msg = new AddBlockInstance { BlockId = _newIdCounter++, PositionX = _newBlockPositionX, PositionY = _newBlockPositionY, RotationZ = _newBlockRotationZ, TemplateId = _newBlockTemplateId };
-        await _unityAppApi.InvokeAddBlockInstance(msg);
+        await _rendererApi.InvokeAddBlockInstance(msg);
         _blocks.Add((msg.BlockId, msg.PositionX, msg.PositionY, msg.RotationZ, msg.TemplateId));
         SaveToLocalStorage();
     }
 
     private async Task RemoveBlock(int id)
     {
-        await _unityAppApi.InvokeRemoveBlock(new RemoveBlock { BlockId = id });
+        ValidateAppApi();  
+        await _rendererApi.InvokeRemoveBlock(new RemoveBlock { BlockId = id });
         _blocks.RemoveAll(o => o.blockId == id);
         SaveToLocalStorage();
     }
 
     private async Task PerfCheck()
     {
+        ValidateAppApi();  
         var testCount = _perfTestCount;
 
         var responses = new bool[testCount];
@@ -292,12 +308,12 @@
         var tcs = new TaskCompletionSource();
         var avgStopwatch = new Stopwatch();
 
-        _unityAppApi.OnPerfCheck += Process;
+        _rendererApi.OnPerfCheck += Process;
 
         avgStopwatch.Start();
         for (var i = 0; i < testCount; i++)
         {
-            await _unityAppApi.InvokePerfCheck(new PerfCheck
+            await _rendererApi.InvokePerfCheck(new PerfCheck
             {
                 Id = i,
                 Aaa = 12,
@@ -309,7 +325,7 @@
 
         await tcs.Task;
 
-        _unityAppApi.OnPerfCheck -= Process;
+        _rendererApi.OnPerfCheck -= Process;
 
         _perfResponse = $"{testCount} messages there and back, took {avgStopwatch.ElapsedMilliseconds:F2} ms (avg {(decimal)avgStopwatch.ElapsedMilliseconds / testCount:F2} ms)";
 
