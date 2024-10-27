@@ -36,7 +36,7 @@ public class HelloSourceGenerator : ISourceGenerator
         {
             var (typeName,namespaceName) = GetTypeAndNamespace(typeDeclaration);
 
-            var appInfo= new AppInfo(typeName, namespaceName, "TypedUnityApi","ValueTask", methodInfo.messagesToUnity, methodInfo.messagesToBlazor, methodInfo);
+            var appInfo= new AppInfo(typeName, namespaceName,  methodInfo.messagesToUnity, methodInfo.messagesToBlazor, methodInfo);
             
             var text = GenerateClass(appInfo);
             context.AddSource($"{typeName}.g.cs", text);
@@ -46,7 +46,7 @@ public class HelloSourceGenerator : ISourceGenerator
         {
             var (typeName,namespaceName) = GetTypeAndNamespace(typeDeclaration);
 
-            var appInfo= new AppInfo(typeName, namespaceName, "TypedBlazorApi","void", methodInfo.messagesToBlazor, methodInfo.messagesToUnity, methodInfo);
+            var appInfo= new AppInfo(typeName, namespaceName,  methodInfo.messagesToBlazor, methodInfo.messagesToUnity, methodInfo);
 
             var text = GenerateClass(appInfo);
 
@@ -64,8 +64,6 @@ public class HelloSourceGenerator : ISourceGenerator
     private record AppInfo(
         string typeName,
         string @namespace,
-        string typedApiName,
-        string sendMessageReturnType,
         IReadOnlyList<(string typeName, string @namespace)> methods,
         IReadOnlyList<(string typeName, string @namespace)> events,
         MessageInfo allMessages)
@@ -84,6 +82,7 @@ public class HelloSourceGenerator : ISourceGenerator
         sb.AppendLine("");
         sb.AppendLine("using System;");
         sb.AppendLine("using System.Threading.Tasks;");
+        sb.AppendLine("using System.Buffers;");
         sb.AppendLines(info.allMessages.messagesToUnity.Concat(info.allMessages.messagesToBlazor).Select(o=>o.@namespace).Distinct().Select(o => $"using {o};"));
         sb.AppendLine("using BlazorWith3d.Unity.Shared;");
         sb.AppendLine("using MemoryPack;");
@@ -94,6 +93,7 @@ public class HelloSourceGenerator : ISourceGenerator
             sb.AppendLine($"public partial interface I{info.typeName}");
             using (sb.IndentWithCurlyBrackets())
             {
+                    sb.AppendLine($"event Action<byte[], Exception> OnMessageError;");
 
                 foreach (var e in info.events)
                 {
@@ -103,13 +103,13 @@ public class HelloSourceGenerator : ISourceGenerator
                 sb.AppendLine();
                 foreach (var m in info.methods)
                 {
-                    sb.AppendLine($"{info.sendMessageReturnType} Invoke{m.typeName}({m.typeName} msg);");
+                    sb.AppendLine($"ValueTask Invoke{m.typeName}({m.typeName} msg);");
 
                 }
 
             }
             
-            sb.AppendLine($"public partial class {info.typeName}: I{info.typeName}");
+            sb.AppendLine($"public partial  class {info.typeName}: I{info.typeName}");
             using (sb.IndentWithCurlyBrackets())
             {
                     
@@ -150,44 +150,97 @@ public class HelloSourceGenerator : ISourceGenerator
                 }
                 
                 
+                sb.AppendLine($"protected partial void SerializeObject<T>(T obj, IBufferWriter<byte> writer);");
+                sb.AppendLine($"protected partial T? DeserializeObject<T>(ReadOnlySpan<byte> bytes);");
 
-                sb.AppendLine($"private readonly {info.typedApiName} _typedApi;");
+                sb.AppendLine($"private readonly IBinaryApi _binaryApi;");
+                sb.AppendLine($"private readonly ArrayBufferWriter<byte> _writer = new ArrayBufferWriter<byte>(100);");
                 sb.AppendLine();
-                sb.AppendLine($"public {info.typeName}({info.typedApiName} typedApi)");
+                sb.AppendLine($"public {info.typeName}(IBinaryApi binaryApi)");
                 using (sb.IndentWithCurlyBrackets())
                 {
-                    sb.AppendLine("_typedApi = typedApi;");
-
-                    foreach (var e in info.events)
-                    {
-                        sb.AppendLine(
-                            $"_typedApi.AddMessageProcessCallback<{e.typeName}>(this.On{e.typeName}Internal);");
-                    }
+                    sb.AppendLine("_binaryApi = binaryApi;");
+                    sb.AppendLine("_binaryApi.OnMessage+=ProcessMessages;");
                 }
 
                 sb.AppendLine();
 
+                sb.AppendLine($"public event Action<byte[], Exception> OnMessageError;");
                 foreach (var e in info.events)
                 {
                     sb.AppendLine($"public event Action<{e.typeName}> On{e.typeName};");
                 }
 
                 sb.AppendLine();
-                foreach (var m in info.methods)
+                for (var i = 0; i < info.methods.Count; i++)
                 {
-                    sb.AppendLine($"public {info.sendMessageReturnType} Invoke{m.typeName}({m.typeName} msg)");
+                    var m = info.methods[i];
+                    sb.AppendLine($"public ValueTask Invoke{m.typeName}({m.typeName} msg)");
 
                     using (sb.IndentWithCurlyBrackets())
                     {
-                        sb.AppendLine($"{(info.sendMessageReturnType=="void"?"":"return ")}_typedApi.SendMessage(msg);");
+                        sb.AppendLine($"return SendMessage({i}, msg);");
                     }
                 }
+
+                sb.AppendLine();
+                
+                sb.AppendLine($"protected ValueTask SendMessage<TMessage>(byte messageId, TMessage message)");
+                using (sb.IndentWithCurlyBrackets())
+                {
+                    sb.AppendLine("try");
+                    using (sb.IndentWithCurlyBrackets())
+                    {
+                        sb.AppendLine("_writer.Clear();");
+                        sb.AppendLine("Span<byte> messageIdSpan = stackalloc byte[1];");
+                        sb.AppendLine("messageIdSpan[0] = messageId;");
+                        sb.AppendLine("_writer.Write(messageIdSpan);");
+                        sb.AppendLine("SerializeObject(message, _writer);");
+                        sb.AppendLine("var encodedMessage = _writer.WrittenSpan.ToArray();");
+                        sb.AppendLine($"return _binaryApi.SendMessage(encodedMessage);");
+                    }
+                    sb.AppendLine("catch (Exception ex)");
+
+                    using (sb.IndentWithCurlyBrackets())
+                    {
+                        sb.AppendLine("throw;");
+                    }
+                }
+                
                 sb.AppendLine();
 
-                foreach (var e in info.events)
+                
+                sb.AppendLine($"protected void ProcessMessages(byte[] message)");
+                using (sb.IndentWithCurlyBrackets())
                 {
-                    sb.AppendLine(
-                        $"private void On{e.typeName}Internal({e.typeName} msg)=> On{e.typeName}?.Invoke(msg);");
+                    sb.AppendLine("try");
+                    using (sb.IndentWithCurlyBrackets())
+                    {
+                        sb.AppendLine("var span = new ReadOnlySpan<byte>(message, 1, message.Length - 1);");
+                        
+                        sb.AppendLine("switch(message[0])");
+                        using (sb.IndentWithCurlyBrackets())
+                        {
+                            for (var i = 0; i < info.events.Count; i++)
+                            {
+                                var e = info.events[i];
+                                sb.AppendLine($"case {i}:");
+                                using (sb.IndentWithCurlyBrackets())
+                                {
+                                    sb.AppendLine($"var obj = DeserializeObject<{e.typeName}>(span);");
+                                    sb.AppendLine($"On{e.typeName}?.Invoke(obj);");
+                                    sb.AppendLine($"break;");
+                                }
+                            }
+                        }
+                    }
+                    sb.AppendLine("catch (Exception ex)");
+
+                    using (sb.IndentWithCurlyBrackets())
+                    {
+                        sb.AppendLine("OnMessageError?.Invoke(message, ex);");
+                        sb.AppendLine("throw;");
+                    }
                 }
             }
         }

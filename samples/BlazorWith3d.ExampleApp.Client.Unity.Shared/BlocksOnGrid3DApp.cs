@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Threading.Tasks;
 using BlazorWith3d.Unity.Shared;
 using MemoryPack;
@@ -7,16 +8,35 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
 {
 #if COMMON_DOTNET
     [Blazor3DApp]
-#endif
     public partial class BlocksOnGrid3DApp
     {
+
+        protected partial void SerializeObject<T>(T obj, IBufferWriter<byte> writer)
+        {
+            MemoryPackSerializer.Serialize<T,IBufferWriter<byte>>(writer, obj);
+        }
+
+        protected partial T? DeserializeObject<T>(ReadOnlySpan<byte> bytes)
+        {
+            return MemoryPackSerializer.Deserialize<T>(bytes);
+        }
     }
+#endif
 
 
 #if COMMON_UNITY
     [Unity3DApp]
     public partial class BlocksOnGridUnityApi
     {
+        protected partial void SerializeObject<T>(T obj, IBufferWriter<byte> writer)
+        {
+            MemoryPackSerializer.Serialize<T,IBufferWriter<byte>>(writer, obj);
+        }
+
+        protected partial T? DeserializeObject<T>(ReadOnlySpan<byte> bytes)
+        {
+            return MemoryPackSerializer.Deserialize<T>(bytes);
+        }
     }
 #endif
 

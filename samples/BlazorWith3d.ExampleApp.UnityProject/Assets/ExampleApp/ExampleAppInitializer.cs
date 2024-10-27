@@ -16,10 +16,9 @@ namespace ExampleApp
         private readonly Dictionary<int, BlockController> _blocks = new();
         private readonly Dictionary<int, BlockController> _templates = new();
         private IBlocksOnGridUnityApi _appApi;
-        private IBlazorApi _blazorApi;
+        private IBinaryApi _blazorApi;
         private GameObject _templateRoot;
 
-        private TypedBlazorApi _typedApi;
         
         private List<IDisposable> _disposables=new List<IDisposable>();
         private List<IAsyncDisposable> _asyncDisposables=new List<IAsyncDisposable>();
@@ -39,30 +38,28 @@ namespace ExampleApp
             BlocksOnGridUnityApi.InitializeMemoryPack();
 #if UNITY_EDITOR
             
-            if (string.IsNullOrEmpty(_backendWebsocketUrl))
-            {
-                var simulatorApi = new SimulatorApi();
-                var simulatorTypedApi = new UnityTypedUnityApi(simulatorApi);
-                var simulator = gameObject.AddComponent<BlazorSimulator>();
-                gameObject.AddComponent<DragChangingSimulatorHandler>();
-                simulator.Initialize(simulatorTypedApi, typeof(UnityAppInitialized).Assembly);
-                _blazorApi = simulatorApi;
-            }
-            else
-            {
+            // if (string.IsNullOrEmpty(_backendWebsocketUrl))
+            // {
+            //     var simulatorProxy = new SimulatorProxy();
+            //     var simulatorTypedApi = new UnityTypedUnityApi(simulatorProxy.uni);
+            //     var simulator = gameObject.AddComponent<BlazorSimulator>();
+            //     gameObject.AddComponent<DragChangingSimulatorHandler>();
+            //     simulator.Initialize(simulatorTypedApi, typeof(UnityAppInitialized).Assembly);
+            //     _blazorApi = simulatorApi;
+            // }
+            // else
+            // {
                 var relay = new BlazorWebSocketRelay(_backendWebsocketUrl);
                 _asyncDisposables.Add(relay);
                 _blazorApi = relay;
-            }
+            // }
 #else
             _blazorApi = new UnityBlazorApi();
 #endif
             
-            _typedApi = new UnityTypedBlazorApi(_blazorApi);
+            _appApi = new BlocksOnGridUnityApi(_blazorApi);
 
-            _appApi = new BlocksOnGridUnityApi(_typedApi);
-
-            _appApi.InvokeUnityAppInitialized(new UnityAppInitialized());
+            await _appApi.InvokeUnityAppInitialized(new UnityAppInitialized());
             _appApi.OnAddBlockTemplate += OnAddBlockTemplateMessage;
             _appApi.OnRemoveBlockTemplate += OnRemoveBlockTemplateMessage;
             _appApi.OnAddBlockInstance += OnAddBlockInstanceMessage;

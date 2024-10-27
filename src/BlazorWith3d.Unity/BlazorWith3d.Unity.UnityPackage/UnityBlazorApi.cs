@@ -1,42 +1,51 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using AOT;
 using BlazorWith3d.Unity.Shared;
 using UnityEngine;
 
 namespace BlazorWith3d.Unity
 {
-    public class UnityBlazorApi : IBlazorApi
+    public class UnityBlazorApi : IBinaryApi
     {
         private static readonly List<byte[]> messageBuffer = new();
 
         private static Action<byte[]> _onHandleReceivedMessages;
 
 
-        public Action<byte[]> OnMessageFromBlazor
+        public event Action<byte[]> OnMessage
         {
-            get => _onHandleReceivedMessages;
-            set
+            add
             {
 #if !(UNITY_WEBGL && !UNITY_EDITOR)
                 throw new NotImplementedException();
 #endif
-                _onHandleReceivedMessages = value;
-                if (value != null)
+                _onHandleReceivedMessages += value;
+                if (messageBuffer.Any())
                 {
-                    foreach (var msg in messageBuffer) value(msg);
+                    foreach (var msg in messageBuffer)
+                    {
+                        value(msg);
+                    }
                     messageBuffer.Clear();
                 }
             }
+            remove
+            {
+                _onHandleReceivedMessages -= value;
+            }
         }
 
-        public void SendMessageToBlazor(byte[] bytes)
+        public ValueTask SendMessage(byte[] bytes)
         {
 #if !(UNITY_WEBGL && !UNITY_EDITOR)
             throw new NotImplementedException();
 #endif
             _SendMessageFromUnity(bytes, bytes.Length);
+            return new ValueTask();
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSplashScreen)]

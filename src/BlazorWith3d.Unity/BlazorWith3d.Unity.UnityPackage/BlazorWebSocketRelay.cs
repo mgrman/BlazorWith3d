@@ -10,7 +10,7 @@ using UnityEngine;
 
 namespace BlazorWith3d.Unity
 {
-    public class BlazorWebSocketRelay : IAsyncDisposable, IBlazorApi
+    public class BlazorWebSocketRelay : IAsyncDisposable, IBinaryApi
     {
         private readonly string _url;
 
@@ -20,7 +20,7 @@ namespace BlazorWith3d.Unity
         private readonly List<byte[]> _unsentMessages= new ();
 
 
-        public Action<byte[]> OnMessageFromBlazor { get; set; }
+        public event Action<byte[]> OnMessage;
 
 
         public BlazorWebSocketRelay(string url)
@@ -116,15 +116,16 @@ namespace BlazorWith3d.Unity
             }
         }
 
-        public void SendMessageToBlazor(byte[] bytes)
+        public ValueTask SendMessage(byte[] bytes)
         {
             if (_ws?.State!= WebSocketState.Open)
             {
                 _unsentMessages.Add(bytes);
-                return;
+                return new ValueTask();
             }
 
             SendMessageInner(bytes);
+            return new ValueTask();
         }
 
         private void SendMessageInner(byte[] bytes)
@@ -135,7 +136,7 @@ namespace BlazorWith3d.Unity
         private async void ResponseReceived(byte[] data)
         {
             await Awaitable.MainThreadAsync();
-            OnMessageFromBlazor?.Invoke(data);
+            OnMessage?.Invoke(data);
         }
 
         public async ValueTask DisposeAsync()

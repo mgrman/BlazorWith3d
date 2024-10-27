@@ -27,9 +27,7 @@
 
         DebugRelayUnityApi.HandleThread(InvokeAsync);
         
-        
-        var typedUnityApi = new BlazorTypedUnityApi(DebugRelayUnityApi, Logger);
-        var unityAppApi = new BlocksOnGrid3DApp(typedUnityApi);
+        var unityAppApi = new BlocksOnGrid3DApp(DebugRelayUnityApi);
         ParentApp.InitializeRenderer(unityAppApi);
     }
 }

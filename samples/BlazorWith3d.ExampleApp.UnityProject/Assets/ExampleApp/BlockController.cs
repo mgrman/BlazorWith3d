@@ -81,7 +81,7 @@ namespace ExampleApp
             _lastRequestedValidatioId = newValidationId;
             _dragMessageCounter.Reset();
 
-            _appApi.InvokeBlockPoseChanging(
+            await _appApi.InvokeBlockPoseChanging(
                 new BlockPoseChanging
                 {
                     BlockId = BlockId,
@@ -97,7 +97,7 @@ namespace ExampleApp
             Debug.Log($"OnEndDrag  {BlockId}");
 
             await _dragMessageCounter.Awaitable;
-            _appApi.InvokeBlockPoseChanged(
+            await _appApi.InvokeBlockPoseChanged(
                 new BlockPoseChanged
                 {
                     BlockId = BlockId,

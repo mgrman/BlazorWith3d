@@ -28,8 +28,12 @@ public class BlocksOnGridUnityRenderer:BaseUnityRenderer
             return;
         }
 
-        var typedUnityApi = new BlazorTypedUnityApi(this, Logger);
-        var unityAppApi = new BlocksOnGrid3DApp(typedUnityApi);
+        var unityAppApi = new BlocksOnGrid3DApp(this);
+        unityAppApi.OnMessageError += (bytes, exception) =>
+        {
+            Logger.LogError($"Error deserializing message {bytes}", exception);
+        };
+        
         ParentApp.InitializeRenderer(unityAppApi);
         
         await base.OnAfterRenderAsync(firstRender);

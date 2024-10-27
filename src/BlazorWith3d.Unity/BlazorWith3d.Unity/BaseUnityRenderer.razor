@@ -1,6 +1,6 @@
 ﻿@inject IJSRuntime JsRuntime
 @inject ILogger<BaseUnityRenderer> Logger
-@implements BlazorWith3d.Unity.Shared.IUnityApi
+@implements BlazorWith3d.Unity.Shared.IBinaryApi
 @using System.ComponentModel
 @using Microsoft.Extensions.Logging
 @using Microsoft.JSInterop
@@ -65,7 +65,7 @@
 
         foreach (var msg in _unsentMessages)
         {
-            await SendMessageToUnity(msg);
+            await SendMessage(msg);
         }
 
         _unsentMessages.Clear();
@@ -73,14 +73,14 @@
         await base.OnAfterRenderAsync(firstRender);
     }
 
-    public Action<byte[]>? OnMessageFromUnity { get; set; }
+    public event Action<byte[]>? OnMessage;
 
     private void OnMessageBytesReceived(byte[] messageBytes)
     {
-        OnMessageFromUnity?.Invoke(messageBytes);
+        OnMessage?.Invoke(messageBytes);
     }
 
-    public async ValueTask SendMessageToUnity(byte[] messageBytes)
+    public async ValueTask SendMessage(byte[] messageBytes)
     {
         if (_unityApi == null)
         {

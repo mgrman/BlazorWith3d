@@ -5,32 +5,35 @@ using Microsoft.Extensions.Logging;
 
 namespace BlazorWith3d.Unity;
 
-public class DebugRelayUnityApi:IUnityApi
+public class DebugRelayUnityApi:IBinaryApi
 {
     private readonly ILogger<DebugRelayUnityApi> _logger;
     private WebSocket? _webSocket;
     private readonly List<byte[]> _unsentMessages= new();
     private readonly List<byte[]> _unhandledMessages= new();
     private Func<Action,Task>  _handleThread;
-    private Action<byte[]>? _onMessageFromUnity;
+    private Action<byte[]>? _onMessage;
 
-    public Action<byte[]>? OnMessageFromUnity
+    public event Action<byte[]>? OnMessage
     {
-        get => _onMessageFromUnity;
-        set
+        add
         {
-            _onMessageFromUnity = value;
+            _onMessage += value;
 
-            var unhandledMessagesCopy = _unhandledMessages.ToList();
-            _unhandledMessages.Clear();
-            Task.Run(async () =>
+            if (_unhandledMessages.Any())
             {
-                foreach (var unhandledMessage in unhandledMessagesCopy)
+                var unhandledMessagesCopy = _unhandledMessages.ToList();
+                _unhandledMessages.Clear();
+                Task.Run(async () =>
                 {
-                    await _handleThread(() => OnMessageFromUnity?.Invoke(unhandledMessage));
-                }
-            });
+                    foreach (var unhandledMessage in unhandledMessagesCopy)
+                    {
+                        await _handleThread(() => _onMessage?.Invoke(unhandledMessage));
+                    }
+                });
+            }
         }
+        remove => _onMessage -= value;
     }
 
     public DebugRelayUnityApi(ILogger<DebugRelayUnityApi> logger)
@@ -43,7 +46,7 @@ public class DebugRelayUnityApi:IUnityApi
         _handleThread = action;
     }
     
-    public async ValueTask SendMessageToUnity(byte[] bytes)
+    public async ValueTask SendMessage(byte[] bytes)
     {
         if (_webSocket?.State != WebSocketState.Open)
         {
@@ -81,13 +84,13 @@ public class DebugRelayUnityApi:IUnityApi
             {
                 var receiveResult = await webSocket.ReceiveAsync(buffer, CancellationToken.None);
                 var msg = buffer.Slice(0, receiveResult.Count).ToArray();
-                if (OnMessageFromUnity == null)
+                if (_onMessage == null)
                 {
                     _unhandledMessages.Add(msg);
                 }
                 else
                 {
-                    await _handleThread(() => OnMessageFromUnity?.Invoke(msg));
+                    await _handleThread(() => _onMessage?.Invoke(msg));
                 }
             }
             catch (WebSocketException ex)

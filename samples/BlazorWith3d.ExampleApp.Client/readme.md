@@ -1,6 +1,28 @@
 ﻿# TODOs
 
+
+Define the messages, then a MemoryPack source generator can generate the serialization.
+And another one to specify our own union handling as then we could support structs as well
+And another one to specify the higher level APIs in C# and in Typescript 
+ - so if renderer wants, it can implement this high level API only
+ - optimization: if message has fields, generete singleton for it and ignore it in method/event parameters
+ - to consider: the methods to invoke, do not need force the message, maybe create a overload where the fields themselves can be provided instead 
+
+
 ## Prio 0
+
+- TEST first if in typescript based implementation, it is better to use direct JS method interop or rather set up message passing channel
+- due to callback not being directly supported in invocation, I am leaning a bit towards using messages and the T4 generate the types 
+ 
+
+- interface for all renderers defined
+- use T4 to generate the message types from arguments
+- and either via T4 or via code gen, the interface implementation using those messages
+- therefore messages become part of Unity specific implemetation
+
+
+
+
 
 - Add BabylonJS/ThreeJS version of 3d renderer
   - One version using Blazor interop https://github.com/HomagGroup/Blazor3D-Core
