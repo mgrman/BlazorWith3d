@@ -2,14 +2,18 @@
 
 
 Define the messages, then a MemoryPack source generator can generate the serialization.
-And another one to specify our own union handling as then we could support structs as well
-And another one to specify the higher level APIs in C# and in Typescript 
- - so if renderer wants, it can implement this high level API only
- - optimization: if message has fields, generete singleton for it and ignore it in method/event parameters
- - to consider: the methods to invoke, do not need force the message, maybe create a overload where the fields themselves can be provided instead 
+And my source gen generates the highlevel API and union handling
+
+so source gen supports the low level binary api
+
+if renderer wants, it can implement this high level API only
+with potentially another source gen to generate the pure JS wrapper (as sending messages back to .NET needs some boilerplate)
 
 
 ## Prio 0
+
+- optimization: if message has fields, generete singleton for it and ignore it in method/event parameters
+- to consider: the methods to invoke, do not need force the message, maybe create a overload where the fields themselves can be provided instead
 
 - TEST first if in typescript based implementation, it is better to use direct JS method interop or rather set up message passing channel
 - due to callback not being directly supported in invocation, I am leaning a bit towards using messages and the T4 generate the types 
@@ -46,6 +50,8 @@ And another one to specify the higher level APIs in C# and in Typescript
 
 
 ## Prio 3
+
+- add support for defining messages from other assemblies
 
 - double check catching of exceptions as they happen in "native" code and do not always propagate properly
 

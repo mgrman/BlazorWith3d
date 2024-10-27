@@ -10,13 +10,6 @@
     [CascadingParameter] 
     public I3DAppController ParentApp { get; set; }
 
-
-    protected override void OnInitialized()
-    {
-        BlocksOnGrid3DApp.InitializeMemoryPack();
-        base.OnInitialized();
-    }
-
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender)

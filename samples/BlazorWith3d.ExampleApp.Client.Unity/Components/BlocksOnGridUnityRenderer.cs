@@ -15,11 +15,6 @@ public class BlocksOnGridUnityRenderer:BaseUnityRenderer
     
     public override string UnityBuildFilesRootPath => "./_content/BlazorWith3d.ExampleApp.Client.Unity";
 
-    protected override void OnInitialized()
-    {
-        BlocksOnGrid3DApp.InitializeMemoryPack();
-        base.OnInitialized();
-    }
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender)

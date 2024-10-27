@@ -113,43 +113,7 @@ public class HelloSourceGenerator : ISourceGenerator
             using (sb.IndentWithCurlyBrackets())
             {
                     
-                sb.AppendLine($"private static bool _memoryPackInitialized;");
-                sb.AppendLine($"public static void InitializeMemoryPack()");
-                using (sb.IndentWithCurlyBrackets())
-                {
-                    sb.AppendLine($"if(_memoryPackInitialized){{return;}}");
-                    sb.AppendLine($"_memoryPackInitialized = true;");
-                        
-                    sb.AppendLine("var messageMethodFormatter = new DynamicUnionFormatter<IMessageToBlazor>(");
-                    using (sb.Indent())
-                    {
-                        for (var i = 0; i < info.allMessages.messagesToBlazor.Count; i++)
-                        {
-                            var m = info.allMessages.messagesToBlazor[i].typeName;
-                            sb.AppendLine($"({i},typeof({m})){(i != info.allMessages.messagesToBlazor.Count - 1 ? "," : "")}");
-                        }
-                    }
-                        
-                    sb.AppendLine(");");
-                        
-                    sb.AppendLine("var messageToUnityFormatter = new DynamicUnionFormatter<IMessageToUnity>(");
-                    using (sb.Indent())
-                    {
-                        for (var i = 0; i < info.allMessages.messagesToUnity.Count; i++)
-                        {
-                            var m = info.allMessages.messagesToUnity[i].typeName;
-                            sb.AppendLine($"({i},typeof({m})){(i != info.allMessages.messagesToUnity.Count - 1 ? "," : "")}");
-                        }
-                    }
-                        
-                    sb.AppendLine(");");
-                        
-                    sb.AppendLine("MemoryPackFormatterProvider.Register(messageMethodFormatter);");
-                    sb.AppendLine("MemoryPackFormatterProvider.Register(messageToUnityFormatter);");
-                        
-                }
-                
-                
+              
                 sb.AppendLine($"protected partial void SerializeObject<T>(T obj, IBufferWriter<byte> writer);");
                 sb.AppendLine($"protected partial T? DeserializeObject<T>(ReadOnlySpan<byte> bytes);");
 

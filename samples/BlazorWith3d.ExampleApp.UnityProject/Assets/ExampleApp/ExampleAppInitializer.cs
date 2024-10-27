@@ -35,7 +35,6 @@ namespace ExampleApp
             _templateRoot.SetActive(false);
             _templateRoot.transform.parent = transform;
 
-            BlocksOnGridUnityApi.InitializeMemoryPack();
 #if UNITY_EDITOR
             
             // if (string.IsNullOrEmpty(_backendWebsocketUrl))
