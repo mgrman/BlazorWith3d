@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+﻿
 using System.Net.WebSockets;
 using BlazorWith3d.Unity.Shared;
 using Microsoft.Extensions.Logging;

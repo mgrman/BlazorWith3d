@@ -3,7 +3,7 @@ using BlazorWith3d.Unity;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
 
-namespace BlazorWith3d.Client.Components;
+namespace BlazorWith3d.ExampleApp.Client.Unity.Components;
 
 public class BlocksOnGridUnityRenderer:BaseUnityRenderer
 {
@@ -12,8 +12,8 @@ public class BlocksOnGridUnityRenderer:BaseUnityRenderer
     
     [Inject]
     public ILogger<BlocksOnGridUnityRenderer> Logger { get; set; }
-    
-    public override string UnityBuildFilesRootPath => "./_content/BlazorWith3d.ExampleApp.Client.Unity";
+
+    public override string UnityBuildFilesRootPath => Assets["./_content/BlazorWith3d.ExampleApp.Client.Unity"];
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

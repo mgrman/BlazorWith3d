@@ -12,6 +12,11 @@ public class BlazorWith3dBuildPostprocessor
         var buildFilesFolder = Path.GetFullPath(Path.Combine(pathToBuiltProject, "Build"));
         var backendWwwrootFolder = Path.GetFullPath(Path.Combine("..", "BlazorWith3d.ExampleApp.Client.Unity", "wwwroot"));
 
+        if (!Directory.Exists(backendWwwrootFolder))
+        {
+            Directory.CreateDirectory(backendWwwrootFolder);
+        }
+
         var buildPrefixName = Path.GetFileName(pathToBuiltProject) + ".";
 
         foreach (var file in Directory.GetFiles(buildFilesFolder))
