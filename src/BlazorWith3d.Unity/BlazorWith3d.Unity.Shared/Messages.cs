@@ -5,12 +5,20 @@ namespace BlazorWith3d.Unity.Shared
     [AttributeUsage(AttributeTargets.Class, Inherited = false)]
     public sealed class Blazor3DAppAttribute : Attribute
     {
+        public Blazor3DAppAttribute(bool generateObjectApi = false)
+        {
+            
+        }
     }
     
     
     [AttributeUsage(AttributeTargets.Class, Inherited = false)]
     public sealed class Unity3DAppAttribute : Attribute
     {
+        public Unity3DAppAttribute(bool generateObjectApi = false)
+        {
+            
+        }
     }
 
     public interface IMessageToBlazor

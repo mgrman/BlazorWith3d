@@ -21,7 +21,10 @@ namespace BlazorWith3d.Unity
             add
             {
 #if !(UNITY_WEBGL && !UNITY_EDITOR)
-                throw new NotImplementedException();
+                if (Application.isEditor|| Application.platform != RuntimePlatform.WebGLPlayer)
+                {
+                    throw new NotImplementedException();
+                }
 #endif
                 _onHandleReceivedMessages += value;
                 if (messageBuffer.Any())
@@ -42,7 +45,10 @@ namespace BlazorWith3d.Unity
         public ValueTask SendMessage(byte[] bytes)
         {
 #if !(UNITY_WEBGL && !UNITY_EDITOR)
-            throw new NotImplementedException();
+            if (Application.isEditor|| Application.platform != RuntimePlatform.WebGLPlayer)
+            {
+                throw new NotImplementedException();
+            }
 #endif
             _SendMessageFromUnity(bytes, bytes.Length);
             return new ValueTask();
@@ -52,7 +58,10 @@ namespace BlazorWith3d.Unity
         private static void OnBeforeSplashScreen()
         {
 #if !(UNITY_WEBGL && !UNITY_EDITOR)
-            return;
+            if (Application.isEditor|| Application.platform != RuntimePlatform.WebGLPlayer)
+            {
+                return;
+            }
 #endif
             WebGLInput.captureAllKeyboardInput = false;
 
@@ -63,13 +72,10 @@ namespace BlazorWith3d.Unity
         [MonoPInvokeCallback(typeof(Action<int, int>))]
         private static void _InstantiateByteArray(int size, int id)
         {
-            //Debug.Log($"_InstantiateByteArray({size},{id})");
             var bytes = new byte[size];
 
             _ReadBytesBuffer(id, bytes);
-            //Debug.Log($"_ReadBytesBuffer({id},bytes)");
 
-            //Debug.Log($"Received message ({string.Join(", ",bytes)})");
             if (_onHandleReceivedMessages == null)
                 messageBuffer.Add(bytes);
             else

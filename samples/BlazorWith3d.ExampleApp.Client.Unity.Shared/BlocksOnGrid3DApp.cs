@@ -5,11 +5,14 @@ using MemoryPack;
 
 namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
 {
-#if COMMON_DOTNET
-    [Blazor3DApp]
+#if COMMON_DOTNET || UNITY_EDITOR
+    [Blazor3DApp(
+#if UNITY_EDITOR
+            true
+#endif
+        )]
     public partial class BlocksOnGrid3DApp
     {
-
         protected partial void SerializeObject<T>(T obj, IBufferWriter<byte> writer)
         {
             MemoryPackSerializer.Serialize<T,IBufferWriter<byte>>(writer, obj);

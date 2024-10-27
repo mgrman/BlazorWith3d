@@ -14,20 +14,18 @@
 //     {
 //         Type MessageType { get; }
 //
-//         TypedUnityApi UnityApi { set; }
+//         IBinaryApi UnityApi { set; }
 //
 //         void HandleMessage(object message);
 //     }
 //
 //     public class BlazorSimulator : MonoBehaviour
 //     {
-//         private TypedUnityApi _api;
-//         private Assembly _messsageAssembly;
+//         private I3DAppObjectApi _api;
 //
-//         public void Initialize(TypedUnityApi api, Assembly messsageAssembly)
+//         public void Initialize(I3DAppObjectApi api)
 //         {
 //             _api = api;
-//             _messsageAssembly = messsageAssembly;
 //
 //
 //             var messageTypesToHandle = _messsageAssembly.GetTypes().Where(o =>
