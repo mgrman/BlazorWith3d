@@ -42,7 +42,8 @@ RenderSettings:
 --- !u!157 &3
 LightmapSettings:
   m_ObjectHideFlags: 0
-  serializedVersion: 12
+  serializedVersion: 13
+  m_BakeOnSceneLoad: 0
   m_GISettings:
     serializedVersion: 2
     m_BounceScale: 1
@@ -503,6 +504,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _templatePrefab: {fileID: 7128798074941321853, guid: e5aab7ee4f3fefa4c81fcce326e5c10a, type: 3}
   _backgroundPlane: {fileID: 991213658}
+  _backendWebsocketUrl: ws://localhost:5292/debug-relay-unity-ws
 --- !u!4 &762850914
 Transform:
   m_ObjectHideFlags: 0

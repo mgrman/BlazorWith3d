@@ -22,7 +22,6 @@ namespace BlazorWith3d.Unity
         
         public IBinaryApi UnityApi { get; }
         
-
         private class BinaryApiProxy:IBinaryApi
         {
             public event Action<byte[]> OnMessage;

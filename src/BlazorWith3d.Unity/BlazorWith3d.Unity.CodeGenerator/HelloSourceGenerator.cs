@@ -169,7 +169,7 @@ public class HelloSourceGenerator : ISourceGenerator
                             sb.AppendLine($"if (msgType == typeof({m.typeName}))");
                             using (sb.IndentWithCurlyBrackets())
                             {
-                                sb.AppendLine($"return SendMessage({i}, msg);");
+                                sb.AppendLine($"return SendMessage<{m.typeName}>({i}, ({m.typeName})msg);");
                             }
                         }
 
