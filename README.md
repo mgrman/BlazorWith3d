@@ -25,6 +25,8 @@ with potentially another source gen to generate the pure JS wrapper (as sending 
 
 ### Prio 1
 
+- generate methods directly creating instance inside, ie if internal struct, then the simple method can create an instance directly inside, to make nicer API
+
 - Add Maui Blazor version with WebGL Unity
     - https://learn.microsoft.com/en-us/aspnet/core/blazor/hybrid/tutorials/maui-blazor-web-app?view=aspnetcore-9.0
 

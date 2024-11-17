@@ -32,20 +32,6 @@ else
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
-
-
-app.UseAntiforgery();
-
-
-app.Use(async (context, next) =>
-{
-    context.Response.Headers.Append("Cross-Origin-Opener-Policy", "same-origin");
-    context.Response.Headers.Append("Cross-Origin-Embedder-Policy", "require-corp");
-    context.Response.Headers.Append("Cross-Origin-Resource-Policy", "cross-origin");
-    await next();
-});
-
 if (app.Environment.IsDevelopment())
 {
     var webSocketOptions = new WebSocketOptions
@@ -77,6 +63,20 @@ if (app.Environment.IsDevelopment())
         }
     });
 }
+app.UseHttpsRedirection();
+
+
+app.UseAntiforgery();
+
+
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Append("Cross-Origin-Opener-Policy", "same-origin");
+    context.Response.Headers.Append("Cross-Origin-Embedder-Policy", "require-corp");
+    context.Response.Headers.Append("Cross-Origin-Resource-Policy", "cross-origin");
+    await next();
+});
+
 
 app.MapStaticAssets();
 

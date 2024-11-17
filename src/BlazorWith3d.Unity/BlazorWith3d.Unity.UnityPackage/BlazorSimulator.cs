@@ -38,13 +38,13 @@ namespace BlazorWith3d.Unity
 
             _api.OnMessageObject += o =>
             {
-                if (!attachedHandlers.TryGetValue(o.GetType(), out var callback))
+                if (!attachedHandlers.TryGetValue(o.msgType, out var callback))
                 {
-                    callback = o => { Debug.Log($"Received msg {o.GetType().Name} {JsonUtility.ToJson(o)}"); };
+                    callback = o1 => { Debug.Log($"Received msg {o.msgType} {JsonUtility.ToJson(o1)}"); };
                 }
 
-                callback.Invoke(o);
-            };
+                callback.Invoke(o.msg);
+            };  
         }
 
 

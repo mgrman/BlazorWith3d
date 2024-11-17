@@ -5,8 +5,10 @@ using Microsoft.Extensions.Logging;
 
 namespace BlazorWith3d.ExampleApp.Client.Unity.Components;
 
-public class BlocksOnGridUnityRenderer:BaseUnityRenderer
+public class BlocksOnGridUnityRenderer:BaseUnityRenderer, IDisposable
 {
+    private IBlocksOnGrid3DApp? unityAppApi;
+
     [CascadingParameter] 
     public I3DAppController ParentApp { get; set; }
     
@@ -23,7 +25,7 @@ public class BlocksOnGridUnityRenderer:BaseUnityRenderer
             return;
         }
 
-        var unityAppApi = new BlocksOnGrid3DApp(this);
+        unityAppApi = new BlocksOnGrid3DApp(this);
         unityAppApi.OnMessageError += (bytes, exception) =>
         {
             Logger.LogError($"Error deserializing message {bytes}", exception);
@@ -32,5 +34,14 @@ public class BlocksOnGridUnityRenderer:BaseUnityRenderer
         ParentApp.InitializeRenderer(unityAppApi);
         
         await base.OnAfterRenderAsync(firstRender);
+    }
+
+    public void Dispose()
+    {
+        if (unityAppApi != null)
+        {
+            ParentApp.InitializeRenderer(null);
+            unityAppApi.Dispose();
+        }
     }
 }

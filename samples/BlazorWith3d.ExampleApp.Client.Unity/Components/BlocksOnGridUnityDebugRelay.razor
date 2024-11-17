@@ -4,8 +4,10 @@
 @rendermode InteractiveServer
 @inject DebugRelayUnityApi DebugRelayUnityApi
 @inject ILogger<BlocksOnGridUnityDebugRelay> Logger
+@implements IDisposable
 
 @code {
+    private IBlocksOnGrid3DApp? unityAppApi;
 
     [CascadingParameter] 
     public I3DAppController ParentApp { get; set; }
@@ -20,7 +22,17 @@
 
         DebugRelayUnityApi.HandleThread(InvokeAsync);
         
-        var unityAppApi = new BlocksOnGrid3DApp(DebugRelayUnityApi);
+        unityAppApi = new BlocksOnGrid3DApp(DebugRelayUnityApi);
         ParentApp.InitializeRenderer(unityAppApi);
     }
+
+    public void Dispose()
+    {
+        if (unityAppApi != null)
+        {
+            ParentApp.InitializeRenderer(null);
+            unityAppApi.Dispose();
+        }
+    }
+
 }

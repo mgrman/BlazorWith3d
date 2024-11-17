@@ -30,13 +30,25 @@ public class HelloSourceGenerator : ISourceGenerator
         }
         
     
-        var methodInfo = GetMethodsInfo(receiver);
+        var messagesToUnity = receiver.MessagesToUnity
+            .Select(typeDeclaration =>
+            {
+                return GetTypeAndNamespace(typeDeclaration);
+            }).ToList();
+        
+        var messagesToBlazor = receiver.MessagesToBlazor
+            .Select(typeDeclaration =>
+            {
+                return GetTypeAndNamespace(typeDeclaration);
+            }).ToList();
+
+        var namespacesToInclude = messagesToUnity.Concat(messagesToBlazor).Select(o => o.@namespace).ToList();
         
         foreach (var typeDeclaration in receiver.Blazor3DAppTypes)
         {
-            var (typeName,namespaceName) = GetTypeAndNamespace(typeDeclaration.type);
+            var (typeName,namespaceName,_) = GetTypeAndNamespace(typeDeclaration.type);
 
-            var appInfo= new AppInfo(typeName, namespaceName, typeDeclaration.generateObjectApi,  methodInfo.messagesToUnity, methodInfo.messagesToBlazor, methodInfo);
+            var appInfo= new AppInfo(typeName, namespaceName, typeDeclaration.generateObjectApi,  messagesToUnity, messagesToBlazor, namespacesToInclude);
             
             var text = GenerateClass(appInfo);
             context.AddSource($"{typeName}.g.cs", text);
@@ -44,9 +56,9 @@ public class HelloSourceGenerator : ISourceGenerator
 
         foreach (var typeDeclaration in receiver.Unity3DAppTypes)
         {
-            var (typeName,namespaceName) = GetTypeAndNamespace(typeDeclaration.type);
+            var (typeName,namespaceName,_) = GetTypeAndNamespace(typeDeclaration.type);
 
-            var appInfo= new AppInfo(typeName, namespaceName,typeDeclaration.generateObjectApi,  methodInfo.messagesToBlazor, methodInfo.messagesToUnity, methodInfo);
+            var appInfo= new AppInfo(typeName, namespaceName,typeDeclaration.generateObjectApi,  messagesToBlazor, messagesToUnity, namespacesToInclude);
 
             var text = GenerateClass(appInfo);
 
@@ -54,25 +66,21 @@ public class HelloSourceGenerator : ISourceGenerator
         }
     }
 
-    private static (string type, string @namespace) GetTypeAndNamespace(TypeDeclarationSyntax typeDeclaration)
+    private static (string type, string @namespace, bool isPublic) GetTypeAndNamespace(TypeDeclarationSyntax typeDeclaration)
     {
         var typeName = typeDeclaration.Identifier.ToString();
         var namespaceName = (typeDeclaration.Parent as NamespaceDeclarationSyntax).Name.ToString();
-        return (typeName,namespaceName);
+        var isPublic = typeDeclaration.Modifiers.Any(o=>o.ToString()== "public");
+        return (typeName,namespaceName,isPublic);
     }
 
     private record AppInfo(
         string typeName,
         string @namespace,
         bool generateObjectApi,
-        IReadOnlyList<(string typeName, string @namespace)> methods,
-        IReadOnlyList<(string typeName, string @namespace)> events,
-        MessageInfo allMessages)
-    {
-    }
-    private record MessageInfo(
-        IReadOnlyList<(string typeName, string @namespace)> messagesToUnity,
-        IReadOnlyList<(string typeName, string @namespace)> messagesToBlazor)
+        IReadOnlyList<(string typeName, string @namespace, bool isPublic)> methods,
+        IReadOnlyList<(string typeName, string @namespace, bool isPublic)> events,
+        IReadOnlyList<string> namespacesToInclude)
     {
     }
 
@@ -85,14 +93,14 @@ public class HelloSourceGenerator : ISourceGenerator
         sb.AppendLine("using System.Collections.Generic;");
         sb.AppendLine("using System.Threading.Tasks;");
         sb.AppendLine("using System.Buffers;");
-        sb.AppendLines(info.allMessages.messagesToUnity.Concat(info.allMessages.messagesToBlazor).Select(o=>o.@namespace).Distinct().Select(o => $"using {o};"));
+        sb.AppendLines(info.namespacesToInclude.Distinct().Select(o => $"using {o};"));
         sb.AppendLine("using BlazorWith3d.Unity.Shared;");
         sb.AppendLine("using MemoryPack;");
         sb.AppendLine("using MemoryPack.Formatters;");
         sb.AppendLine($"namespace {info.@namespace}");
         using (sb.IndentWithCurlyBrackets())
         {
-            sb.AppendLine($"public partial interface I{info.typeName}");
+            sb.AppendLine($"public partial interface I{info.typeName}: IDisposable");
             using (sb.IndentWithCurlyBrackets())
             {
                 sb.AppendLine($"event Action<byte[], Exception> OnMessageError;");
@@ -106,13 +114,11 @@ public class HelloSourceGenerator : ISourceGenerator
                 foreach (var m in info.methods)
                 {
                     sb.AppendLine($"ValueTask Invoke{m.typeName}({m.typeName} msg);");
-
                 }
-
             }
             
             sb.AppendLine();
-            sb.AppendLine($"public partial  class {info.typeName}: I{info.typeName}{(info.generateObjectApi?", I3DAppObjectApi":"")}");
+            sb.AppendLine($"public partial  class {info.typeName}: I{info.typeName}{(info.generateObjectApi?", I3DAppObjectApi":"")}, IDisposable");
             using (sb.IndentWithCurlyBrackets())
             {
                 sb.AppendLine($"protected partial void SerializeObject<T>(T obj, IBufferWriter<byte> writer);");
@@ -134,7 +140,7 @@ public class HelloSourceGenerator : ISourceGenerator
                 sb.AppendLine($"public event Action<byte[], Exception> OnMessageError;");
                 if (info.generateObjectApi)
                 {
-                    sb.AppendLine($"public event Action<object>? OnMessageObject;");
+                    sb.AppendLine($"public event Action<(object msg, Type msgType)>? OnMessageObject;");
                 }
 
                 sb.AppendLine();
@@ -144,9 +150,8 @@ public class HelloSourceGenerator : ISourceGenerator
                 }
 
                 sb.AppendLine();
-                for (var i = 0; i < info.methods.Count; i++)
+                foreach(var (m,i)in info.methods.EnumerateWithIndex())
                 {
-                    var m = info.methods[i];
                     sb.AppendLine($"public ValueTask Invoke{m.typeName}({m.typeName} msg)");
 
                     using (sb.IndentWithCurlyBrackets())
@@ -158,14 +163,13 @@ public class HelloSourceGenerator : ISourceGenerator
 
                 if (info.generateObjectApi)
                 {
-                    sb.AppendLine($"public ValueTask InvokeMessageObject(object msg)");
+                    sb.AppendLine($"public ValueTask InvokeMessageObject(object msg, Type messageTypeOverride = null)");
                     using (sb.IndentWithCurlyBrackets())
                     {
                         sb.AppendLine($"if(msg==null) throw new ArgumentNullException(nameof(msg));");
-                        sb.AppendLine($"var msgType=msg.GetType();");
-                        for (var i = 0; i < info.methods.Count; i++)
+                        sb.AppendLine($"var msgType=messageTypeOverride ?? msg.GetType();");
+                        foreach(var (m,i)in info.methods.EnumerateWithIndex())
                         {
-                            var m = info.methods[i];
                             sb.AppendLine($"if (msgType == typeof({m.typeName}))");
                             using (sb.IndentWithCurlyBrackets())
                             {
@@ -173,8 +177,7 @@ public class HelloSourceGenerator : ISourceGenerator
                             }
                         }
 
-                        sb.AppendLine(
-                            $"throw new InvalidOperationException($\"Unknown message type {{msgType.Name}}\");");
+                        sb.AppendLine($"throw new InvalidOperationException($\"Unknown message type {{msgType.Name}}\");");
                     }
 
                     sb.AppendLine();
@@ -184,9 +187,8 @@ public class HelloSourceGenerator : ISourceGenerator
                         sb.AppendLine($"get");
                         using (sb.IndentWithCurlyBrackets())
                         {
-                            for (var i = 0; i < info.events.Count; i++)
+                            foreach(var (m,i)in info.events.EnumerateWithIndex())
                             {
-                                var m = info.events[i];
                                 sb.AppendLine($"yield return typeof({m.typeName});");
                             }
                         }
@@ -199,15 +201,21 @@ public class HelloSourceGenerator : ISourceGenerator
                         sb.AppendLine($"get");
                         using (sb.IndentWithCurlyBrackets())
                         {
-                            for (var i = 0; i < info.methods.Count; i++)
+                            foreach(var (m,i)in info.methods.EnumerateWithIndex())
                             {
-                                var m = info.methods[i];
                                 sb.AppendLine($"yield return typeof({m.typeName});");
                             }
                         }
                     }
 
                     sb.AppendLine();
+                }
+                
+                sb.AppendLine();
+                sb.AppendLine($"public void Dispose()");
+                using (sb.IndentWithCurlyBrackets())
+                {
+                    sb.AppendLine("_binaryApi.OnMessage-=ProcessMessages;");
                 }
                 
                 sb.AppendLine($"protected ValueTask SendMessage<TMessage>(byte messageId, TMessage message)");
@@ -246,9 +254,8 @@ public class HelloSourceGenerator : ISourceGenerator
                         sb.AppendLine("switch(message[0])");
                         using (sb.IndentWithCurlyBrackets())
                         {
-                            for (var i = 0; i < info.events.Count; i++)
+                            foreach(var (e,i)in info.events.EnumerateWithIndex())
                             {
-                                var e = info.events[i];
                                 sb.AppendLine($"case {i}:");
                                 using (sb.IndentWithCurlyBrackets())
                                 {
@@ -257,11 +264,7 @@ public class HelloSourceGenerator : ISourceGenerator
 
                                     if (info.generateObjectApi)
                                     {
-                                        sb.AppendLine($"if(obj!=null)");
-                                        using (sb.IndentWithCurlyBrackets())
-                                        {
-                                            sb.AppendLine($"OnMessageObject?.Invoke(obj);");
-                                        }
+                                        sb.AppendLine($"OnMessageObject?.Invoke((obj, typeof({e.typeName})));");
                                     }
 
                                     sb.AppendLine($"break;");
@@ -282,24 +285,6 @@ public class HelloSourceGenerator : ISourceGenerator
         
         return sb.ToString();
     }
-
-    private static MessageInfo GetMethodsInfo(SyntaxReceiver receiver)
-    {
-            
-        var messagesToUnity = receiver.MessagesToUnity
-            .Select(typeDeclaration =>
-            {
-                return GetTypeAndNamespace(typeDeclaration);
-            }).ToList();
-        var messagesToBlazor = receiver.MessagesToBlazor
-            .Select(typeDeclaration =>
-            {
-                return GetTypeAndNamespace(typeDeclaration);
-            }).ToList();
-        
-        return new MessageInfo(messagesToUnity, messagesToBlazor);
-    }
-
 
     /// <summary>
     ///     Created on demand before each generation pass

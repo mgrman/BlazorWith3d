@@ -6,7 +6,7 @@ namespace BlazorWith3d.Unity
 {
     public interface I3DAppController
     {
-        void InitializeRenderer(IBlocksOnGrid3DApp appApi);
+        void InitializeRenderer(IBlocksOnGrid3DApp? appApi);
     }
 }
 #endif

@@ -189,14 +189,24 @@
         await base.OnInitializedAsync();
     }
 
-    public void InitializeRenderer(IBlocksOnGrid3DApp rendererApi)
+    public void InitializeRenderer(IBlocksOnGrid3DApp? rendererApi)
     {
-        _rendererApi = rendererApi;
-        _rendererApi.OnUnityAppInitialized += OnAppInitialized;
-        _rendererApi.OnBlockPoseChanging += OnBlockPoseChanging;
-        _rendererApi.OnBlockPoseChanged += OnBlockPoseChanged;
+        if (_rendererApi != null)
+        {
+            _rendererApi.OnUnityAppInitialized -= OnAppInitialized;
+            _rendererApi.OnBlockPoseChanging -= OnBlockPoseChanging;
+            _rendererApi.OnBlockPoseChanged -= OnBlockPoseChanged;
+        }
         
-        _rendererApi.InvokeBlazorControllerInitialized(new BlazorControllerInitialized());
+        _rendererApi = rendererApi;
+        if (_rendererApi != null)
+        {
+            _rendererApi.OnUnityAppInitialized += OnAppInitialized;
+            _rendererApi.OnBlockPoseChanging += OnBlockPoseChanging;
+            _rendererApi.OnBlockPoseChanged += OnBlockPoseChanged;
+
+            _rendererApi.InvokeBlazorControllerInitialized(new BlazorControllerInitialized());
+        }
     }
 
     private void OnBlockPoseChanged(BlockPoseChanged obj)

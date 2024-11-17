@@ -6,8 +6,8 @@ namespace BlazorWith3d.Unity.Shared
 {
     public interface I3DAppObjectApi
     {
-        event Action<object>? OnMessageObject;
-        ValueTask InvokeMessageObject(object msg);
+        event Action<(object msg, Type msgType)>? OnMessageObject;
+        ValueTask InvokeMessageObject(object msg, Type msgTypeOverride = null);
         
         IEnumerable<Type> SupportedOnMessageTypes { get; }
         IEnumerable<Type> SupportedInvokeMessageTypes { get; }
