@@ -10,10 +10,10 @@ public class BlocksOnGridUnityRenderer:BaseUnityRenderer, IDisposable
     private IBlocksOnGrid3DApp? unityAppApi;
 
     [CascadingParameter] 
-    public I3DAppController ParentApp { get; set; }
+    public required I3DAppController ParentApp { get; set; }
     
     [Inject]
-    public ILogger<BlocksOnGridUnityRenderer> Logger { get; set; }
+    public required ILogger<BlocksOnGridUnityRenderer> Logger { get; set; }
 
     public override string UnityBuildFilesRootPath => Assets["./_content/BlazorWith3d.ExampleApp.Client.Unity"];
 

@@ -10,7 +10,7 @@
     private IBlocksOnGrid3DApp? unityAppApi;
 
     [CascadingParameter] 
-    public I3DAppController ParentApp { get; set; }
+    public required I3DAppController ParentApp { get; set; }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

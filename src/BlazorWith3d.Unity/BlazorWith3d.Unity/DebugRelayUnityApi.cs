@@ -11,7 +11,7 @@ public class DebugRelayUnityApi:IBinaryApi
     private WebSocket? _webSocket;
     private readonly List<byte[]> _unsentMessages= new();
     private readonly List<byte[]> _unhandledMessages= new();
-    private Func<Action,Task>  _handleThread;
+    private Func<Action,Task>?  _handleThread;
     private Action<byte[]>? _onMessage;
 
     public event Action<byte[]>? OnMessage
@@ -28,7 +28,14 @@ public class DebugRelayUnityApi:IBinaryApi
                 {
                     foreach (var unhandledMessage in unhandledMessagesCopy)
                     {
-                        await _handleThread(() => _onMessage?.Invoke(unhandledMessage));
+                        if (_handleThread == null)
+                        {
+                            _onMessage?.Invoke(unhandledMessage);
+                        }
+                        else
+                        {
+                            await _handleThread(() => _onMessage?.Invoke(unhandledMessage));
+                        }
                     }
                 });
             }
@@ -89,8 +96,14 @@ public class DebugRelayUnityApi:IBinaryApi
                     _unhandledMessages.Add(msg);
                 }
                 else
-                {
-                    await _handleThread(() => _onMessage?.Invoke(msg));
+                {  if (_handleThread == null)
+                    {
+                        _onMessage?.Invoke(msg);
+                    }
+                    else
+                    {
+                        await _handleThread(() => _onMessage?.Invoke(msg));
+                    }
                 }
             }
             catch (WebSocketException ex)

@@ -26,7 +26,7 @@
     private ElementReference _containerElementReference;
     private DotNetObjectReference<JsMessageReceiverProxy>? _messageReceiverProxyReference;
 
-    public virtual string UnityBuildFilesRootPath { get;  } 
+    public virtual string UnityBuildFilesRootPath => Assets[""];
     private readonly List<byte[]> _unsentMessages = new();
 
     public async ValueTask DisposeAsync()
