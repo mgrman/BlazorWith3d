@@ -100,7 +100,7 @@ public class HelloSourceGenerator : ISourceGenerator
         sb.AppendLine($"namespace {info.@namespace}");
         using (sb.IndentWithCurlyBrackets())
         {
-            sb.AppendLine($"public partial interface I{info.typeName}: IDisposable");
+            sb.AppendLine($"public partial interface I{info.typeName}");
             using (sb.IndentWithCurlyBrackets())
             {
                 sb.AppendLine($"event Action<byte[], Exception> OnMessageError;");

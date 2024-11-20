@@ -16,7 +16,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\src\BlazorWith3d.Unity\BlazorWith3d.Unity\BlazorWith3d.Unity.csproj"/>
-        <ProjectReference Include="..\BlazorWith3d.ExampleApp.Client.Unity.Shared\BlazorWith3d.ExampleApp.Client.Unity.Shared.csproj"/>
+        <ProjectReference Include="..\BlazorWith3d.ExampleApp.Client.Shared\BlazorWith3d.ExampleApp.Client.Shared.csproj" />
     </ItemGroup>
 
 

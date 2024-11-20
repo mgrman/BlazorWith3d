@@ -7,7 +7,7 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Components;
 
 public class BlocksOnGridUnityRenderer:BaseUnityRenderer, IDisposable
 {
-    private IBlocksOnGrid3DApp? unityAppApi;
+    private BlocksOnGrid3DApp? unityAppApi;
 
     [CascadingParameter] 
     public required I3DAppController ParentApp { get; set; }

@@ -184,6 +184,9 @@
             _blocks = await LocalStorage.GetItemAsync<List<(int blockId, float positionX, float positionY, float rotationZ, int templateId)>>("_blocks") ?? new List<(int blockId, float positionX, float positionY, float rotationZ, int templateId)>();
 
             _newIdCounter = _templates.Select(o => o.id).Concat(_blocks.Select(o => o.blockId)).DefaultIfEmpty(-1).Max() + 1;
+            
+            
+            await ReplayState();
         }
 
         await base.OnInitializedAsync();
@@ -207,6 +210,9 @@
 
             _rendererApi.InvokeBlazorControllerInitialized(new BlazorControllerInitialized());
         }
+
+        
+         ReplayState();
     }
 
     private void OnBlockPoseChanged(BlockPoseChanged obj)
@@ -302,7 +308,7 @@
     private async Task RemoveBlock(int id)
     {
         ValidateAppApi();  
-        await _rendererApi.InvokeRemoveBlock(new RemoveBlock { BlockId = id });
+        await _rendererApi.InvokeRemoveBlockInstance(new RemoveBlockInstance { BlockId = id });
         _blocks.RemoveAll(o => o.blockId == id);
         SaveToLocalStorage();
     }

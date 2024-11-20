@@ -1,5 +1,5 @@
 {
-  "name": "com.blazorwith3d.exampleapp.client.unity.shared",
+  "name": "com.blazorwith3d.exampleapp.client.shared",
   "version": "1.2.3",
   "displayName": "BlazorWith3d - ExampleApp (Shared Package)"
 }

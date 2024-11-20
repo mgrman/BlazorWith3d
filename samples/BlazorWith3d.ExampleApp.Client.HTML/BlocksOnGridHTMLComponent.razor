@@ -1,0 +1,218 @@
+﻿@using System.Drawing
+@using System.Globalization
+@using BlazorWith3d.ExampleApp.Client.Unity.Shared
+@using BlazorWith3d.Unity
+@using Microsoft.Extensions.Logging
+@using Microsoft.JSInterop
+@implements IBlocksOnGrid3DApp
+@implements IAsyncDisposable
+@inject ILogger<BlocksOnGridHTMLComponent> Logger
+@inject IJSRuntime JsRuntime
+
+<div class="my-component" style="width: @ToStringCSS(canvasSizeX*scale)px; height: @ToStringCSS(canvasSizeY*scale)px; position: relative">
+    
+    @if (_instances.Count > 0)
+    {
+        var minHeight = _templates.Select(o => o.SizeZ).Min();
+        var maxHeight = _templates.Select(o => o.SizeZ).Max();
+        var heightRange = maxHeight - minHeight;
+        
+        foreach(var(instance, template) in _instances.Select(instance => (instance, template: _templates.FirstOrDefault(t => t.TemplateId == instance.TemplateId))))
+        {
+            var brightness = (byte)(((template.SizeY - minHeight) / heightRange) * 255);
+            var color = ColorTranslator.ToHtml(Color.FromArgb(brightness, 0, 0));
+            <div class="my-component" 
+                 style="user-select: none; position: absolute; width: @ToStringCSS((template.SizeX)*scale)px; height: @ToStringCSS((template.SizeY)*scale)px; background-color: @color; left: @ToStringCSS((instance.PositionX-template.SizeX/2+offsetX)*scale)px; top: @ToStringCSS((instance.PositionY-template.SizeY/2+offsetY)*scale)px; rotate: @ToStringCSS(instance.RotationZ)deg;"
+                 @onmousedown="e=>OnMouseDown(instance, e)">
+                @instance.BlockId
+            </div>
+        }
+    }
+
+</div>
+
+@code
+{
+
+    private const float canvasSizeX = 10f;
+    private const float canvasSizeY = 10f;
+    
+    private string ToStringCSS(float val) => val.ToString(CultureInfo.InvariantCulture);
+    private const float scale = 50f;
+    private const float offsetX = canvasSizeX/2;
+    private const float offsetY = canvasSizeY / 2;
+
+    private readonly List<AddBlockTemplate> _templates = new List<AddBlockTemplate>();
+    private readonly List<AddBlockInstance> _instances = new List<AddBlockInstance>();
+    
+    private static Action mouseUpAction;
+    
+    
+    [CascadingParameter] 
+    public required I3DAppController ParentApp { get; set; }
+    private DotNetObjectReference<JsProxy>? _jsProxyReference;
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            await base.OnAfterRenderAsync(firstRender);
+            return;
+        }
+        
+        
+        ParentApp.InitializeRenderer(this);
+        
+        var moduleTask = new Lazy<Task<IJSObjectReference>>(() => JsRuntime.InvokeAsync<IJSObjectReference>("import", "./_content/BlazorWith3d.ExampleApp.Client.HTML/exampleJsInterop.js").AsTask());
+        module = await moduleTask.Value;
+
+
+        await base.OnAfterRenderAsync(firstRender);
+    }
+    
+    protected override void OnInitialized()
+    {
+        _jsProxyReference = DotNetObjectReference.Create(new JsProxy(OnMouseMove, OnMouseUp));
+        base.OnInitialized();
+    }
+    
+    public async ValueTask DisposeAsync()
+    {
+        _jsProxyReference?.Dispose();
+    }
+
+    public event Action<byte[], Exception>? OnMessageError;
+    public event Action<PerfCheck>? OnPerfCheck;
+    public event Action<UnityAppInitialized>? OnUnityAppInitialized;
+    public event Action<BlockPoseChanging>? OnBlockPoseChanging;
+    public event Action<BlockPoseChanged>? OnBlockPoseChanged;
+
+    private (AddBlockInstance instance, float offsetX,float offsetY)? _dragging;
+    private int _changingRequestIds;
+    private IJSObjectReference module;
+    private IJSObjectReference? _mouseEventsDispose;
+
+
+    public ValueTask InvokeBlazorControllerInitialized(BlazorControllerInitialized msg)
+    {
+        Logger.LogInformation("BlazorControllerInitialized");
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask InvokePerfCheck(PerfCheck msg)
+    {
+        OnPerfCheck?.Invoke(msg);
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask InvokeAddBlockTemplate(AddBlockTemplate msg)
+    {
+        _templates.Add(msg);
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask InvokeAddBlockInstance(AddBlockInstance msg)
+    {
+        _instances.Add(msg);
+        StateHasChanged();
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask InvokeRemoveBlockInstance(RemoveBlockInstance msg)
+    {
+        _instances.RemoveAll(o=>o.BlockId== msg.BlockId);
+        StateHasChanged();
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask InvokeRemoveBlockTemplate(RemoveBlockTemplate msg)
+    {
+        _templates.RemoveAll(o=>o.TemplateId== msg.TemplateId);
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask InvokeStartDraggingBlock(StartDraggingBlock msg)
+    {
+        throw new NotImplementedException();
+    }
+
+    public ValueTask InvokeBlockPoseChangeValidated(BlockPoseChangeValidated msg)
+    {
+        var instance = _instances.FirstOrDefault(o => o.BlockId == msg.BlockId);
+        instance.PositionX = msg.NewPositionX;
+        instance.PositionY = msg.NewPositionY;
+        instance.RotationZ = msg.NewRotationZ;
+        StateHasChanged();
+        return ValueTask.CompletedTask;
+    }
+
+    private async Task OnMouseDown(AddBlockInstance instance, MouseEventArgs e)
+    {
+       var offsetX = (float)e.PageX/scale - instance.PositionX;
+       var offsetY =  (float)e.PageY/scale - instance.PositionY;
+        _dragging = (instance,offsetX,offsetY);
+        
+        _mouseEventsDispose = await module.InvokeAsync<IJSObjectReference>("InitializeGlobalMouseEvents", _jsProxyReference, nameof(JsProxy.OnMouseMove), nameof(JsProxy.OnMouseUp));
+    }
+
+    private void OnMouseMove(float screenX, float screenY)
+    {
+        if (!_dragging.HasValue)
+        {
+            return;
+        }
+
+        var dragging = _dragging.Value;
+        
+
+        int requestId;
+        unchecked
+        {
+            requestId = _changingRequestIds++;
+        }
+        
+        OnBlockPoseChanging?.Invoke(new BlockPoseChanging()
+        {
+            BlockId = dragging.instance.BlockId,
+            ChangingRequestId = requestId,
+            PositionX = screenX/scale - dragging.offsetX,
+            PositionY = screenY/scale - dragging.offsetY,
+             RotationZ = dragging.instance.RotationZ
+        });
+        
+    }
+
+    private void OnMouseUp()
+    {
+        if (!_dragging.HasValue)
+        {
+            return;
+        }
+
+        var dragging = _dragging.Value;
+        OnBlockPoseChanged?.Invoke(new BlockPoseChanged()
+        {
+            BlockId = dragging.instance.BlockId,
+            PositionX = dragging.instance.PositionX,
+            PositionY = dragging.instance.PositionY,
+            RotationZ = dragging.instance.RotationZ
+        });
+        _dragging = null;
+        
+        _mouseEventsDispose?.InvokeVoidAsync("Dispose");
+    }
+
+    private class JsProxy(Action<float,float> onMouseMove,Action onMouseUp)
+    {
+        [JSInvokable]
+        public void OnMouseMove(float screenX, float screenY)
+        {
+            onMouseMove(screenX,screenY);
+        }
+        [JSInvokable]
+        public void OnMouseUp()
+        {
+            onMouseUp();
+        }
+    }
+}

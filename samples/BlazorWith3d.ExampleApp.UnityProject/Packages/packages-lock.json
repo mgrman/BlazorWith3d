@@ -1,7 +1,7 @@
 {
   "dependencies": {
-    "com.blazorwith3d.exampleapp.client.unity.shared": {
-      "version": "file:../../BlazorWith3d.ExampleApp.Client.Unity.Shared",
+    "com.blazorwith3d.exampleapp.client.shared": {
+      "version": "file:../../BlazorWith3d.ExampleApp.Client.Shared",
       "depth": 0,
       "source": "local",
       "dependencies": {}

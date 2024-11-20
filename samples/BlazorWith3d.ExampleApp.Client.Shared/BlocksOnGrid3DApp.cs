@@ -90,7 +90,7 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
 
     [MemoryPackable]
     [GenerateTypeScript]
-    public partial class RemoveBlock : IMessageToUnity
+    public partial class RemoveBlockInstance : IMessageToUnity
     {
         public int BlockId;
     }

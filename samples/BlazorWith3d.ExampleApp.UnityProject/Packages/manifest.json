@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "com.blazorwith3d.exampleapp.client.unity.shared": "file:../../BlazorWith3d.ExampleApp.Client.Unity.Shared",
+    "com.blazorwith3d.exampleapp.client.shared": "file:../../BlazorWith3d.ExampleApp.Client.Shared",
     "com.blazorwith3d.unity": "file:../../../src/BlazorWith3d.Unity/BlazorWith3d.Unity.UnityPackage",
     "com.blazorwith3d.unity.shared": "file:../../../src/BlazorWith3d.Unity/BlazorWith3d.Unity.Shared",
     "com.cysharp.memorypack": "https://github.com/Cysharp/MemoryPack.git?path=src/MemoryPack.Unity/Assets/MemoryPack.Unity#1.21.3",

@@ -62,7 +62,7 @@ namespace ExampleApp
             _appApi.OnAddBlockTemplate += OnAddBlockTemplateMessage;
             _appApi.OnRemoveBlockTemplate += OnRemoveBlockTemplateMessage;
             _appApi.OnAddBlockInstance += OnAddBlockInstanceMessage;
-            _appApi.OnRemoveBlock += OnRemoveBlockMessage;
+            _appApi.OnRemoveBlockInstance += OnRemoveBlockMessage;
             _appApi.OnBlockPoseChangeValidated += OnBlockPoseChangingResponse;
             _appApi.OnBlazorControllerInitialized += OnControllerInitialized;
             
@@ -149,7 +149,7 @@ namespace ExampleApp
             Debug.Log($"Added block : {JsonUtility.ToJson(msg)}");
         }
 
-        private void OnRemoveBlockMessage(RemoveBlock msg)
+        private void OnRemoveBlockMessage(RemoveBlockInstance msg)
         {
             Debug.Log($"Removing block: {JsonUtility.ToJson(msg)}");
             Destroy( _blocks[msg.BlockId].gameObject);
