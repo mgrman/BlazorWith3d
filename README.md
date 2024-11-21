@@ -15,7 +15,6 @@ with potentially another source gen to generate the pure JS wrapper (as sending 
 ### Prio 0
 
 - Add BabylonJS/ThreeJS version of 3d renderer
-    - One version using Blazor interop https://github.com/HomagGroup/Blazor3D-Core
     - One version using own JS with direct interop
     - One version using own JS app and memorypack typescript generator
 

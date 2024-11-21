@@ -1,0 +1,39 @@
+﻿@page "/app"
+@using BlazorWith3d.ExampleApp.Client.Components
+@using BlazorWith3d.ExampleApp.Client.Unity.Components
+@using BlazorWith3d.ExampleApp.Client.HTML
+@rendermode InteractiveAuto
+
+<PageTitle>WebGL instance</PageTitle>
+
+<InputSelect id="scent" @bind-Value="_renderer">
+    @foreach (var renderer in _renderers)
+    {
+        <option value="@renderer">@renderer</option>
+    }
+</InputSelect>
+
+<BlocksOnGrid3DComponent >
+    @switch (_renderer)
+    {
+        case "WebGL":
+            <BlocksOnGridUnityRenderer></BlocksOnGridUnityRenderer>
+            break;
+        case "Html":
+            <BlocksOnGridHTMLComponent></BlocksOnGridHTMLComponent>
+            break;
+            default:
+            <text> Unsupported renderer type @_renderer</text>
+            break;
+    }
+    
+</BlocksOnGrid3DComponent>
+
+
+@code{
+
+    List<string> _renderers = ["WebGL", "Html"];
+
+    string _renderer = "Html";
+
+}
