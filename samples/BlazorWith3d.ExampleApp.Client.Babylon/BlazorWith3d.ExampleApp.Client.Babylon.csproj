@@ -6,6 +6,10 @@
         <ImplicitUsings>enable</ImplicitUsings>
     </PropertyGroup>
 
+    <ItemGroup>
+      <Content Include=".gitignore" />
+    </ItemGroup>
+
 
 
 

@@ -6,22 +6,22 @@
         <DefineConstants>$(DefineConstants);COMMON_DOTNET</DefineConstants>
         <TargetFrameworks>netstandard2.1;net9.0</TargetFrameworks>
     </PropertyGroup>
+  <PropertyGroup>
+    <MemoryPackGenerator_TypeScriptOutputDirectory>$(MSBuildProjectDirectory)\scripts\memorypack</MemoryPackGenerator_TypeScriptOutputDirectory>
+  </PropertyGroup>
 
-    <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk"/>
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk"/>
 
-    <PropertyGroup>
-        <Nullable>enable</Nullable>
-        <IntermediateOutputPath>.obj</IntermediateOutputPath>
-        <LangVersion>11</LangVersion>
-        <OutputPath>.bin\$(Configuration)\</OutputPath>
-    </PropertyGroup>
-    
-    <ItemGroup>
-        <CompilerVisibleProperty Include="MemoryPackGenerator_TypeScriptOutputDirectory" />
-    </ItemGroup>
-    <PropertyGroup>
-        <MemoryPackGenerator_TypeScriptOutputDirectory>$(MSBuildProjectDirectory)\wwwroot\js\memorypack</MemoryPackGenerator_TypeScriptOutputDirectory>
-    </PropertyGroup>
+  <PropertyGroup>
+    <Nullable>enable</Nullable>
+    <IntermediateOutputPath>.obj</IntermediateOutputPath>
+    <LangVersion>11</LangVersion>
+    <OutputPath>.bin\$(Configuration)\</OutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <CompilerVisibleProperty Include="MemoryPackGenerator_TypeScriptOutputDirectory" />
+  </ItemGroup>
 
     <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk"/>
     <ItemGroup>

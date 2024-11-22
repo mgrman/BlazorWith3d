@@ -5,13 +5,14 @@
         "noEmitOnError": true,
         "removeComments": false,
         "sourceMap": true,
-        "target": "ES6",
+        "target": "es2020",
         "outDir": "wwwroot/js",
         "moduleResolution": "node"
     },
-    "include": [
-        "scripts/**/*"
-    ],
+  "include": [
+    "scripts/**/*",
+    "../BlazorWith3d.ExampleApp.Client.Shared/scripts/**/*"
+  ],
     "exclude": [
         "wwwroot"
     ]
