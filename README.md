@@ -14,7 +14,7 @@ with potentially another source gen to generate the pure JS wrapper (as sending 
 
 ### Prio 0
 
-- Add BabylonJS/ThreeJS version of 3d renderer
+- Add BabylonJS/ThreeJS version of 3d renderer ( see https://doc.babylonjs.com/guidedLearning/usingVite/ )
     - One version using own JS with direct interop
     - One version using own JS app and memorypack typescript generator
 
