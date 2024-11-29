@@ -5,6 +5,18 @@
     <title>Title of Your Project</title>
 </head>
 <body>
-    <script type="module" src="./src/app.ts"></script>
+    <script type="module" >
+        import {InitializeBabylonApp} from "./src/app.ts"
+
+        // create the canvas html element and attach it to the webpage
+        var canvas = document.createElement("canvas");
+        canvas.style.width = "100%";
+        canvas.style.height = "100%";
+        canvas.id = "gameCanvas";
+        document.body.appendChild(canvas);
+
+        var babylonApp= InitializeBabylonApp(canvas);
+        
+    </script>
 </body>
 </html>

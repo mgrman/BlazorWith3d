@@ -6,12 +6,11 @@
 </canvas>
 
 
-@* <script type="module" src="./_content/BlazorWith3d.ExampleApp.Client.Babylon/js/file1.js"></script> *@
-
 @code{
 
     private ElementReference _containerElementReference;
     private IJSObjectReference module;
+    private IJSObjectReference _babylonApp;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -25,7 +24,12 @@
         var moduleTask = new Lazy<Task<IJSObjectReference>>(() => JsRuntime.InvokeAsync
         <IJSObjectReference>
             ("import", Assets["./_content/BlazorWith3d.ExampleApp.Client.Babylon/assets/index.js"]).AsTask());
+        
         module = await moduleTask.Value;
+        
+        
+        _babylonApp = await module.InvokeAsync<IJSObjectReference>("Initialize", _containerElementReference);
+
 
         await base.OnAfterRenderAsync(firstRender);
     }

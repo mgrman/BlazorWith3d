@@ -1,13 +1,11 @@
 import "@babylonjs/core/Debug/debugLayer";
 import "@babylonjs/inspector";
 import { Engine, Scene, ArcRotateCamera, Vector3, HemisphericLight, MeshBuilder } from "@babylonjs/core";
-class App {
-    constructor() {
-        var canvas = document.createElement("canvas");
-        canvas.style.width = "100%";
-        canvas.style.height = "100%";
-        canvas.id = "gameCanvas";
-        document.body.appendChild(canvas);
+export function InitializeBabylonApp(canvas) {
+    return new DebugApp(canvas);
+}
+export class DebugApp {
+    constructor(canvas) {
         var engine = new Engine(canvas, true);
         var scene = new Scene(engine);
         var camera = new ArcRotateCamera("Camera", Math.PI / 2, Math.PI / 2, 2, Vector3.Zero(), scene);
@@ -29,4 +27,3 @@ class App {
         });
     }
 }
-new App();
