@@ -23,12 +23,12 @@
 
         var moduleTask = new Lazy<Task<IJSObjectReference>>(() => JsRuntime.InvokeAsync
         <IJSObjectReference>
-            ("import", Assets["./_content/BlazorWith3d.ExampleApp.Client.Babylon/assets/index.js"]).AsTask());
+            ("import", Assets["./_content/BlazorWith3d.ExampleApp.Client.Babylon/bundle.js"]).AsTask());
         
         module = await moduleTask.Value;
         
         
-        _babylonApp = await module.InvokeAsync<IJSObjectReference>("Initialize", _containerElementReference);
+        _babylonApp = await module.InvokeAsync<IJSObjectReference>("InitializeBabylonApp", _containerElementReference);
 
 
         await base.OnAfterRenderAsync(firstRender);

@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es6", // choose our ECMA/JavaScript version (all modern browsers support ES6 so it's your best bet)
+    "target": "ES2020",
     "lib": [ // choose our default ECMA/libraries to import
       "dom", // mandatory for all browser-based apps
       "es6" // mandatory for targeting ES6

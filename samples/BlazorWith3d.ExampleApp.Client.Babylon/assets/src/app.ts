@@ -19,18 +19,18 @@ export class DebugApp {
         camera.attachControl(canvas, true);
         var light1: HemisphericLight = new HemisphericLight("light1", new Vector3(1, 1, 0), scene);
         var sphere: Mesh = MeshBuilder.CreateSphere("sphere", {diameter: 1}, scene);
-
-        // hide/show the Inspector
-        window.addEventListener("keydown", (ev) => {
-            // Shift+Ctrl+Alt+I
-            if (ev.shiftKey && ev.ctrlKey && ev.altKey && ev.keyCode === 73) {
-                if (scene.debugLayer.isVisible()) {
-                    scene.debugLayer.hide();
-                } else {
-                    scene.debugLayer.show();
-                }
-            }
-        });
+        //
+        // // hide/show the Inspector
+        // window.addEventListener("keydown", (ev) => {
+        //     // Shift+Ctrl+Alt+I
+        //     if (ev.shiftKey && ev.ctrlKey && ev.altKey && ev.keyCode === 73) {
+        //         if (scene.debugLayer.isVisible()) {
+        //             scene.debugLayer.hide();
+        //         } else {
+        //             scene.debugLayer.show();
+        //         }
+        //     }
+        // });
 
         // run the main render loop
         engine.runRenderLoop(() => {

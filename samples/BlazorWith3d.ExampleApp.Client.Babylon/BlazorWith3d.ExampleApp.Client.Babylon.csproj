@@ -4,7 +4,6 @@
         <TargetFramework>net9.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
-      <ClientAssetsBuildOutputParameter>--outDir</ClientAssetsBuildOutputParameter>
   </PropertyGroup>
 
 
@@ -16,6 +15,10 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.ClientAssets" Version="0.1.0-alpha.23330.1" />
         <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="9.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="assets\public\" />
     </ItemGroup>
 
 </Project>
