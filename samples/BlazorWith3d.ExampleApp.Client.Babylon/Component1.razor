@@ -22,11 +22,10 @@
         }
 
 
-        var moduleTask = new Lazy<Task<IJSObjectReference>>(() => JsRuntime.InvokeAsync<IJSObjectReference>("import", "./_content/BlazorWith3d.ExampleApp.Client.Babylon/js/file1.js").AsTask());
+        var moduleTask = new Lazy<Task<IJSObjectReference>>(() => JsRuntime.InvokeAsync
+        <IJSObjectReference>
+            ("import", Assets["./_content/BlazorWith3d.ExampleApp.Client.Babylon/assets/index.js"]).AsTask());
         module = await moduleTask.Value;
-
-
-        await module.InvokeVoidAsync("StartEngine", _containerElementReference);
 
         await base.OnAfterRenderAsync(firstRender);
     }

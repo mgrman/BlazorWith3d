@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+https://go.microsoft.com/fwlink/?LinkID=208121.
+-->
+<Project>
+  <PropertyGroup>
+    <_PublishTargetUrl>D:\Martin\repos\BlazorWith3d\samples\BlazorWith3d.ExampleApp\bin\Release\net9.0\publish\</_PublishTargetUrl>
+    <History>True|2024-11-26T20:05:14.1794401Z||;True|2024-11-26T20:38:03.7588035+01:00||;</History>
+    <LastFailureDetails />
+  </PropertyGroup>
+</Project>

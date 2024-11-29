@@ -79,6 +79,7 @@ app.Use(async (context, next) =>
 
 
 app.MapStaticAssets();
+app.UseStaticFiles();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
