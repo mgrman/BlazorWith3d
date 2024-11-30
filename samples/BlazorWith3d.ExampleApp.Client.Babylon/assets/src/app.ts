@@ -25,8 +25,8 @@ export function InitializeBabylonApp(canvas: HTMLCanvasElement, dotnetObject: an
 export class DebugApp {
     private _sendMessage: (msgBytes: Uint8Array) => Promise<any>;
     private scene: Scene;
-    private templates: Array<AddBlockTemplate>;
-    private instances: Array<[instance:AddBlockInstance, mesh: Mesh]>;
+    private templates: Array<AddBlockTemplate>= new Array<AddBlockTemplate>();
+    private instances: Array<[instance:AddBlockInstance, mesh: Mesh]> = new Array<[instance: AddBlockInstance, mesh: Mesh]>();
 
     constructor(canvas: HTMLCanvasElement, sendMessage: (msgBytes: Uint8Array) => Promise<any>) {
         this._sendMessage = sendMessage;
@@ -66,6 +66,7 @@ export class DebugApp {
         var dst = new ArrayBuffer(buffer.byteLength);
         new Uint8Array(dst).set(buffer);
 
+        try {
         switch (msgId) {
             case 0: {
                 const obj: BlazorControllerInitialized = BlazorControllerInitialized.deserialize(dst);
@@ -73,12 +74,7 @@ export class DebugApp {
                 break;
             }
             case 1: {
-                let obj: PerfCheck;
-                try {
-                    obj = PerfCheck.deserialize(dst);
-                } catch (e) {
-                    console.log(e)
-                }
+                const obj = PerfCheck.deserialize(dst);
                 this.OnPerfCheck?.(obj);
                 break;
             }
@@ -113,6 +109,9 @@ export class DebugApp {
                 break;
             }
         }
+        } catch (e) {
+            console.log(e)
+        }
     }
     
     public Quit(): void {
@@ -134,12 +133,27 @@ export class DebugApp {
 
     protected OnRemoveBlockInstance(obj: RemoveBlockInstance) {
         console.log("RemoveBlockInstance", obj);
-        this.instances = this.instances.filter(o => o.blockId !== obj.blockId);
+
+
+        const [instance, mesh]  = this.instances.find(o => o[0].blockId === obj.blockId);
+        this.instances = this.instances.filter(o => o[0].blockId !== obj.blockId);
+        
+        this.scene.removeMesh(mesh);
     }
 
     protected OnAddBlockInstance(obj: AddBlockInstance) {
         console.log("AddBlockInstance", obj);
-        this.instances.push(obj);
+        
+       var template= this.templates.find(o => o.templateId === obj.templateId); 
+        
+        var mesh: Mesh = MeshBuilder.CreateBox("box"+obj.blockId, {
+            width: template.sizeX,
+            height: template.sizeY,
+            depth: template.sizeZ
+        }, this.scene);
+        mesh.position=new Vector3(obj.positionX, obj.positionY, template.sizeZ/2);
+        mesh.rotation= new Vector3(0,0, obj.rotationZ);
+        this.instances.push([obj, mesh]);
     }
 
     protected OnAddBlockTemplate(obj: AddBlockTemplate) {
