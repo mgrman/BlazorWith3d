@@ -59,12 +59,12 @@ namespace ExampleApp
             
 
             await _appApi.InvokeUnityAppInitialized(new UnityAppInitialized());
+            _appApi.OnBlazorControllerInitialized += OnControllerInitialized;
             _appApi.OnAddBlockTemplate += OnAddBlockTemplateMessage;
             _appApi.OnRemoveBlockTemplate += OnRemoveBlockTemplateMessage;
             _appApi.OnAddBlockInstance += OnAddBlockInstanceMessage;
             _appApi.OnRemoveBlockInstance += OnRemoveBlockMessage;
             _appApi.OnBlockPoseChangeValidated += OnBlockPoseChangingResponse;
-            _appApi.OnBlazorControllerInitialized += OnControllerInitialized;
             
             _appApi.OnPerfCheck += request =>
             {
@@ -94,6 +94,7 @@ namespace ExampleApp
 
         private void OnControllerInitialized(BlazorControllerInitialized _)
         {
+            Debug.Log($"BlazorControllerInitialized: ");
             foreach (var block in _templates.Values)
             {
                 GameObject.Destroy(block.gameObject);

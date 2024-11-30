@@ -127,6 +127,19 @@ public class HelloSourceGenerator : ISourceGenerator
                 sb.AppendLine();
                 sb.AppendLine($"private readonly IBinaryApi _binaryApi;");
                 sb.AppendLine($"private readonly ArrayBufferWriter<byte> _writer = new ArrayBufferWriter<byte>(100);");
+                
+                sb.AppendLine();
+                foreach (var e in info.events)
+                {
+                    sb.AppendLine($"private event Action<{e.typeName}> _on{e.typeName};");
+                }
+                
+                sb.AppendLine();
+                foreach (var e in info.events)
+                {
+                    sb.AppendLine($"private List<{e.typeName}> {e.typeName}Buffer = new List<{e.typeName}>();");
+                }
+                
                 sb.AppendLine();
                 sb.AppendLine($"public {info.typeName}(IBinaryApi binaryApi)");
                 using (sb.IndentWithCurlyBrackets())
@@ -146,7 +159,33 @@ public class HelloSourceGenerator : ISourceGenerator
                 sb.AppendLine();
                 foreach (var e in info.events)
                 {
-                    sb.AppendLine($"public event Action<{e.typeName}> On{e.typeName};");
+                    sb.AppendLine($"public event Action<{e.typeName}> On{e.typeName}");
+                    using (sb.IndentWithCurlyBrackets())
+                    {
+                        sb.AppendLine($"add");
+                        using (sb.IndentWithCurlyBrackets())
+                        {
+                            sb.AppendLine($"_on{e.typeName} += value;");
+                            
+                            sb.AppendLine($"if ({e.typeName}Buffer.Count > 0)");
+                            using (sb.IndentWithCurlyBrackets())
+                            {
+                                
+                                sb.AppendLine($"foreach (var msg in {e.typeName}Buffer)");
+                                using (sb.IndentWithCurlyBrackets())
+                                {
+                                    sb.AppendLine($"value(msg);");
+                                }
+                                sb.AppendLine($"{e.typeName}Buffer.Clear();");
+                            }
+                        }
+                        sb.AppendLine($"remove");
+                        using (sb.IndentWithCurlyBrackets())
+                        {
+                            sb.AppendLine($"_on{e.typeName} -= value;");
+
+                        }
+                    }
                 }
 
                 sb.AppendLine();
@@ -260,7 +299,18 @@ public class HelloSourceGenerator : ISourceGenerator
                                 using (sb.IndentWithCurlyBrackets())
                                 {
                                     sb.AppendLine($"var obj = DeserializeObject<{e.typeName}>(span);");
-                                    sb.AppendLine($"On{e.typeName}?.Invoke(obj);");
+                                    
+                                    
+                                    sb.AppendLine($"if (_on{e.typeName} == null)");
+                                    using (sb.IndentWithCurlyBrackets())
+                                    {
+                                        sb.AppendLine($"{e.typeName}Buffer.Add(obj);");
+                                    }
+                                    sb.AppendLine($"else");
+                                    using (sb.IndentWithCurlyBrackets())
+                                    {
+                                        sb.AppendLine($"_on{e.typeName}?.Invoke(obj);");
+                                    }
 
                                     if (info.generateObjectApi)
                                     {

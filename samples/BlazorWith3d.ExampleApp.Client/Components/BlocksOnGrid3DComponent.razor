@@ -250,7 +250,8 @@
 
     private async void OnAppInitialized(UnityAppInitialized arg)
     {
-        await ReplayState();
+        // TODO without this the WebGL is broken
+        //await ReplayState();
     }
 
     private async ValueTask ReplayState()

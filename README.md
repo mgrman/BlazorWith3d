@@ -14,25 +14,26 @@ with potentially another source gen to generate the pure JS wrapper (as sending 
 
 ### Prio 0
 
-- Add BabylonJS/ThreeJS version of 3d renderer ( see https://doc.babylonjs.com/guidedLearning/usingVite/ )
-    - One version using own JS with direct interop
-    - One version using own JS app and memorypack typescript generator
-    - using https://github.com/aspnet/AspLabs/tree/main/src/ClientAssets
-
-- Benchmark if in typescript based implementation, it is better to use direct JS method interop or rather set up message passing channel
-    - another source gen to generate the pure JS wrapper (as sending messages back to .NET needs some boilerplate)
-
-
-### Prio 1
+- Optimize Typescript dev experience
+  - add option to live recompile changes
+  - add debugging support to IDEs
 
 - generate Typescript App Api as well (and set it up to generate an npm package for other apps to use)
 
+- Optimize Typescript API
+    - remove memory copies during message handling
+
+### Prio 1
+
 - generate methods directly creating instance inside, ie if internal struct, then the simple method can create an instance directly inside, to make nicer API
+- add reusable singleton support for messages without fields
 
 - Add Maui Blazor version with WebGL Unity
     - https://learn.microsoft.com/en-us/aspnet/core/blazor/hybrid/tutorials/maui-blazor-web-app?view=aspnetcore-9.0
 
-- Blazorwith3d - add purely 2d view, as for block movement we can have 2d only backend without gpu
+- Add BabylonJS/ThreeJS version of 3d renderer ( see https://doc.babylonjs.com/guidedLearning/usingVite/ )
+    - One version using own JS with direct interop
+    - one using Blazor bindings project
 
 
 ### Prio 2
@@ -41,17 +42,14 @@ with potentially another source gen to generate the pure JS wrapper (as sending 
 
 - cleanup, refactor generator, too many things seemingly hardcoded and edge cases not handled (e.g. namespaces of messages, or if multiple apps are defined)
 
-- split unity packages/libraries by abstraction level (raw message, then typed message, then generated API)
+- split packages/libraries by abstraction level (raw message, then typed message, then generated API)
+
+- double check catching of exceptions as they happen in "native" code and do not always propagate properly
 
 
 ### Prio 3
 
-- optimization: if message has fields, generete singleton for it and ignore it in method/event parameters
-- to consider: the methods to invoke, do not need force the message, maybe create a overload where the fields themselves can be provided instead
-
 - add support for defining messages from other assemblies
-
-- double check catching of exceptions as they happen in "native" code and do not always propagate properly
 
 - consider some generic reactive dictionary or patch requests on object support
     - e.g. that both sides can instantiate kind of reactive dictionry and through generic messages they both can be kept automatically in sync, with changes always propagating to the other side
@@ -63,7 +61,6 @@ with potentially another source gen to generate the pure JS wrapper (as sending 
 - Add Maui Blazor with Native android Unity as library
     -  https://github.com/Unity-Technologies/uaal-example
 
-    - consider dev mode using only Unity's JSON serialization, as that is faster to build (less dlls), also to test switching serialization options
 
 ### Not gonna do for now
 - appInitialized message should be on renderer level, as it means replay state in general
@@ -86,3 +83,6 @@ with potentially another source gen to generate the pure JS wrapper (as sending 
 | ByteArray         | 49.65 ns | 4.785 ns | 14.109 ns | 43.82 ns |
 | ArrayBufferWriter | 34.29 ns | 0.441 ns |  0.413 ns | 34.28 ns |
 - sadly without chaining source generators, this does not work. As none of the types generated can be them MemoryPack compatible (as it uses own source gen)
+
+- consider dev mode using only Unity's JSON serialization, as that is faster to build (less dlls), also to test switching serialization options 
+  - RESOLUTION not gonna do, instead there is option for debugging directly in Unity via websockets

@@ -1,6 +1,15 @@
 import "@babylonjs/core/Debug/debugLayer";
 import "@babylonjs/inspector";
-import { Engine, Scene, ArcRotateCamera, Vector3, HemisphericLight, Mesh, MeshBuilder } from "@babylonjs/core";
+import {
+    Engine,
+    Scene,
+    ArcRotateCamera,
+    Vector3,
+    HemisphericLight,
+    Mesh,
+    MeshBuilder,
+    PointerDragBehavior, Camera, FreeCamera, Vector2, Tools, Matrix, PointLight, DirectionalLight
+} from "@babylonjs/core";
 import {AddBlockInstance} from "./memorypack/AddBlockInstance";
 import {BlazorControllerInitialized} from "./memorypack/BlazorControllerInitialized";
 import {PerfCheck} from "./memorypack/PerfCheck";
@@ -26,8 +35,11 @@ export class DebugApp {
     private _sendMessage: (msgBytes: Uint8Array) => Promise<any>;
     private scene: Scene;
     private templates: Array<AddBlockTemplate>= new Array<AddBlockTemplate>();
-    private instances: Array<[instance:AddBlockInstance, mesh: Mesh]> = new Array<[instance: AddBlockInstance, mesh: Mesh]>();
+    private instances: Array<[instance:AddBlockInstance, mesh: Mesh, drag: PointerDragBehavior]> = new Array<[instance: AddBlockInstance, mesh: Mesh, drag: PointerDragBehavior]>();
 
+    private changingRequestId: number=0;
+    private plane: Mesh; 
+    
     constructor(canvas: HTMLCanvasElement, sendMessage: (msgBytes: Uint8Array) => Promise<any>) {
         this._sendMessage = sendMessage;
 
@@ -35,9 +47,19 @@ export class DebugApp {
         var engine = new Engine(canvas, true);
         this.scene = new Scene(engine);
 
-        var camera: ArcRotateCamera = new ArcRotateCamera("Camera", Math.PI / 2, Math.PI / 2, 2, Vector3.Zero(), this.scene);
-        camera.attachControl(canvas, true);
-        var light1: HemisphericLight = new HemisphericLight("light1", new Vector3(1, 1, 0), this.scene);
+        var camera = new FreeCamera("Camera", new Vector3(0,0,10), this.scene);
+        camera.setTarget(Vector3.Zero());
+        var light1 = new DirectionalLight("light1", new Vector3(0, 3, 0), this.scene);
+        light1.direction= new Vector3(-1.144162,-2.727118,-1.981747)
+
+        this.plane = MeshBuilder.CreatePlane("plane", {
+            width: 10,
+            height: 10,
+            sideOrientation: Mesh.DOUBLESIDE
+
+        }, this.scene);
+        this.plane.rotation=new Vector3(Tools.ToRadians(4.92),Tools.ToRadians(159.77-180),Tools.ToRadians(180));
+        
 
         // hide/show the Inspector
         window.addEventListener("keydown", (ev) => {
@@ -56,6 +78,7 @@ export class DebugApp {
             this.scene.render();
         });
 
+        
         this.InvokeUnityAppInitialized(new UnityAppInitialized()).then(_ => console.log("UnityAppInitialized invoked"));
     }
 
@@ -120,10 +143,18 @@ export class DebugApp {
 
     protected OnBlockPoseChangeValidated(obj: BlockPoseChangeValidated) {
         console.log("BlockPoseChangeValidated", obj);
+
+
+        const [instance, mesh, drag]  = this.instances.find(o => o[0].blockId === obj.blockId);
+
+        instance.positionX=obj.newPositionX;
+        instance.positionY=obj.newPositionY;
+        instance.rotationZ=obj.newRotationZ;
+        this.UpdateMeshPosition(mesh, instance);
     }
 
     protected OnStartDraggingBlock(obj: StartDraggingBlock) {
-        console.log("StartDraggingBlock", obj);
+        console.log("StartDraggingBlock IS NOT SUPPORTED YET", obj);
     }
 
     protected OnRemoveBlockTemplate(obj: RemoveBlockTemplate) {
@@ -135,7 +166,7 @@ export class DebugApp {
         console.log("RemoveBlockInstance", obj);
 
 
-        const [instance, mesh]  = this.instances.find(o => o[0].blockId === obj.blockId);
+        const [instance, mesh, drag]  = this.instances.find(o => o[0].blockId === obj.blockId);
         this.instances = this.instances.filter(o => o[0].blockId !== obj.blockId);
         
         this.scene.removeMesh(mesh);
@@ -151,9 +182,61 @@ export class DebugApp {
             height: template.sizeY,
             depth: template.sizeZ
         }, this.scene);
-        mesh.position=new Vector3(obj.positionX, obj.positionY, template.sizeZ/2);
-        mesh.rotation= new Vector3(0,0, obj.rotationZ);
-        this.instances.push([obj, mesh]);
+        mesh.parent=this.plane;
+        mesh.position = new Vector3(0, 0, template.sizeZ / 2);
+        this.UpdateMeshPosition(mesh, obj);
+
+        var pointerDragBehavior = new PointerDragBehavior({ dragPlaneNormal: new Vector3(0, 0, 1) });
+        pointerDragBehavior.useObjectOrientationForDragging = false;
+        pointerDragBehavior.updateDragPlane = false;
+        
+        var initialPoint: Vector2;
+
+
+        const matrix = Matrix.Invert(this.plane.computeWorldMatrix(true));
+        
+        pointerDragBehavior.onDragStartObservable.add((event) => {
+            console.log("dragStart");
+            console.log(event);
+            
+            var localPoint= Vector3.TransformCoordinates(event.dragPlanePoint, matrix);
+
+            initialPoint= new Vector2(localPoint.x- obj.positionX,localPoint.y-obj.positionY);
+        });
+        pointerDragBehavior.onDragObservable.add((event) => {
+            console.log("drag");
+            console.log(event);
+            
+            var localPoint= Vector3.TransformCoordinates(event.dragPlanePoint, matrix);
+
+            this.InvokeBlockPoseChanging({
+
+                blockId: obj.blockId,
+                changingRequestId: this.changingRequestId++,
+                positionX: localPoint.x-initialPoint.x,
+                positionY: localPoint.y-initialPoint.y,
+                rotationZ: obj.rotationZ
+            }).then();
+        });
+        pointerDragBehavior.onDragEndObservable.add((event) => {
+            console.log("dragEnd");
+            console.log(event);
+            this.InvokeBlockPoseChanged( {
+                blockId : obj.blockId,
+                positionX : obj.positionX,
+                positionY : obj.positionY,
+                rotationZ : obj.rotationZ
+            });
+        });
+        pointerDragBehavior.moveAttached = false;
+        pointerDragBehavior.attach(mesh);
+        this.instances.push([obj, mesh, pointerDragBehavior]);
+    }
+
+    private UpdateMeshPosition = (mesh: Mesh, obj: AddBlockInstance) => {
+        
+        mesh.position = new Vector3(obj.positionX, obj.positionY, mesh.position.z);
+        mesh.rotation = new Vector3(0, 0, obj.rotationZ);
     }
 
     protected OnAddBlockTemplate(obj: AddBlockTemplate) {
@@ -175,6 +258,18 @@ export class DebugApp {
     protected OnBlazorControllerInitialized(obj: BlazorControllerInitialized) {
 
         console.log("OnBlazorControllerInitialized", obj);
+
+        this.templates= new Array<AddBlockTemplate>();
+        
+        
+        for(const i of this.instances) {
+            const [instance, mesh, drag] = i;
+
+            this.scene.removeMesh(mesh);
+        }
+        
+        this.instances= new Array<[instance: AddBlockInstance, mesh: Mesh, drag: PointerDragBehavior]>();
+
     }
 
     protected async InvokePerfCheck(msg: PerfCheck): Promise<void> {

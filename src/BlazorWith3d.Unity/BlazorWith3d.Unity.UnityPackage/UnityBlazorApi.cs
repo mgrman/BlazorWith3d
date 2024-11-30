@@ -31,6 +31,7 @@ namespace BlazorWith3d.Unity
                 {
                     foreach (var msg in messageBuffer)
                     {
+                        Debug.Log($"replaying msg of {msg.Length} bytes as  onHandleReceivedMessages is set");
                         value(msg);
                     }
                     messageBuffer.Clear();
@@ -77,9 +78,15 @@ namespace BlazorWith3d.Unity
             _ReadBytesBuffer(id, bytes);
 
             if (_onHandleReceivedMessages == null)
+            {
+                Debug.Log($"received msg of {bytes.Length} bytes but onHandleReceivedMessages is null");
                 messageBuffer.Add(bytes);
+            }
             else
+            {
+                Debug.Log($"received msg of {bytes.Length} bytes and invoked onHandleReceivedMessages");
                 _onHandleReceivedMessages?.Invoke(bytes);
+            }
         }
 
         [DllImport("__Internal")]
