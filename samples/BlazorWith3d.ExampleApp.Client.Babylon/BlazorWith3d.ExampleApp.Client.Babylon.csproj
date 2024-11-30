@@ -21,4 +21,9 @@
       <Folder Include="assets\public\" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\..\src\BlazorWith3d.Unity\BlazorWith3d.Unity.Shared\BlazorWith3d.Unity.Shared.csproj" />
+      <ProjectReference Include="..\BlazorWith3d.ExampleApp.Client.Shared\BlazorWith3d.ExampleApp.Client.Shared.csproj" />
+    </ItemGroup>
+
 </Project>

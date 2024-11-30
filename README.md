@@ -17,12 +17,15 @@ with potentially another source gen to generate the pure JS wrapper (as sending 
 - Add BabylonJS/ThreeJS version of 3d renderer ( see https://doc.babylonjs.com/guidedLearning/usingVite/ )
     - One version using own JS with direct interop
     - One version using own JS app and memorypack typescript generator
+    - using https://github.com/aspnet/AspLabs/tree/main/src/ClientAssets
 
 - Benchmark if in typescript based implementation, it is better to use direct JS method interop or rather set up message passing channel
     - another source gen to generate the pure JS wrapper (as sending messages back to .NET needs some boilerplate)
 
 
 ### Prio 1
+
+- generate Typescript App Api as well (and set it up to generate an npm package for other apps to use)
 
 - generate methods directly creating instance inside, ie if internal struct, then the simple method can create an instance directly inside, to make nicer API
 

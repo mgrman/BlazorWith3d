@@ -1,0 +1,87 @@
+import { MemoryPackWriter } from "./MemoryPackWriter";
+import { MemoryPackReader } from "./MemoryPackReader";
+
+export class BlockPoseChanged {
+    blockId: number;
+    positionX: number;
+    positionY: number;
+    rotationZ: number;
+
+    constructor() {
+        this.blockId = 0;
+        this.positionX = 0;
+        this.positionY = 0;
+        this.rotationZ = 0;
+
+    }
+
+    static serialize(value: BlockPoseChanged | null): Uint8Array {
+        const writer = MemoryPackWriter.getSharedInstance();
+        this.serializeCore(writer, value);
+        return writer.toArray();
+    }
+
+    static serializeCore(writer: MemoryPackWriter, value: BlockPoseChanged | null): void {
+        if (value == null) {
+            writer.writeNullObjectHeader();
+            return;
+        }
+
+        writer.writeObjectHeader(4);
+        writer.writeInt32(value.blockId);
+        writer.writeFloat32(value.positionX);
+        writer.writeFloat32(value.positionY);
+        writer.writeFloat32(value.rotationZ);
+
+    }
+
+    static serializeArray(value: (BlockPoseChanged | null)[] | null): Uint8Array {
+        const writer = MemoryPackWriter.getSharedInstance();
+        this.serializeArrayCore(writer, value);
+        return writer.toArray();
+    }
+
+    static serializeArrayCore(writer: MemoryPackWriter, value: (BlockPoseChanged | null)[] | null): void {
+        writer.writeArray(value, (writer, x) => BlockPoseChanged.serializeCore(writer, x));
+    }
+
+    static deserialize(buffer: ArrayBuffer): BlockPoseChanged | null {
+        return this.deserializeCore(new MemoryPackReader(buffer));
+    }
+
+    static deserializeCore(reader: MemoryPackReader): BlockPoseChanged | null {
+        const [ok, count] = reader.tryReadObjectHeader();
+        if (!ok) {
+            return null;
+        }
+
+        const value = new BlockPoseChanged();
+        if (count == 4) {
+            value.blockId = reader.readInt32();
+            value.positionX = reader.readFloat32();
+            value.positionY = reader.readFloat32();
+            value.rotationZ = reader.readFloat32();
+
+        }
+        else if (count > 4) {
+            throw new Error("Current object's property count is larger than type schema, can't deserialize about versioning.");
+        }
+        else {
+            if (count == 0) return value;
+            value.blockId = reader.readInt32(); if (count == 1) return value;
+            value.positionX = reader.readFloat32(); if (count == 2) return value;
+            value.positionY = reader.readFloat32(); if (count == 3) return value;
+            value.rotationZ = reader.readFloat32(); if (count == 4) return value;
+
+        }
+        return value;
+    }
+
+    static deserializeArray(buffer: ArrayBuffer): (BlockPoseChanged | null)[] | null {
+        return this.deserializeArrayCore(new MemoryPackReader(buffer));
+    }
+
+    static deserializeArrayCore(reader: MemoryPackReader): (BlockPoseChanged | null)[] | null {
+        return reader.readArray(reader => BlockPoseChanged.deserializeCore(reader));
+    }
+}

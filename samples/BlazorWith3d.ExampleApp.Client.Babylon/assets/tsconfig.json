@@ -1,12 +1,11 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "lib": [ // choose our default ECMA/libraries to import
-      "dom", // mandatory for all browser-based apps
-      "es6" // mandatory for targeting ES6
+    "target": "ES2022",
+    "lib": [
+      "ES2022",
+      "dom"
     ],
-    "useDefineForClassFields": true, // enable latest ECMA runtime behavior with older ECMA/JavaScript versions (delete this line if target: "ESNext" or "ES2022"+)
-    "module": "ESNext", // use the latest ECMA/JavaScript syntax for our import statements and such
+    "module": "ES2022",
     "moduleResolution": "node", // ensures we are using CommonJS for our npm packages
     "noResolve": false, // disable TypeScript from automatically detecting/adding files based on import statements and etc (it's less helpful than you think)
     "isolatedModules": true, // allows our code to be processed by other transpilers, such as preventing non-module TS files (you could delete this since we're only using base TypeScript)
@@ -18,6 +17,6 @@
     "noImplicitReturns": true, // raises an error for functions that return nothing
     "skipLibCheck": true // skip type-checking of .d.ts files (it speeds up transpiling)
   },
-  "include": [ "src" ], // specify location(s) of .ts files,
+  "include": [ "src"], // specify location(s) of .ts files,
   "exclude": ["node_modules"]
 }

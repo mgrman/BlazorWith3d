@@ -5,7 +5,6 @@
 @using BlazorWith3d.ExampleApp.Client.Babylon
 @rendermode InteractiveAuto
 
-<Component1></Component1>
 <PageTitle>WebGL instance</PageTitle>
 
 <InputSelect id="scent" @bind-Value="_renderer">
@@ -24,6 +23,9 @@
         case "Html":
             <BlocksOnGridHTMLComponent></BlocksOnGridHTMLComponent>
             break;
+        case "Babylon":
+            <BlocksOnGridBabylonRenderer></BlocksOnGridBabylonRenderer>
+            break;
             default:
             <text> Unsupported renderer type @_renderer</text>
             break;
@@ -34,7 +36,7 @@
 
 @code{
 
-    List<string> _renderers = ["WebGL", "Html"];
+    List<string> _renderers = ["WebGL", "Html", "Babylon"];
 
     string _renderer = "Html";
 
