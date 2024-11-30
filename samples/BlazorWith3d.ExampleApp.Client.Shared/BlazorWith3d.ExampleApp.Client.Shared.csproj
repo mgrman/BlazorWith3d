@@ -8,6 +8,7 @@
     </PropertyGroup>
   <PropertyGroup>
     <MemoryPackGenerator_TypeScriptOutputDirectory>$(MSBuildProjectDirectory)\scripts\memorypack</MemoryPackGenerator_TypeScriptOutputDirectory>
+      <MemoryPackGenerator_TypeScriptImportExtension> </MemoryPackGenerator_TypeScriptImportExtension>
   </PropertyGroup>
 
   <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk"/>
@@ -20,7 +21,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <CompilerVisibleProperty Include="MemoryPackGenerator_TypeScriptOutputDirectory" />
+      <CompilerVisibleProperty Include="MemoryPackGenerator_TypeScriptOutputDirectory" />
+      <CompilerVisibleProperty Include="MemoryPackGenerator_TypeScriptImportExtension" />
   </ItemGroup>
 
     <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk"/>
