@@ -11,37 +11,26 @@ namespace BlazorWith3d.Unity
 {
     public class UnityBlazorApi : IBinaryApi
     {
-        private static readonly List<byte[]> messageBuffer = new();
-
-        private static Action<byte[]> _onHandleReceivedMessages;
+        private static readonly ReceiveMessageBuffer _receiveMessageBuffer = new();
 
 
-        public event Action<byte[]> OnMessage
+
+        public Action<byte[]>? MainMessageHandler
         {
-            add
+            get => _receiveMessageBuffer.MainMessageHandler;
+            set
             {
+                
 #if !(UNITY_WEBGL && !UNITY_EDITOR)
                 if (Application.isEditor|| Application.platform != RuntimePlatform.WebGLPlayer)
                 {
                     throw new NotImplementedException();
                 }
 #endif
-                _onHandleReceivedMessages += value;
-                if (messageBuffer.Any())
-                {
-                    foreach (var msg in messageBuffer)
-                    {
-                        Debug.Log($"replaying msg of {msg.Length} bytes as  onHandleReceivedMessages is set");
-                        value(msg);
-                    }
-                    messageBuffer.Clear();
-                }
-            }
-            remove
-            {
-                _onHandleReceivedMessages -= value;
+                _receiveMessageBuffer.MainMessageHandler = value;
             }
         }
+        
 
         public ValueTask SendMessage(byte[] bytes)
         {
@@ -77,16 +66,7 @@ namespace BlazorWith3d.Unity
 
             _ReadBytesBuffer(id, bytes);
 
-            if (_onHandleReceivedMessages == null)
-            {
-                Debug.Log($"received msg of {bytes.Length} bytes but onHandleReceivedMessages is null");
-                messageBuffer.Add(bytes);
-            }
-            else
-            {
-                Debug.Log($"received msg of {bytes.Length} bytes and invoked onHandleReceivedMessages");
-                _onHandleReceivedMessages?.Invoke(bytes);
-            }
+            _receiveMessageBuffer.InvokeMessage(bytes);
         }
 
         [DllImport("__Internal")]

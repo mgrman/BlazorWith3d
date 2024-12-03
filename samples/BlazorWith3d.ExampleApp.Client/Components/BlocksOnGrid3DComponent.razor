@@ -208,6 +208,7 @@
             _rendererApi.OnBlockPoseChanging += OnBlockPoseChanging;
             _rendererApi.OnBlockPoseChanged += OnBlockPoseChanged;
 
+            _rendererApi.StartProcessingMessages();
             _rendererApi.InvokeBlazorControllerInitialized(new BlazorControllerInitialized());
         }
 

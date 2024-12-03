@@ -45,6 +45,7 @@ namespace BlazorWith3d.Unity
 
                 callback.Invoke(o.msg);
             };  
+            _api.StartProcessingMessages();
         }
 
 

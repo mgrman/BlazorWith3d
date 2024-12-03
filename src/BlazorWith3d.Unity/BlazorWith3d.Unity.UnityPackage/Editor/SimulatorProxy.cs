@@ -24,7 +24,9 @@ namespace BlazorWith3d.Unity
         
         private class BinaryApiProxy:IBinaryApi
         {
-            public event Action<byte[]> OnMessage;
+            private  readonly ReceiveMessageBuffer _receiveMessageBuffer = new();
+            public Action<byte[]> MainMessageHandler { get => _receiveMessageBuffer.MainMessageHandler; set=>_receiveMessageBuffer.MainMessageHandler=value; }
+
             public ValueTask SendMessage(byte[] bytes)
             {
                 On_SendMessage?.Invoke(bytes);
@@ -35,7 +37,7 @@ namespace BlazorWith3d.Unity
 
             public void Invoke_OnMessage(byte[] bytes)
             {
-                OnMessage?.Invoke(bytes);
+                _receiveMessageBuffer.InvokeMessage(bytes);
             }
         }
     }

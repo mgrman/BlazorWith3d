@@ -77,6 +77,7 @@ namespace ExampleApp
                     Ddd = request.Ddd
                 });
             };
+            _appApi.StartProcessingMessages();
         }
 
         private async Awaitable OnDestroy()

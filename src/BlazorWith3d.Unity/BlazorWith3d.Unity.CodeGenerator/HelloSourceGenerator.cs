@@ -103,6 +103,10 @@ public class HelloSourceGenerator : ISourceGenerator
             sb.AppendLine($"public partial interface I{info.typeName}");
             using (sb.IndentWithCurlyBrackets())
             {
+                sb.AppendLine($"bool IsProcessingMessages {{ get; }}");
+                sb.AppendLine($"void StartProcessingMessages();");
+                sb.AppendLine($"void StopProcessingMessages();");
+                
                 sb.AppendLine($"event Action<byte[], Exception> OnMessageError;");
 
                 foreach (var e in info.events)
@@ -127,25 +131,29 @@ public class HelloSourceGenerator : ISourceGenerator
                 sb.AppendLine();
                 sb.AppendLine($"private readonly IBinaryApi _binaryApi;");
                 sb.AppendLine($"private readonly ArrayBufferWriter<byte> _writer = new ArrayBufferWriter<byte>(100);");
-                
-                sb.AppendLine();
-                foreach (var e in info.events)
-                {
-                    sb.AppendLine($"private event Action<{e.typeName}> _on{e.typeName};");
-                }
-                
-                sb.AppendLine();
-                foreach (var e in info.events)
-                {
-                    sb.AppendLine($"private List<{e.typeName}> {e.typeName}Buffer = new List<{e.typeName}>();");
-                }
-                
                 sb.AppendLine();
                 sb.AppendLine($"public {info.typeName}(IBinaryApi binaryApi)");
                 using (sb.IndentWithCurlyBrackets())
                 {
                     sb.AppendLine("_binaryApi = binaryApi;");
-                    sb.AppendLine("_binaryApi.OnMessage+=ProcessMessages;");
+                }
+                sb.AppendLine($"public bool IsProcessingMessages => _binaryApi.MainMessageHandler == ProcessMessages;");
+                
+                sb.AppendLine($"public void StartProcessingMessages()");
+                using (sb.IndentWithCurlyBrackets())
+                {
+                    sb.AppendLine("_binaryApi.MainMessageHandler = ProcessMessages;");
+                }
+                
+                sb.AppendLine($"public void StopProcessingMessages()");
+                using (sb.IndentWithCurlyBrackets())
+                {
+                    sb.AppendLine("if(_binaryApi.MainMessageHandler != ProcessMessages)");
+                    using (sb.IndentWithCurlyBrackets())
+                    {
+                        sb.AppendLine("return;");
+                    }
+                    sb.AppendLine("_binaryApi.MainMessageHandler = null;");
                 }
 
                 sb.AppendLine();
@@ -159,33 +167,7 @@ public class HelloSourceGenerator : ISourceGenerator
                 sb.AppendLine();
                 foreach (var e in info.events)
                 {
-                    sb.AppendLine($"public event Action<{e.typeName}> On{e.typeName}");
-                    using (sb.IndentWithCurlyBrackets())
-                    {
-                        sb.AppendLine($"add");
-                        using (sb.IndentWithCurlyBrackets())
-                        {
-                            sb.AppendLine($"_on{e.typeName} += value;");
-                            
-                            sb.AppendLine($"if ({e.typeName}Buffer.Count > 0)");
-                            using (sb.IndentWithCurlyBrackets())
-                            {
-                                
-                                sb.AppendLine($"foreach (var msg in {e.typeName}Buffer)");
-                                using (sb.IndentWithCurlyBrackets())
-                                {
-                                    sb.AppendLine($"value(msg);");
-                                }
-                                sb.AppendLine($"{e.typeName}Buffer.Clear();");
-                            }
-                        }
-                        sb.AppendLine($"remove");
-                        using (sb.IndentWithCurlyBrackets())
-                        {
-                            sb.AppendLine($"_on{e.typeName} -= value;");
-
-                        }
-                    }
+                    sb.AppendLine($"public event Action<{e.typeName}> On{e.typeName};");
                 }
 
                 sb.AppendLine();
@@ -254,7 +236,7 @@ public class HelloSourceGenerator : ISourceGenerator
                 sb.AppendLine($"public void Dispose()");
                 using (sb.IndentWithCurlyBrackets())
                 {
-                    sb.AppendLine("_binaryApi.OnMessage-=ProcessMessages;");
+                    sb.AppendLine("StopProcessingMessages();");
                 }
                 
                 sb.AppendLine($"protected ValueTask SendMessage<TMessage>(byte messageId, TMessage message)");
@@ -299,18 +281,7 @@ public class HelloSourceGenerator : ISourceGenerator
                                 using (sb.IndentWithCurlyBrackets())
                                 {
                                     sb.AppendLine($"var obj = DeserializeObject<{e.typeName}>(span);");
-                                    
-                                    
-                                    sb.AppendLine($"if (_on{e.typeName} == null)");
-                                    using (sb.IndentWithCurlyBrackets())
-                                    {
-                                        sb.AppendLine($"{e.typeName}Buffer.Add(obj);");
-                                    }
-                                    sb.AppendLine($"else");
-                                    using (sb.IndentWithCurlyBrackets())
-                                    {
-                                        sb.AppendLine($"_on{e.typeName}?.Invoke(obj);");
-                                    }
+                                    sb.AppendLine($"On{e.typeName}?.Invoke(obj);");
 
                                     if (info.generateObjectApi)
                                     {

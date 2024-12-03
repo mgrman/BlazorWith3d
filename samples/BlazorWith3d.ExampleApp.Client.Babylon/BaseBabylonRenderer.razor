@@ -1,4 +1,5 @@
-﻿@using Microsoft.JSInterop
+﻿@using BlazorWith3d.Unity.Shared
+@using Microsoft.JSInterop
 @inject IJSRuntime JsRuntime
 @inject ILogger<BaseBabylonRenderer> Logger
 @implements BlazorWith3d.Unity.Shared.IBinaryApi
@@ -16,22 +17,20 @@
     private IJSObjectReference? module;
     private IJSObjectReference? _babylonApp;
     
-    
     public virtual string BabylonAppPath => "";
     
     private DotNetObjectReference<JsMessageReceiverProxy>? _messageReceiverProxyReference;
     private readonly List<byte[]> _unsentMessages = new();
+    private readonly ReceiveMessageBuffer _receiveMessageBuffer = new();
 
     public async ValueTask DisposeAsync()
     {
-        
         if (_babylonApp != null)
         {
             await _babylonApp.InvokeVoidAsync("Quit");
             await _babylonApp.DisposeAsync();
             _babylonApp = null;
         }
-
 
         _messageReceiverProxyReference?.Dispose();
     }
@@ -75,12 +74,18 @@
 
         await base.OnAfterRenderAsync(firstRender);
     }
-    public event Action<byte[]>? OnMessage;
+    
+    public Action<byte[]>? MainMessageHandler
+    {
+        get => _receiveMessageBuffer.MainMessageHandler;
+        set => _receiveMessageBuffer.MainMessageHandler = value;
+    }
 
     private void OnMessageBytesReceived(byte[] messageBytes)
     {
-        OnMessage?.Invoke(messageBytes);
+        _receiveMessageBuffer.InvokeMessage(messageBytes);
     }
+    
     public async ValueTask SendMessage(byte[] messageBytes)
     {
         if (_babylonApp == null)

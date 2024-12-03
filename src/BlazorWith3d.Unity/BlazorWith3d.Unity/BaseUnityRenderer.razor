@@ -1,6 +1,7 @@
 ﻿@inject IJSRuntime JsRuntime
 @inject ILogger<BaseUnityRenderer> Logger
 @implements BlazorWith3d.Unity.Shared.IBinaryApi
+@using BlazorWith3d.Unity.Shared
 @using Microsoft.Extensions.Logging
 @implements IAsyncDisposable
 @rendermode InteractiveAuto
@@ -20,7 +21,6 @@
 
 @code
 {
-    
     private IJSObjectReference? _unityApi;
 
     private ElementReference _containerElementReference;
@@ -28,6 +28,7 @@
 
     public virtual string UnityBuildFilesRootPath => Assets[""];
     private readonly List<byte[]> _unsentMessages = new();
+    private readonly ReceiveMessageBuffer _receiveMessageBuffer = new();
 
     public async ValueTask DisposeAsync()
     {
@@ -72,11 +73,15 @@
         await base.OnAfterRenderAsync(firstRender);
     }
 
-    public event Action<byte[]>? OnMessage;
+    public Action<byte[]>? MainMessageHandler
+    {
+        get => _receiveMessageBuffer.MainMessageHandler;
+        set => _receiveMessageBuffer.MainMessageHandler = value;
+    }
 
     private void OnMessageBytesReceived(byte[] messageBytes)
     {
-        OnMessage?.Invoke(messageBytes);
+        _receiveMessageBuffer.InvokeMessage(messageBytes);
     }
 
     public async ValueTask SendMessage(byte[] messageBytes)

@@ -10,38 +10,10 @@ public class DebugRelayUnityApi:IBinaryApi
     private readonly ILogger<DebugRelayUnityApi> _logger;
     private WebSocket? _webSocket;
     private readonly List<byte[]> _unsentMessages= new();
-    private readonly List<byte[]> _unhandledMessages= new();
+    private readonly BackgroundMessageBuffer _unhandledMessages= new();
     private Func<Action,Task>?  _handleThread;
-    private Action<byte[]>? _onMessage;
 
-    public event Action<byte[]>? OnMessage
-    {
-        add
-        {
-            _onMessage += value;
-
-            if (_unhandledMessages.Any())
-            {
-                var unhandledMessagesCopy = _unhandledMessages.ToList();
-                _unhandledMessages.Clear();
-                Task.Run(async () =>
-                {
-                    foreach (var unhandledMessage in unhandledMessagesCopy)
-                    {
-                        if (_handleThread == null)
-                        {
-                            _onMessage?.Invoke(unhandledMessage);
-                        }
-                        else
-                        {
-                            await _handleThread(() => _onMessage?.Invoke(unhandledMessage));
-                        }
-                    }
-                });
-            }
-        }
-        remove => _onMessage -= value;
-    }
+    public Action<byte[]>? MainMessageHandler { get => _unhandledMessages.MainMessageHandler; set => _unhandledMessages.MainMessageHandler = value; }
 
     public DebugRelayUnityApi(ILogger<DebugRelayUnityApi> logger)
     {
@@ -50,7 +22,7 @@ public class DebugRelayUnityApi:IBinaryApi
     
     public void HandleThread(Func<Action,Task> action)
     {
-        _handleThread = action;
+        _unhandledMessages.HandleThread = action;
     }
     
     public async ValueTask SendMessage(byte[] bytes)
@@ -91,20 +63,7 @@ public class DebugRelayUnityApi:IBinaryApi
             {
                 var receiveResult = await webSocket.ReceiveAsync(buffer, CancellationToken.None);
                 var msg = buffer.Slice(0, receiveResult.Count).ToArray();
-                if (_onMessage == null)
-                {
-                    _unhandledMessages.Add(msg);
-                }
-                else
-                {  if (_handleThread == null)
-                    {
-                        _onMessage?.Invoke(msg);
-                    }
-                    else
-                    {
-                        await _handleThread(() => _onMessage?.Invoke(msg));
-                    }
-                }
+                _unhandledMessages.InvokeMessageAsync(msg);
             }
             catch (WebSocketException ex)
             {
