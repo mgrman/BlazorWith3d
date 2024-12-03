@@ -14,27 +14,36 @@ with potentially another source gen to generate the pure JS wrapper (as sending 
 
 ### Prio 0
 
-- Optimize Typescript dev experience
-  - add option to live recompile changes
-  - add debugging support to IDEs
+- set up github issues 
 
-- generate Typescript App Api as well (and set it up to generate an npm package for other apps to use)
+- optimize generic App startup (it is a bit slow till UI starts to react)
 
-- Optimize Typescript API
-    - remove memory copies during message handling
-
-### Prio 1
-
-- generate methods directly creating instance inside, ie if internal struct, then the simple method can create an instance directly inside, to make nicer API
-- add reusable singleton support for messages without fields
+- do Isometric or fake-3d in CSS only for HTML version
 
 - Add Maui Blazor version with WebGL Unity
     - https://learn.microsoft.com/en-us/aspnet/core/blazor/hybrid/tutorials/maui-blazor-web-app?view=aspnetcore-9.0
+  
+- generate Typescript App Api as well (and set it up to generate an npm package for other apps to use)
 
-- Add BabylonJS/ThreeJS version of 3d renderer ( see https://doc.babylonjs.com/guidedLearning/usingVite/ )
-    - One version using own JS with direct interop
+### Prio 1
+
+- Optimize Typescript dev experience
+    - add option to live recompile changes
+    - add debugging support to IDEs
+    - switch to Vite as everybody's using it ( see https://doc.babylonjs.com/guidedLearning/usingVite/ )
+
+- Optimize Typescript API
+    - remove memory copies during message handling
+  
+- generate methods directly creating instance inside, ie if internal struct, then the simple method can create an instance directly inside, to make nicer API
+- add reusable singleton support for messages without fields
+
+- Add BabylonJS/ThreeJS version of 3d renderer 
+    - Using JS interop with messages
     - one using Blazor bindings project
-
+  
+- Add BabylonJS version of 3d renderer 
+    - one using Blazor bindings project
 
 ### Prio 2
 
