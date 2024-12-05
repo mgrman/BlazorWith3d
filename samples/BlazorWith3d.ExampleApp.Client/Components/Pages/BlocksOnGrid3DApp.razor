@@ -17,7 +17,9 @@
 <BlocksOnGrid3DComponent >
     @switch (_renderer)
     {
-        case "WebGL":
+        case "None":
+            break;
+        case "Unity WebGL":
             <BlocksOnGridUnityRenderer></BlocksOnGridUnityRenderer>
             break;
         case "Html":
@@ -36,8 +38,8 @@
 
 @code{
 
-    List<string> _renderers = ["WebGL", "Html", "Babylon"];
+    List<string> _renderers = ["None","Unity WebGL", "Html", "Babylon"];
 
-    string _renderer = "Html";
+    string _renderer = "None";
 
 }

@@ -10,7 +10,7 @@
 @inject ILogger<BlocksOnGrid3DComponent> Logger
 @implements I3DAppController
 
-<text>@(OperatingSystem.IsBrowser() ? "WASM" : "Serverside")</text>
+<text>@(RendererInfo.Name) @(RendererInfo.IsInteractive?"Interactive":"Static")</text>
 
 
 <table>
@@ -169,7 +169,7 @@
     int _newBlockTemplateId;
 
     string? _perfResponse;
-    int _perfTestCount;
+    int _perfTestCount=100;
 
     private List<(int id, float sizeX, float sizeY, float sizeZ)> _templates = new();
     private List<(int blockId, float positionX, float positionY, float rotationZ, int templateId)> _blocks = new();
@@ -184,7 +184,6 @@
             _blocks = await LocalStorage.GetItemAsync<List<(int blockId, float positionX, float positionY, float rotationZ, int templateId)>>("_blocks") ?? new List<(int blockId, float positionX, float positionY, float rotationZ, int templateId)>();
 
             _newIdCounter = _templates.Select(o => o.id).Concat(_blocks.Select(o => o.blockId)).DefaultIfEmpty(-1).Max() + 1;
-            
             
             await ReplayState();
         }
@@ -228,7 +227,11 @@
 
     private void OnBlockPoseChanging(BlockPoseChanging arg)
     {
-        ValidateAppApi();  
+        if (_rendererApi == null)
+        {
+            return;
+        }
+        
         _rendererApi.InvokeBlockPoseChangeValidated(new BlockPoseChangeValidated
         {
             BlockId = arg.BlockId,
@@ -240,24 +243,16 @@
         });
     }
 
-    [MemberNotNull(nameof(_rendererApi))]
-    private void ValidateAppApi()
-    {
-        if (_rendererApi == null)
-        {
-            throw new InvalidOperationException("Renderer is not initialized yet!");
-        }
-    }
-
     private async void OnAppInitialized(UnityAppInitialized arg)
     {
-        // TODO without this the WebGL is broken
-        //await ReplayState();
     }
 
     private async ValueTask ReplayState()
     {
-        ValidateAppApi();  
+        if (_rendererApi == null)
+        {
+            return;
+        }
         
         foreach (var template in _templates)
         {
@@ -274,11 +269,14 @@
 
     private async Task AddTemplate()
     {
-        ValidateAppApi();  
         var msg = new AddBlockTemplate { TemplateId = _newIdCounter++, SizeX = _newTemplateSizeX, SizeY = _newTemplateSizeY, SizeZ = _newTemplateSizeZ };
-        await _rendererApi.InvokeAddBlockTemplate(msg);
         _templates.Add((msg.TemplateId, msg.SizeX, msg.SizeY, msg.SizeZ));
         SaveToLocalStorage();
+        
+        if (_rendererApi != null)
+        {
+            await _rendererApi.InvokeAddBlockTemplate(msg);
+        }
     }
 
     private void  SaveToLocalStorage()
@@ -292,32 +290,44 @@
 
     private async Task RemoveTemplate(int id)
     {
-        ValidateAppApi();  
-        await _rendererApi.InvokeRemoveBlockTemplate(new RemoveBlockTemplate { TemplateId = id });
         _templates.RemoveAll(o => o.id == id);
         SaveToLocalStorage();
+        
+        if (_rendererApi != null)
+        {
+            await _rendererApi.InvokeRemoveBlockTemplate(new RemoveBlockTemplate { TemplateId = id });
+        }
     }
 
     private async Task AddBlock()
     {
-        ValidateAppApi();  
         var msg = new AddBlockInstance { BlockId = _newIdCounter++, PositionX = _newBlockPositionX, PositionY = _newBlockPositionY, RotationZ = _newBlockRotationZ, TemplateId = _newBlockTemplateId };
-        await _rendererApi.InvokeAddBlockInstance(msg);
         _blocks.Add((msg.BlockId, msg.PositionX, msg.PositionY, msg.RotationZ, msg.TemplateId));
         SaveToLocalStorage();
+        
+        if (_rendererApi != null)
+        {
+            await _rendererApi.InvokeAddBlockInstance(msg);
+        }
     }
 
     private async Task RemoveBlock(int id)
     {
-        ValidateAppApi();  
-        await _rendererApi.InvokeRemoveBlockInstance(new RemoveBlockInstance { BlockId = id });
         _blocks.RemoveAll(o => o.blockId == id);
         SaveToLocalStorage();
+        if (_rendererApi != null)
+        {
+            await _rendererApi.InvokeRemoveBlockInstance(new RemoveBlockInstance { BlockId = id });
+        }
     }
 
     private async Task PerfCheck()
     {
-        ValidateAppApi();  
+        if (_rendererApi == null)
+        {
+            _perfResponse = "No Renderer is configured!";
+            return;
+        } 
         var testCount = _perfTestCount;
 
         var responses = new bool[testCount];
