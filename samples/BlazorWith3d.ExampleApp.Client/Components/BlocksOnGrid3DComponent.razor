@@ -178,17 +178,34 @@
 
     protected override async Task OnInitializedAsync()
     {
-        if (OperatingSystem.IsBrowser())
+        if (RendererInfo.Name== "Server")
         {
-            _templates = await LocalStorage.GetItemAsync<List<(int id, float sizeX, float sizeY, float sizeZ)>>("_templates") ?? new List<(int id, float sizeX, float sizeY, float sizeZ)>();
-            _blocks = await LocalStorage.GetItemAsync<List<(int blockId, float positionX, float positionY, float rotationZ, int templateId)>>("_blocks") ?? new List<(int blockId, float positionX, float positionY, float rotationZ, int templateId)>();
-
-            _newIdCounter = _templates.Select(o => o.id).Concat(_blocks.Select(o => o.blockId)).DefaultIfEmpty(-1).Max() + 1;
-            
-            await ReplayState();
+            await LoadInitialState();
         }
 
         await base.OnInitializedAsync();
+    }
+
+    private async Task LoadInitialState()
+    {
+        _templates = await LocalStorage.GetItemAsync<List<(int id, float sizeX, float sizeY, float sizeZ)>>("_templates") ?? new List<(int id, float sizeX, float sizeY, float sizeZ)>();
+        _blocks = await LocalStorage.GetItemAsync<List<(int blockId, float positionX, float positionY, float rotationZ, int templateId)>>("_blocks") ?? new List<(int blockId, float positionX, float positionY, float rotationZ, int templateId)>();
+
+        _newIdCounter = _templates.Select(o => o.id).Concat(_blocks.Select(o => o.blockId)).DefaultIfEmpty(-1).Max() + 1;
+        
+        StateHasChanged();
+        await ReplayState();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            await base.OnAfterRenderAsync(firstRender);
+            return;
+        }
+        await LoadInitialState();
+        await base.OnAfterRenderAsync(firstRender);
     }
 
     public void InitializeRenderer(IBlocksOnGrid3DApp? rendererApi)
