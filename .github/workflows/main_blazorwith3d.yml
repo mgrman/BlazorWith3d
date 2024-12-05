@@ -52,6 +52,9 @@ jobs:
       - name: dotnet tool restore
         run: dotnet tool restore
 
+      - name: dotnet workload install wasm-tools
+        run: dotnet workload install wasm-tools
+        
       - name: restore nuget for unity
         run: dotnet nugetforunity restore "samples/BlazorWith3d.ExampleApp.UnityProject"
 
