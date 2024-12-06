@@ -32,6 +32,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d.ExampleApp.Cli
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d.ExampleApp.Client.Babylon", "samples\BlazorWith3d.ExampleApp.Client.Babylon\BlazorWith3d.ExampleApp.Client.Babylon.csproj", "{1E1C9549-D095-42B2-84DC-EF2717775578}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d.ExampleApp.Maui", "samples\BlazorWith3d.ExampleApp.Maui\BlazorWith3d.ExampleApp.Maui.csproj", "{6CC87DAA-38F3-264B-C400-5531A5FC776A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d.ExampleApp.WebAssembly", "samples\BlazorWith3d.ExampleApp.WebAssembly\BlazorWith3d.ExampleApp.WebAssembly.csproj", "{D53BA66F-0AF8-E4D4-3F3F-A7F8869707C2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -78,6 +82,14 @@ Global
 		{1E1C9549-D095-42B2-84DC-EF2717775578}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1E1C9549-D095-42B2-84DC-EF2717775578}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1E1C9549-D095-42B2-84DC-EF2717775578}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6CC87DAA-38F3-264B-C400-5531A5FC776A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6CC87DAA-38F3-264B-C400-5531A5FC776A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6CC87DAA-38F3-264B-C400-5531A5FC776A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6CC87DAA-38F3-264B-C400-5531A5FC776A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D53BA66F-0AF8-E4D4-3F3F-A7F8869707C2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D53BA66F-0AF8-E4D4-3F3F-A7F8869707C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D53BA66F-0AF8-E4D4-3F3F-A7F8869707C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D53BA66F-0AF8-E4D4-3F3F-A7F8869707C2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

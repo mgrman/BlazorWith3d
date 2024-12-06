@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
     <PropertyGroup>
         <TargetFramework>net9.0</TargetFramework>
@@ -13,7 +13,12 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\BlazorWith3d.ExampleApp.Client\BlazorWith3d.ExampleApp.Client.csproj" />
+      <_ContentIncludedByDefault Remove="Components\Layout\MainLayout.razor" />
+      <_ContentIncludedByDefault Remove="Components\Layout\NavMenu.razor" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\BlazorWith3d.ExampleApp.WebAssembly\BlazorWith3d.ExampleApp.WebAssembly.csproj" />
     </ItemGroup>
 
 </Project>

@@ -1,4 +1,5 @@
-﻿<!DOCTYPE html>
+﻿@using BlazorWith3d.ExampleApp.Client.Components
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -8,22 +9,14 @@
     <link rel="stylesheet" href="@Assets["bootstrap/bootstrap.min.css"]"/>
     <link rel="stylesheet" href="@Assets["app.css"]"/>
     <link rel="stylesheet" href="@Assets["BlazorWith3d.ExampleApp.styles.css"]"/>
-    <ImportMap ImportMapDefinition="aaa" />
+    <ImportMap />
     <link rel="icon" type="image/png" href="favicon.png"/>
     <HeadOutlet/>
 </head>
 
 <body>
-    <Routes/>
+    <Routes  @rendermode="InteractiveAuto"/>
     <script src="_framework/blazor.web.js"></script>
 </body>
 
 </html>
-
-@code{
-    ImportMapDefinition aaa = new ImportMapDefinition(new Dictionary<string, string>()
-    {
-        {"@babylonjs/core/","https://cdn.jsdelivr.net/npm/@babylonjs/core@7.35.0/" }
-
-    }, null, null);
-}

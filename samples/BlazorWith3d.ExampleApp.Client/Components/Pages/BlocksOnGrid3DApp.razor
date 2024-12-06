@@ -2,8 +2,7 @@
 @using BlazorWith3d.ExampleApp.Client.Components
 @using BlazorWith3d.ExampleApp.Client.Unity.Components
 @using BlazorWith3d.ExampleApp.Client.HTML
-@using BlazorWith3d.ExampleApp.Client.Babylon
-@rendermode InteractiveAuto
+
 
 <PageTitle>WebGL instance</PageTitle>
 
@@ -26,7 +25,7 @@
             <BlocksOnGridHTMLComponent></BlocksOnGridHTMLComponent>
             break;
         case "Babylon":
-            <BlocksOnGridBabylonRenderer></BlocksOnGridBabylonRenderer>
+            @* <BlocksOnGridBabylonRenderer></BlocksOnGridBabylonRenderer> *@
             break;
             default:
             <text> Unsupported renderer type @_renderer</text>

@@ -1,5 +1,6 @@
 using Blazored.LocalStorage;
 using BlazorWith3d.Components;
+using BlazorWith3d.ExampleApp.Client.Services;
 using BlazorWith3d.Unity;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,6 +18,7 @@ builder.Services.AddBlazoredLocalStorage(c =>
 });
 
 builder.Services.AddSingleton<DebugRelayUnityApi>();
+builder.Services.AddSingleton<IFlagProvider,ServerFlagProvider>();
 
 var app = builder.Build();
 

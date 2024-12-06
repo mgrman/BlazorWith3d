@@ -1,5 +1,9 @@
 using Blazored.LocalStorage;
+
+using BlazorWith3d.ExampleApp.Client.Services;
+
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
@@ -9,6 +13,7 @@ builder.Services.AddBlazoredLocalStorage(c =>
     c.JsonSerializerOptions.IgnoreReadOnlyFields = false;
     c.JsonSerializerOptions.IgnoreReadOnlyProperties = false;
 });
+builder.Services.AddSingleton<IFlagProvider,WasmFlagProvider>();
 
 await builder.Build().RunAsync();
 
