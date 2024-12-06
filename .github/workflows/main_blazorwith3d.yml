@@ -68,6 +68,13 @@ jobs:
           projectPath: samples/BlazorWith3d.ExampleApp.UnityProject/
           buildsPath: ${{env.DOTNET_ROOT}}/mywebglapp
 
+      - name: Build MAUI with dotnet
+        run: dotnet publish "samples/BlazorWith3d.ExampleApp.Maui/BlazorWith3d.ExampleApp.Maui.csproj" -f net9.0-windows10.0.19041.0 -c Release -p:RuntimeIdentifierOverride=win10-x64 -p:WindowsPackageType=None -p:WindowsAppSDKSelfContained=true --output "publish/windowsApp"
+      
+      - uses: montudor/action-zip@v1
+        with:
+            args: zip -qq -r "publish/windowsApp" "samples/BlazorWith3d.ExampleApp/wwwroot/windowsApp.zip"
+
 
       - name: Build with dotnet
         run: dotnet build "samples/BlazorWith3d.ExampleApp/BlazorWith3d.ExampleApp.csproj" -c Release

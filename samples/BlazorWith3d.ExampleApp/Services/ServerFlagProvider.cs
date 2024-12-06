@@ -8,4 +8,6 @@ public class ServerFlagProvider: IFlagProvider
     }
     
     public bool IsUnityRelayEnabled { get; private set; }
+
+    public bool IsWindowsBuildLinkEnabled => true;
 }

@@ -1,7 +1,14 @@
 ﻿@page "/"
+@inject IFlagProvider FlagProvider
 
 <PageTitle>Home</PageTitle>
 
 <h1>Hello, world!</h1>
 
 Welcome to your BlazorWith3d app.
+
+
+@if (FlagProvider.IsWindowsBuildLinkEnabled)
+{
+  <a href="/windowsApp.zip"> Download Windows MAUI build</a>
+}

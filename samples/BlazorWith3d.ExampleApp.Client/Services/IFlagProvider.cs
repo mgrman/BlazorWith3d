@@ -3,5 +3,6 @@
 public interface IFlagProvider
 {
     bool IsUnityRelayEnabled { get; }
+    bool IsWindowsBuildLinkEnabled { get; }
 }
 

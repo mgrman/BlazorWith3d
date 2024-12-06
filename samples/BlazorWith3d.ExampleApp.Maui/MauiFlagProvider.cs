@@ -5,4 +5,6 @@ namespace MauiApp1;
 internal class MauiFlagProvider : IFlagProvider
 {
     public bool IsUnityRelayEnabled => false;
+
+    public bool IsWindowsBuildLinkEnabled => false;
 }
