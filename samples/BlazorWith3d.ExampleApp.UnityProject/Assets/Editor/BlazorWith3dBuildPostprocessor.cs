@@ -1,16 +1,21 @@
 ﻿#if UNITY_EDITOR
 using System.IO;
 using UnityEditor;
+using UnityEditor.Build;
+using UnityEditor.Build.Reporting;
 using UnityEditor.Callbacks;
 using UnityEngine;
 
-public class BlazorWith3dBuildPostprocessor
+public class BlazorWith3dBuildPostprocessor : IPostprocessBuildWithReport
 {
-    [PostProcessBuild(1)]
-    public static void OnPostprocessBuild(BuildTarget target, string pathToBuiltProject)
+    public int callbackOrder { get; }
+
+    public void OnPostprocessBuild(BuildReport report)
     {
+        var pathToBuiltProject = report.summary.outputPath;
         var buildFilesFolder = Path.GetFullPath(Path.Combine(pathToBuiltProject, "Build"));
-        var backendWwwrootFolder = Path.GetFullPath(Path.Combine("..", "BlazorWith3d.ExampleApp.Client.Unity", "wwwroot"));
+        var backendWwwrootFolder =
+            Path.GetFullPath(Path.Combine("..", "BlazorWith3d.ExampleApp.Client.Unity", "wwwroot"));
 
         if (!Directory.Exists(backendWwwrootFolder))
         {
