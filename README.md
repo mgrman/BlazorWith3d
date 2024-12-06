@@ -14,8 +14,6 @@ with potentially another source gen to generate the pure JS wrapper (as sending 
 
 ### Prio 0
 
-- fix Babylon usage in MAUI
-
 - optimize generic App startup (it is a bit slow till UI starts to react)
 
 - do Isometric or fake-3d in CSS only for HTML version
