@@ -20,7 +20,7 @@ module.exports = env => {
             extensions: ['.tsx', '.ts', '.js'],
         },
         output: {
-            filename: "bundle.js",
+            filename: "blazorwith3d-exampleapp-client-babylon-bundle.js",
             path: path.resolve(__dirname, "dist"),
             library: {
                 type: "module",

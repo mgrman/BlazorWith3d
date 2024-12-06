@@ -16,7 +16,7 @@ public class BlocksOnGridBabylonRenderer:BaseBabylonRenderer, IDisposable
     [Inject]
     public required ILogger<BlocksOnGridBabylonRenderer> Logger { get; set; }
 
-    public override string BabylonAppPath => Assets["./_content/BlazorWith3d.ExampleApp.Client.Babylon/bundle.js"];
+    public override string BabylonAppPath => Assets["./_content/BlazorWith3d.ExampleApp.Client.Babylon/blazorwith3d-exampleapp-client-babylon-bundle.js"];
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
