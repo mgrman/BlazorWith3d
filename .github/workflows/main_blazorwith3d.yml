@@ -90,9 +90,8 @@ jobs:
       - name: Build MAUI with dotnet
         run: dotnet publish "samples/BlazorWith3d.ExampleApp.Maui/BlazorWith3d.ExampleApp.Maui.csproj" -f net9.0-windows10.0.19041.0 -c Release -p:RuntimeIdentifierOverride=win10-x64 -p:WindowsPackageType=None -p:WindowsAppSDKSelfContained=true --output "publish/windowsApp"
 
-      - uses: montudor/action-zip@v1
-        with:
-          args: zip -qq -r "publish/windowsApp" "publish/windowsApp.zip"
+      - name: zip app
+        run: powershell Compress-Archive "publish\windowsApp" "publish\windowsApp.zip"
 
       - name: Upload artifact for unity build
         uses: actions/upload-artifact@v4
