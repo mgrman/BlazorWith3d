@@ -124,6 +124,9 @@ jobs:
           dotnet-version: '9.x'
           dotnet-quality: 'preview'
 
+      - name: dotnet workload install wasm-tools
+        run: dotnet workload install wasm-tools
+
       - name: Build with dotnet
         run: dotnet build "samples/BlazorWith3d.ExampleApp/BlazorWith3d.ExampleApp.csproj" -c Release
 
