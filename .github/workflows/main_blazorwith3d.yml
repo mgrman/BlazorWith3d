@@ -54,6 +54,9 @@ jobs:
 
       - name: dotnet workload install wasm-tools
         run: dotnet workload install wasm-tools
+
+      - name: dotnet workload install maui
+        run: dotnet workload install maui
         
       - name: restore nuget for unity
         run: dotnet nugetforunity restore "samples/BlazorWith3d.ExampleApp.UnityProject"
