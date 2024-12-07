@@ -74,6 +74,7 @@ jobs:
 
   build-maui:
     runs-on: windows-latest
+    needs: [ build-unity ]
 
     steps:
       - uses: actions/checkout@v4
@@ -84,8 +85,17 @@ jobs:
           dotnet-version: '9.x'
           dotnet-quality: 'preview'
 
+      - name: Download unity webgl
+        uses: actions/download-artifact@v4
+        with:
+          name: unity-webgl-app
+          path: "samples/BlazorWith3d.ExampleApp.Client.Unity/wwwroot"
+
       - name: dotnet workload install maui
         run: dotnet workload install maui
+
+      - name: Build with dotnet
+        run: dotnet build "samples/BlazorWith3d.ExampleApp.Maui/BlazorWith3d.ExampleApp.Maui.csproj" -c Release
 
       - name: Build MAUI with dotnet
         run: dotnet publish "samples/BlazorWith3d.ExampleApp.Maui/BlazorWith3d.ExampleApp.Maui.csproj" -f net9.0-windows10.0.19041.0 -c Release -p:RuntimeIdentifierOverride=win10-x64 -p:WindowsPackageType=None -p:WindowsAppSDKSelfContained=true --output "publish/windowsApp"

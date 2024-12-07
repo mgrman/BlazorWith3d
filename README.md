@@ -14,7 +14,7 @@ with potentially another source gen to generate the pure JS wrapper (as sending 
 
 ### Prio 0
 
-- optimize generic App startup (it is a bit slow till UI starts to react)
+- fix that babylon js file is not there if you do publish on maui app without any build calls before
 
 - do Isometric or fake-3d in CSS only for HTML version
 - https://developer.mozilla.org/en-US/docs/Web/CSS/transform-function/perspective
