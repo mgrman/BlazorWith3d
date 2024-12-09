@@ -16,6 +16,9 @@ with potentially another source gen to generate the pure JS wrapper (as sending 
 
 - fix that babylon js file is not there if you do publish on maui app without any build calls before
 
+- Add BabylonJS version of 3d renderer
+    - one using Blazor bindings project
+
 - do Isometric or fake-3d in CSS only for HTML version
 - https://developer.mozilla.org/en-US/docs/Web/CSS/transform-function/perspective
   
@@ -38,8 +41,6 @@ with potentially another source gen to generate the pure JS wrapper (as sending 
     - Using JS interop with messages
     - one using Blazor bindings project
   
-- Add BabylonJS version of 3d renderer 
-    - one using Blazor bindings project
 
 ### Prio 2
 
