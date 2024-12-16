@@ -21,7 +21,7 @@ with potentially another source gen to generate the pure JS wrapper (as sending 
 
 - do Isometric or fake-3d in CSS only for HTML version
 - https://developer.mozilla.org/en-US/docs/Web/CSS/transform-function/perspective
-  
+
 - generate Typescript App Api as well (and set it up to generate an npm package for other apps to use)
 
 ### Prio 1
@@ -31,16 +31,19 @@ with potentially another source gen to generate the pure JS wrapper (as sending 
     - add debugging support to IDEs
     - switch to Vite as everybody's using it ( see https://doc.babylonjs.com/guidedLearning/usingVite/ )
 
+- Maui app with native Unity build
+    https://docs.unity3d.com/6000.1/Documentation/Manual/UnityasaLibrary-Windows.html
+
 - Optimize Typescript API
     - remove memory copies during message handling
-  
+
 - generate methods directly creating instance inside, ie if internal struct, then the simple method can create an instance directly inside, to make nicer API
 - add reusable singleton support for messages without fields
 
-- Add BabylonJS/ThreeJS version of 3d renderer 
+- Add ThreeJS version of 3d renderer
     - Using JS interop with messages
     - one using Blazor bindings project
-  
+
 
 ### Prio 2
 

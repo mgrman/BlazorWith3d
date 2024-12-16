@@ -3,13 +3,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.12.35323.107
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d.ExampleApp", "samples\BlazorWith3d.ExampleApp\BlazorWith3d.ExampleApp.csproj", "{950A34BA-A271-435A-9161-28891E4082BB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d.ExampleApp.AspNet", "samples\BlazorWith3d.ExampleApp.AspNet\BlazorWith3d.ExampleApp.AspNet.csproj", "{950A34BA-A271-435A-9161-28891E4082BB}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d.ExampleApp.Client", "samples\BlazorWith3d.ExampleApp.Client\BlazorWith3d.ExampleApp.Client.csproj", "{386015FC-3AD7-4D4B-99B5-590B111D82BF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d.Unity", "src\BlazorWith3d.Unity\BlazorWith3d.Unity\BlazorWith3d.Unity.csproj", "{E881D744-002F-40ED-8DFD-C839300890B5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d.Unity", "src\BlazorWith3d\BlazorWith3d.Unity\BlazorWith3d.Unity.csproj", "{E881D744-002F-40ED-8DFD-C839300890B5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d.Unity.Shared", "src\BlazorWith3d.Unity\BlazorWith3d.Unity.Shared\BlazorWith3d.Unity.Shared.csproj", "{5DE1CF85-C4B0-4B38-8804-3DC41F6355B4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d.Shared", "src\BlazorWith3d\BlazorWith3d.Shared\BlazorWith3d.Shared.csproj", "{5DE1CF85-C4B0-4B38-8804-3DC41F6355B4}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{DCF5B369-95B8-4FA0-94BE-8AEDE842B105}"
 	ProjectSection(SolutionItems) = preProject
@@ -20,9 +20,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d.Unity.CodeGenerator", "src\BlazorWith3d.Unity\BlazorWith3d.Unity.CodeGenerator\BlazorWith3d.Unity.CodeGenerator.csproj", "{47CE0DFA-94DF-4040-ACA6-BFAA0E984677}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d.Unity.Benchmark", "src\BlazorWith3d.Unity\BlazorWith3d.Unity.Benchmark\BlazorWith3d.Unity.Benchmark.csproj", "{BD0658F7-AE9D-4B3C-87EA-2F32830D6825}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d.CodeGenerator", "src\BlazorWith3d\BlazorWith3d.CodeGenerator\BlazorWith3d.CodeGenerator.csproj", "{47CE0DFA-94DF-4040-ACA6-BFAA0E984677}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d.ExampleApp.Client.Unity", "samples\BlazorWith3d.ExampleApp.Client.Unity\BlazorWith3d.ExampleApp.Client.Unity.csproj", "{E773FCE7-BF7A-461B-BC7A-64E804D0C30D}"
 EndProject
@@ -34,7 +32,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d.ExampleApp.Cli
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d.ExampleApp.Maui", "samples\BlazorWith3d.ExampleApp.Maui\BlazorWith3d.ExampleApp.Maui.csproj", "{6CC87DAA-38F3-264B-C400-5531A5FC776A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d.ExampleApp.WebAssembly", "samples\BlazorWith3d.ExampleApp.WebAssembly\BlazorWith3d.ExampleApp.WebAssembly.csproj", "{D53BA66F-0AF8-E4D4-3F3F-A7F8869707C2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d.ExampleApp.AspNet.WebAssembly", "samples\BlazorWith3d.ExampleApp.AspNet.WebAssembly\BlazorWith3d.ExampleApp.AspNet.WebAssembly.csproj", "{D53BA66F-0AF8-E4D4-3F3F-A7F8869707C2}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "BlazorWith3d", "BlazorWith3d", "{8D75F5F4-2A1B-4C7D-9217-10A5BCFF61EB}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ExampleApp", "ExampleApp", "{44CB5B1C-A284-45E6-BFB7-C58D73AE7037}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d.Babylon", "src\BlazorWith3d\BlazorWith3d.Babylon\BlazorWith3d.Babylon.csproj", "{C3CDE7A6-8733-4DCD-8928-800073E33565}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -62,10 +66,6 @@ Global
 		{47CE0DFA-94DF-4040-ACA6-BFAA0E984677}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{47CE0DFA-94DF-4040-ACA6-BFAA0E984677}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{47CE0DFA-94DF-4040-ACA6-BFAA0E984677}.Release|Any CPU.Build.0 = Release|Any CPU
-		{BD0658F7-AE9D-4B3C-87EA-2F32830D6825}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{BD0658F7-AE9D-4B3C-87EA-2F32830D6825}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{BD0658F7-AE9D-4B3C-87EA-2F32830D6825}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{BD0658F7-AE9D-4B3C-87EA-2F32830D6825}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E773FCE7-BF7A-461B-BC7A-64E804D0C30D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E773FCE7-BF7A-461B-BC7A-64E804D0C30D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E773FCE7-BF7A-461B-BC7A-64E804D0C30D}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -90,9 +90,27 @@ Global
 		{D53BA66F-0AF8-E4D4-3F3F-A7F8869707C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D53BA66F-0AF8-E4D4-3F3F-A7F8869707C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D53BA66F-0AF8-E4D4-3F3F-A7F8869707C2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C3CDE7A6-8733-4DCD-8928-800073E33565}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C3CDE7A6-8733-4DCD-8928-800073E33565}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C3CDE7A6-8733-4DCD-8928-800073E33565}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C3CDE7A6-8733-4DCD-8928-800073E33565}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{950A34BA-A271-435A-9161-28891E4082BB} = {44CB5B1C-A284-45E6-BFB7-C58D73AE7037}
+		{386015FC-3AD7-4D4B-99B5-590B111D82BF} = {44CB5B1C-A284-45E6-BFB7-C58D73AE7037}
+		{E881D744-002F-40ED-8DFD-C839300890B5} = {8D75F5F4-2A1B-4C7D-9217-10A5BCFF61EB}
+		{5DE1CF85-C4B0-4B38-8804-3DC41F6355B4} = {8D75F5F4-2A1B-4C7D-9217-10A5BCFF61EB}
+		{47CE0DFA-94DF-4040-ACA6-BFAA0E984677} = {8D75F5F4-2A1B-4C7D-9217-10A5BCFF61EB}
+		{E773FCE7-BF7A-461B-BC7A-64E804D0C30D} = {44CB5B1C-A284-45E6-BFB7-C58D73AE7037}
+		{25A15756-1FE5-4E77-AA27-1B271E323E5E} = {44CB5B1C-A284-45E6-BFB7-C58D73AE7037}
+		{1AE985E3-DB1E-4D0D-ABFA-6E7EA9B2269E} = {44CB5B1C-A284-45E6-BFB7-C58D73AE7037}
+		{1E1C9549-D095-42B2-84DC-EF2717775578} = {44CB5B1C-A284-45E6-BFB7-C58D73AE7037}
+		{6CC87DAA-38F3-264B-C400-5531A5FC776A} = {44CB5B1C-A284-45E6-BFB7-C58D73AE7037}
+		{D53BA66F-0AF8-E4D4-3F3F-A7F8869707C2} = {44CB5B1C-A284-45E6-BFB7-C58D73AE7037}
+		{C3CDE7A6-8733-4DCD-8928-800073E33565} = {8D75F5F4-2A1B-4C7D-9217-10A5BCFF61EB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {66A8D527-8D61-4D7B-AAFB-AE9DEF0B3757}

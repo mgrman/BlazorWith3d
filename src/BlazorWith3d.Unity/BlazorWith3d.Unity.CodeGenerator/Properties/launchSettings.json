@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "DebugRoslynSourceGenerator": {
-      "commandName": "DebugRoslynComponent",
-      "targetProject": "..\\..\\..\\samples\\BlazorWith3d.ExampleApp.Client.Unity.Shared\\BlazorWith3d.ExampleApp.Client.Unity.Shared.csproj"
-    }
-  }
-}

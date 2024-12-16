@@ -1,5 +1,5 @@
-﻿using BlazorWith3d.ExampleApp.Client.Unity.Shared;
-using BlazorWith3d.Unity;
+﻿using BlazorWith3d.Babylon;
+using BlazorWith3d.ExampleApp.Client.Shared;
 
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;

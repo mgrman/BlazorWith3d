@@ -1,0 +1,14 @@
+{
+  "name": "BlazorWith3d.Shared",
+  "rootNamespace": "BlazorWith3d.Shared",
+  "references": [],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": true,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": true
+}

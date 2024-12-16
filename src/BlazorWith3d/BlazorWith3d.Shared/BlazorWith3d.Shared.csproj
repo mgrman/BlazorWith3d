@@ -1,0 +1,24 @@
+﻿<Project>
+
+    <PropertyGroup>
+        <BaseIntermediateOutputPath>.obj</BaseIntermediateOutputPath>
+        <RootNamespace>.BlazorWith3d.Shared</RootNamespace>
+        <DefineConstants>$(DefineConstants);COMMON_DOTNET</DefineConstants>
+        <TargetFramework>netstandard2.1</TargetFramework>
+    </PropertyGroup>
+
+    <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk"/>
+
+    <PropertyGroup>
+        <Nullable>enable</Nullable>
+        <IntermediateOutputPath>.obj</IntermediateOutputPath>
+        <LangVersion>10</LangVersion>
+        <OutputPath>.bin\$(Configuration)\</OutputPath>
+    </PropertyGroup>
+
+    <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk"/>
+    <ItemGroup>
+        <None Remove="*.meta"/>
+        <Content Remove="*.meta"/>
+    </ItemGroup>
+</Project>

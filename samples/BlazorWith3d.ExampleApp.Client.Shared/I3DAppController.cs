@@ -1,8 +1,7 @@
 ﻿#if COMMON_DOTNET
-using BlazorWith3d.ExampleApp.Client.Unity.Shared;
-using BlazorWith3d.Unity.Shared;
+using BlazorWith3d.Shared;
 
-namespace BlazorWith3d.Unity
+namespace BlazorWith3d.ExampleApp.Client.Shared
 {
     public interface I3DAppController
     {

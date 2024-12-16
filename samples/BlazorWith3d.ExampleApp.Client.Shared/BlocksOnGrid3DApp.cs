@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Buffers;
-using BlazorWith3d.Unity.Shared;
+
+using BlazorWith3d.Shared;
 using MemoryPack;
 
-namespace BlazorWith3d.ExampleApp.Client.Unity.Shared
+namespace BlazorWith3d.ExampleApp.Client.Shared
 {
 #if COMMON_DOTNET || UNITY_EDITOR
     [Blazor3DApp(

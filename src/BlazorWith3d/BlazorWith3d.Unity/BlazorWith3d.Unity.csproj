@@ -1,4 +1,5 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
     <PropertyGroup>
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
@@ -6,18 +7,17 @@
         <LangVersion>preview</LangVersion>
     </PropertyGroup>
 
+
     <ItemGroup>
         <SupportedPlatform Include="browser"/>
     </ItemGroup>
+
     <ItemGroup>
-        <PackageReference Include="Blazored.LocalStorage" Version="4.5.0"/>
         <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="9.0.0" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\BlazorWith3d\BlazorWith3d.Unity\BlazorWith3d.Unity.csproj"/>
-        <ProjectReference Include="..\BlazorWith3d.ExampleApp.Client.Shared\BlazorWith3d.ExampleApp.Client.Shared.csproj" />
+        <ProjectReference Include="..\BlazorWith3d.Shared\BlazorWith3d.Shared.csproj" />
     </ItemGroup>
-
 
 </Project>

@@ -1,0 +1,112 @@
+﻿@inject IJSRuntime JsRuntime
+@inject ILogger<BaseUnityRenderer> Logger
+@implements BlazorWith3d.Shared.IBinaryApi
+@using BlazorWith3d.Shared
+@using Microsoft.Extensions.Logging
+@implements IAsyncDisposable
+
+<div @ref="_containerElementReference" class="unity-container">
+
+    <canvas id="unity-canvas" width="960" height="600" tabindex="-1"></canvas>
+    <div id="unity-loading-bar">
+        <div id="unity-logo"></div>
+        <div id="unity-progress-bar-empty">
+            <div id="unity-progress-bar-full"></div>
+        </div>
+    </div>
+    <div id="unity-warning"> </div>
+</div>
+
+
+@code
+{
+    private IJSObjectReference? _unityApi;
+
+    private ElementReference _containerElementReference;
+    private DotNetObjectReference<JsMessageReceiverProxy>? _messageReceiverProxyReference;
+
+    public virtual string UnityBuildFilesRootPath => Assets[""];
+    private readonly List<byte[]> _unsentMessages = new();
+    private readonly ReceiveMessageBuffer _receiveMessageBuffer = new();
+
+    public async ValueTask DisposeAsync()
+    {
+        
+        if (_unityApi != null)
+        {
+            await _unityApi.InvokeVoidAsync("Quit");
+            await _unityApi.DisposeAsync();
+            _unityApi = null;
+        }
+
+
+        _messageReceiverProxyReference?.Dispose();
+    }
+
+    protected override void OnInitialized()
+    {
+        _messageReceiverProxyReference = DotNetObjectReference.Create(new JsMessageReceiverProxy(OnMessageBytesReceived));
+        base.OnInitialized();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            await base.OnAfterRenderAsync(firstRender);
+            return;
+        }
+
+        var moduleTask = new Lazy<Task<IJSObjectReference>>(() => JsRuntime.InvokeAsync<IJSObjectReference>("import", "./_content/BlazorWith3d.Unity/unityInitialization.js").AsTask());
+        var module = await moduleTask.Value;
+
+        _unityApi = await module.InvokeAsync<IJSObjectReference>("showUnity", UnityBuildFilesRootPath, _containerElementReference, _messageReceiverProxyReference, nameof(JsMessageReceiverProxy.OnMessageBytesReceived));
+
+        foreach (var msg in _unsentMessages)
+        {
+            await SendMessage(msg);
+        }
+
+        _unsentMessages.Clear();
+
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    public Action<byte[]>? MainMessageHandler
+    {
+        get => _receiveMessageBuffer.MainMessageHandler;
+        set => _receiveMessageBuffer.MainMessageHandler = value;
+    }
+
+    private void OnMessageBytesReceived(byte[] messageBytes)
+    {
+        _receiveMessageBuffer.InvokeMessage(messageBytes);
+    }
+
+    public async ValueTask SendMessage(byte[] messageBytes)
+    {
+        if (_unityApi == null)
+        {
+            _unsentMessages.Add(messageBytes);
+            return;
+        }
+
+        try
+        {
+            await _unityApi.InvokeVoidAsync("SendMessage", messageBytes);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error sending message");
+        }
+    }
+
+    private class JsMessageReceiverProxy(Action<byte[]> onMessageBytesReceived)
+    {
+        [JSInvokable]
+        public void OnMessageBytesReceived(byte[] msg)
+        {
+            onMessageBytesReceived(msg);
+        }
+    }
+}
