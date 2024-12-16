@@ -30,6 +30,7 @@
 
   <!-- Adapted from https://github.com/aspnet/AspLabs/blob/d193d1660e54f4c65f86a9938ffa1a424b37b3a6/src/ClientAssets/Microsoft.AspNetCore.ClientAssets/build/netstandard2.0/Microsoft.AspNetCore.ClientAssets.targets -->
   <!-- with change to use wwwroot as build output as otherwise the Maui build was not liking it-->
+  <!-- !!! THERE IS A BUG, babylon js file is not there if you do publish on maui app without any build calls before !!!-->
   <PropertyGroup>
     <ClientAssetsDirectory Condition="'$(ClientAssetsDirectory)' == ''">assets\</ClientAssetsDirectory>
     <ClientAssetsRestoreInputs Condition="'$(ClientAssetsRestoreInputs)' == ''">$(ClientAssetsDirectory)package-lock.json;$(ClientAssetsDirectory)package.json</ClientAssetsRestoreInputs>

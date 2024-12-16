@@ -14,7 +14,6 @@ with potentially another source gen to generate the pure JS wrapper (as sending 
 
 ### Prio 0
 
-- fix that babylon js file is not there if you do publish on maui app without any build calls before
 
 - Add BabylonJS version of 3d renderer
     - one using Blazor bindings project
