@@ -2,9 +2,5 @@
   "name": "com.blazorwith3d.exampleapp.client.shared",
   "version": "1.2.3",
   "displayName": "BlazorWith3d - ExampleApp (Shared Package)",
-  "type": "module",
-  "dependencies": {
-
-    "com.blazorwith3d.shared": "file:../../../src/BlazorWith3d/BlazorWith3d.Shared/scripts"
-  }
+  "type": "module"
 }

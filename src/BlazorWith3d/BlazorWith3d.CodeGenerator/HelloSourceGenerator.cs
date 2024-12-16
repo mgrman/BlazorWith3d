@@ -383,7 +383,7 @@ public class HelloSourceGenerator : ISourceGenerator
         var sb = new IndentedStringBuilder();
 
 
-        sb.AppendLine($"import {{IBinaryApi}} from \"com.blazorwith3d.shared/IBinaryApi\";");
+        sb.AppendLine($"import {{IBinaryApi}} from \"../IBinaryApi\";");
         sb.AppendLine($"import {{MemoryPackWriter}} from \"./MemoryPackWriter\";");
         foreach (var type in info.methods.Concat(info.events).Select(o => o.typeName).Distinct())
         {

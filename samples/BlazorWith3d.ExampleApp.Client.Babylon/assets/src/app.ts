@@ -27,7 +27,7 @@ import {UnityAppInitialized} from "com.blazorwith3d.exampleapp.client.shared/mem
 import {BlockPoseChanging} from "com.blazorwith3d.exampleapp.client.shared/memorypack/BlockPoseChanging";
 import {BlockPoseChanged} from "com.blazorwith3d.exampleapp.client.shared/memorypack/BlockPoseChanged";
 import { BlocksOnGridUnityApi } from "com.blazorwith3d.exampleapp.client.shared/memorypack/BlocksOnGridUnityApi";
-import {BlazorBinaryApi} from "com.blazorwith3d.shared/BlazorBinaryApi";
+import {BlazorBinaryApi} from "com.blazorwith3d.exampleapp.client.shared/BlazorBinaryApi";
 
 export function InitializeBabylonApp(canvas: HTMLCanvasElement, dotnetObject: any, onMessageReceivedMethodName: string) {
 
