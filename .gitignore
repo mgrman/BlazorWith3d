@@ -34,8 +34,8 @@ obj
 
 
 # generator local build folder
-/src/BlazorWith3d.Unity/BlazorWith3d.Unity.UnityPackage/Generator/*
-!src/BlazorWith3d.Unity/BlazorWith3d.Unity.UnityPackage/Generator/BlazorWith3d.Unity.CodeGenerator.dll.meta
+/src/BlazorWith3d/BlazorWith3d.Unity.UnityPackage/Generator/*
+!src/BlazorWith3d/BlazorWith3d.Unity.UnityPackage/Generator/BlazorWith3d.CodeGenerator.dll.meta
 
 
 node_modules
