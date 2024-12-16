@@ -46,7 +46,7 @@ jobs:
           global-json-file: global.json
 
       - name: dotnet tool build generator
-        run: dotnet build "src/BlazorWith3d.Unity/BlazorWith3d.Unity.CodeGenerator/BlazorWith3d.Unity.CodeGenerator.csproj" -c Release
+        run: dotnet build "src/BlazorWith3d/BlazorWith3d.CodeGenerator/BlazorWith3d.CodeGenerator.csproj" -c Release
 
       - name: dotnet tool restore
         run: dotnet tool restore
