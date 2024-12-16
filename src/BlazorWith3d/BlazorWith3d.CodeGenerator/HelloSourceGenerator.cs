@@ -1,5 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Xml.Serialization;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -63,6 +67,8 @@ public class HelloSourceGenerator : ISourceGenerator
             var text = GenerateClass(appInfo);
 
             context.AddSource($"{typeName}.g.cs", text);
+
+            GenerateTypeScriptClass(context, appInfo);
         }
     }
 
@@ -306,6 +312,206 @@ public class HelloSourceGenerator : ISourceGenerator
         
         return sb.ToString();
     }
+
+    private static void GenerateTypeScriptClass(GeneratorExecutionContext context, AppInfo info)
+    {
+        if (!context.Compilation.ReferencedAssemblyNames.Any(o => o.Name.Contains("MemoryPack")))
+        {
+            return;
+        }
+
+        var configOptions = context.AnalyzerConfigOptions;
+
+        // https://github.com/dotnet/project-system/blob/main/docs/design-time-builds.md
+        var isDesignTimeBuild =
+            configOptions.GlobalOptions.TryGetValue("build_property.DesignTimeBuild", out var designTimeBuild) &&
+            designTimeBuild == "true";
+
+        if (isDesignTimeBuild)
+        {
+            return;
+        }
+
+        string? path;
+        if (!configOptions.GlobalOptions.TryGetValue("build_property.MemoryPackGenerator_TypeScriptOutputDirectory",
+                out path))
+        {
+            path = null;
+        }
+
+        if (path == null)
+        {
+            return;
+        }
+
+        string ext;
+        if (!configOptions.GlobalOptions.TryGetValue("build_property.MemoryPackGenerator_TypeScriptImportExtension",
+                out ext!))
+        {
+            ext = ".js";
+        }
+
+        string convertProp;
+        if (!configOptions.GlobalOptions.TryGetValue("build_property.MemoryPackGenerator_TypeScriptConvertPropertyName",
+                out convertProp!))
+        {
+            convertProp = "true";
+        }
+
+        if (!configOptions.GlobalOptions.TryGetValue("build_property.MemoryPackGenerator_TypeScriptEnableNullableTypes",
+                out var enableNullableTypes))
+        {
+            enableNullableTypes = "false";
+        }
+
+        if (!bool.TryParse(convertProp, out var convert)) 
+        {
+            convert = true; 
+        }
+
+        var typeScriptGenerateOptions = new
+        {
+            OutputDirectory = path,
+            ImportExtension = ext,
+            ConvertPropertyName = convert,
+            EnableNullableTypes =
+                bool.TryParse(enableNullableTypes, out var enabledNullableTypesParsed) &&
+                enabledNullableTypesParsed,
+            IsDesignTimeBuild = isDesignTimeBuild
+        };
+
+        var sb = new IndentedStringBuilder();
+
+
+        sb.AppendLine($"import {{IBinaryApi}} from \"com.blazorwith3d.shared/IBinaryApi\";");
+        sb.AppendLine($"import {{MemoryPackWriter}} from \"./MemoryPackWriter\";");
+        foreach (var type in info.methods.Concat(info.events).Select(o => o.typeName).Distinct())
+        {
+            sb.AppendLine($"import {{{type}}} from \"./{type}\";");
+        }
+
+        sb.AppendLine($"export class {info.typeName}");
+        using (sb.IndentWithCurlyBrackets())
+        {
+            sb.AppendLine($"private _binaryApi: IBinaryApi;");
+            sb.AppendLine($"private _messageHandler:(bytes: Uint8Array) => void;");
+
+            sb.AppendLine($"constructor( binaryApi: IBinaryApi)");
+            using (sb.IndentWithCurlyBrackets())
+            {
+                sb.AppendLine($"this._binaryApi = binaryApi;");
+                sb.AppendLine($"this._messageHandler= (msg)=>this.ProcessMessages(msg);");
+    
+    
+            }
+
+            sb.AppendLines(
+                @"public get IsProcessingMessages():boolean 
+{
+    return this._binaryApi.mainMessageHandler == this._messageHandler;
+}
+public StartProcessingMessages():void
+{
+    this._binaryApi.mainMessageHandler = this._messageHandler;
+}
+public StopProcessingMessages():void
+{
+    if(this._binaryApi.mainMessageHandler != this._messageHandler)
+    {
+        return;
+    }
+    this._binaryApi.mainMessageHandler = null;
+}".Split(new[] { "\r\n", "\n" }, StringSplitOptions.None));
+
+            foreach (var @event in info.events)
+            {
+                sb.AppendLine($"public On{@event.typeName}?: (msg: {@event.typeName}) => void;");
+            }
+
+            foreach (var (@event, i) in info.methods.EnumerateWithIndex())
+            {
+                sb.AppendLine($"public Invoke{@event.typeName}(msg: {@event.typeName}): Promise<void>");
+                using (sb.IndentWithCurlyBrackets())
+                {
+                    sb.AppendLine($"return this.sendMessage({i},  w => {@event.typeName}.serializeCore(w, msg));");
+                }
+            }
+
+            sb.AppendLines(
+                @"private async sendMessage(messageId: number, messageSerializeCore: (writer: MemoryPackWriter) => any): Promise<void> 
+{
+    try {
+        const writer = MemoryPackWriter.getSharedInstance();
+        writer.writeInt8(messageId);
+        messageSerializeCore(writer);
+        const encodedMessage = writer.toArray();
+
+        return this._binaryApi.sendMessage(encodedMessage);
+    } catch (ex) 
+    {
+        throw ex;
+    }
+}".Split(new[] { "\r\n", "\n" }, StringSplitOptions.None));
+            
+            
+
+            sb.AppendLine($"private ProcessMessages(msg: Uint8Array): void");
+            using (sb.IndentWithCurlyBrackets())
+            {
+            
+                sb.AppendLine($"let msgId = msg[0];");
+                sb.AppendLine($"let buffer = msg.slice(1);");
+                sb.AppendLine($"var dst = new ArrayBuffer(buffer.byteLength);");
+                sb.AppendLine($"new Uint8Array(dst).set(buffer);");
+                sb.AppendLine($"try");
+                using (sb.IndentWithCurlyBrackets())
+                {
+                    sb.AppendLine("switch (msgId)");
+                    using (sb.IndentWithCurlyBrackets())
+                    {
+                        foreach (var (e,i) in info.events.EnumerateWithIndex())
+                        {
+                            sb.AppendLine($"case {i}:");
+                            using (sb.IndentWithCurlyBrackets())
+                            {
+                                sb.AppendLine($"const obj: {e.typeName} = {e.typeName}.deserialize(dst);");
+                                sb.AppendLine($"this.On{e.typeName}?.(obj);");
+                                sb.AppendLine($"break;");
+                            }
+                        }
+                    }
+                }
+                sb.AppendLine("catch (e)");
+                using (sb.IndentWithCurlyBrackets())
+                {
+                    sb.AppendLine(" console.log(e);");
+                }
+        
+        
+
+        
+        
+            }
+        }
+    
+        // save to file
+        try
+        {
+            if (!Directory.Exists(typeScriptGenerateOptions.OutputDirectory))
+            {
+                Directory.CreateDirectory(typeScriptGenerateOptions.OutputDirectory);
+            }
+
+            File.WriteAllText(Path.Combine(typeScriptGenerateOptions.OutputDirectory, $"{info.typeName}.ts"),
+                sb.ToString(), new UTF8Encoding(false));
+        }
+        catch (Exception ex)
+        {
+            Trace.WriteLine(ex.ToString());
+        }
+
+    }
+
 
     /// <summary>
     ///     Created on demand before each generation pass

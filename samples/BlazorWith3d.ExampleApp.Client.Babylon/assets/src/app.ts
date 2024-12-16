@@ -23,10 +23,11 @@ import {RemoveBlockInstance} from "com.blazorwith3d.exampleapp.client.shared/mem
 import {RemoveBlockTemplate} from "com.blazorwith3d.exampleapp.client.shared/memorypack/RemoveBlockTemplate";
 import {StartDraggingBlock} from "com.blazorwith3d.exampleapp.client.shared/memorypack/StartDraggingBlock";
 import {BlockPoseChangeValidated} from "com.blazorwith3d.exampleapp.client.shared/memorypack/BlockPoseChangeValidated";
-import {MemoryPackWriter} from "com.blazorwith3d.exampleapp.client.shared/memorypack/MemoryPackWriter";
 import {UnityAppInitialized} from "com.blazorwith3d.exampleapp.client.shared/memorypack/UnityAppInitialized";
 import {BlockPoseChanging} from "com.blazorwith3d.exampleapp.client.shared/memorypack/BlockPoseChanging";
 import {BlockPoseChanged} from "com.blazorwith3d.exampleapp.client.shared/memorypack/BlockPoseChanged";
+import { BlocksOnGridUnityApi } from "com.blazorwith3d.exampleapp.client.shared/memorypack/BlocksOnGridUnityApi";
+import {BlazorBinaryApi} from "com.blazorwith3d.shared/BlazorBinaryApi";
 
 export function InitializeBabylonApp(canvas: HTMLCanvasElement, dotnetObject: any, onMessageReceivedMethodName: string) {
 
@@ -44,9 +45,10 @@ export class DebugApp {
 
     private changingRequestId: number = 0;
     private plane: Mesh;
+    private _blazorApp: BlocksOnGridUnityApi;
+    private _binaryApi: BlazorBinaryApi;
 
     constructor(canvas: HTMLCanvasElement, sendMessage: (msgBytes: Uint8Array) => Promise<any>) {
-        this._sendMessage = sendMessage;
 
         // initialize babylon scene and engine
         var engine = new Engine(canvas, true);
@@ -56,6 +58,9 @@ export class DebugApp {
         camera.setTarget(Vector3.Zero());
         var light1 = new DirectionalLight("light1", new Vector3(0, 3, 0), this.scene);
         light1.direction = new Vector3(-1.144162, -2.727118, -1.981747)
+
+       this._binaryApi= new BlazorBinaryApi(sendMessage);
+        this._blazorApp=new BlocksOnGridUnityApi(this._binaryApi);
 
         this.plane = MeshBuilder.CreatePlane("plane", {
             width: 10,
@@ -82,64 +87,23 @@ export class DebugApp {
         engine.runRenderLoop(() => {
             this.scene.render();
         });
+        
+        this._blazorApp.OnBlazorControllerInitialized=msg=>this.OnBlazorControllerInitialized(msg);
+        this._blazorApp.OnPerfCheck=msg=>this.OnPerfCheck(msg);
+        this._blazorApp.OnAddBlockTemplate=msg=>this.OnAddBlockTemplate(msg);
+        this._blazorApp.OnAddBlockInstance=msg=>this.OnAddBlockInstance(msg);
+        this._blazorApp.OnRemoveBlockInstance=msg=>this.OnRemoveBlockInstance(msg);
+        this._blazorApp.OnRemoveBlockTemplate=msg=>this.OnRemoveBlockTemplate(msg);
+        this._blazorApp.OnStartDraggingBlock=msg=>this.OnStartDraggingBlock(msg);
+        this._blazorApp.OnBlockPoseChangeValidated=msg=>this.OnBlockPoseChangeValidated(msg);
 
+        this._blazorApp.StartProcessingMessages();
 
-        this.InvokeUnityAppInitialized(new UnityAppInitialized()).then(_ => console.log("UnityAppInitialized invoked"));
+        this._blazorApp.InvokeUnityAppInitialized(new UnityAppInitialized()).then(_ => console.log("UnityAppInitialized invoked"));
     }
 
     public ProcessMessage(msg: Uint8Array): void {
-        let msgId = msg[0];
-        let buffer = msg.slice(1);
-
-        var dst = new ArrayBuffer(buffer.byteLength);
-        new Uint8Array(dst).set(buffer);
-
-        try {
-            switch (msgId) {
-                case 0: {
-                    const obj: BlazorControllerInitialized = BlazorControllerInitialized.deserialize(dst);
-                    this.OnBlazorControllerInitialized?.(obj);
-                    break;
-                }
-                case 1: {
-                    const obj = PerfCheck.deserialize(dst);
-                    this.OnPerfCheck?.(obj);
-                    break;
-                }
-                case 2: {
-                    const obj: AddBlockTemplate = AddBlockTemplate.deserialize(dst);
-                    this.OnAddBlockTemplate?.(obj);
-                    break;
-                }
-                case 3: {
-                    const obj: AddBlockInstance = AddBlockInstance.deserialize(dst);
-                    this.OnAddBlockInstance?.(obj);
-                    break;
-                }
-                case 4: {
-                    const obj: RemoveBlockInstance = RemoveBlockInstance.deserialize(dst);
-                    this.OnRemoveBlockInstance?.(obj);
-                    break;
-                }
-                case 5: {
-                    const obj: RemoveBlockTemplate = RemoveBlockTemplate.deserialize(dst);
-                    this.OnRemoveBlockTemplate?.(obj);
-                    break;
-                }
-                case 6: {
-                    const obj: StartDraggingBlock = StartDraggingBlock.deserialize(dst);
-                    this.OnStartDraggingBlock?.(obj);
-                    break;
-                }
-                case 7: {
-                    const obj: BlockPoseChangeValidated = BlockPoseChangeValidated.deserialize(dst);
-                    this.OnBlockPoseChangeValidated?.(obj);
-                    break;
-                }
-            }
-        } catch (e) {
-            console.log(e)
-        }
+        this._binaryApi.onMessageReceived(msg);
     }
 
     public Quit(): void {
@@ -214,7 +178,7 @@ export class DebugApp {
 
             var localPoint = Vector3.TransformCoordinates(event.dragPlanePoint, matrix);
 
-            this.InvokeBlockPoseChanging({
+            this._blazorApp.InvokeBlockPoseChanging({
 
                 blockId: obj.blockId,
                 changingRequestId: this.changingRequestId++,
@@ -226,7 +190,7 @@ export class DebugApp {
         pointerDragBehavior.onDragEndObservable.add((event) => {
             console.log("dragEnd");
             console.log(event);
-            this.InvokeBlockPoseChanged({
+            this._blazorApp.InvokeBlockPoseChanged({
                 blockId: obj.blockId,
                 positionX: obj.positionX,
                 positionY: obj.positionY,
@@ -250,7 +214,7 @@ export class DebugApp {
     }
 
     protected OnPerfCheck(obj: PerfCheck) {
-        this.InvokePerfCheck(
+        this._blazorApp.InvokePerfCheck(
             {
                 aaa: obj.aaa,
                 bbb: obj.bbb,
@@ -277,35 +241,4 @@ export class DebugApp {
 
     }
 
-    protected async InvokePerfCheck(msg: PerfCheck): Promise<void> {
-        await this.sendMessage(0, w => PerfCheck.serializeCore(w, msg));
-    }
-
-    protected async InvokeUnityAppInitialized(msg: UnityAppInitialized): Promise<void> {
-        await this.sendMessage(1, w => UnityAppInitialized.serializeCore(w, msg));
-    }
-
-    protected async InvokeBlockPoseChanging(msg: BlockPoseChanging): Promise<void> {
-        await this.sendMessage(2, w => BlockPoseChanging.serializeCore(w, msg));
-    }
-
-    protected async InvokeBlockPoseChanged(msg: BlockPoseChanged): Promise<void> {
-        await this.sendMessage(3, w => BlockPoseChanged.serializeCore(w, msg));
-    }
-
-    private previousMessage: Promise<void> = Promise.resolve();
-
-    private async sendMessage(messageId: number, messageSerializeCore: (writer: MemoryPackWriter) => any): Promise<void> {
-        try {
-            const writer = MemoryPackWriter.getSharedInstance();
-            writer.writeInt8(messageId);
-            messageSerializeCore(writer);
-            const encodedMessage = writer.toArray();
-
-            await this.previousMessage;
-            this.previousMessage = this._sendMessage(encodedMessage);
-        } catch (ex) {
-            throw ex;
-        }
-    }
 }

@@ -27,7 +27,7 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
 #endif
 
 
-#if COMMON_UNITY
+//#if COMMON_UNITY
     [Unity3DApp]
     public partial class BlocksOnGridUnityApi
     {
@@ -41,7 +41,7 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
             return MemoryPackSerializer.Deserialize<T>(bytes);
         }
     }
-#endif
+//#endif
 
     [MemoryPackable]
     [GenerateTypeScript]

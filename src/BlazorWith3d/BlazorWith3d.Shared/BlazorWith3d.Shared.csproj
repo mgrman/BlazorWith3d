@@ -7,7 +7,7 @@
         <TargetFramework>netstandard2.1</TargetFramework>
     </PropertyGroup>
 
-    <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk"/>
+    <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
 
     <PropertyGroup>
         <Nullable>enable</Nullable>
@@ -16,9 +16,9 @@
         <OutputPath>.bin\$(Configuration)\</OutputPath>
     </PropertyGroup>
 
-    <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk"/>
+    <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
     <ItemGroup>
-        <None Remove="*.meta"/>
-        <Content Remove="*.meta"/>
+        <None Remove="*.meta" />
+        <Content Remove="*.meta" />
     </ItemGroup>
 </Project>
