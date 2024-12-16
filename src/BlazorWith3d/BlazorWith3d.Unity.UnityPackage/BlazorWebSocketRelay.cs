@@ -5,7 +5,7 @@ using System.IO;
 using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
-using BlazorWith3d.Unity.Shared;
+using BlazorWith3d.Shared;
 using UnityEngine;
 
 namespace BlazorWith3d.Unity

@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using BlazorWith3d.Unity.Shared;
+using BlazorWith3d.Shared;
 using UnityEditor;
 using UnityEngine;
 

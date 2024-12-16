@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using BlazorWith3d.ExampleApp.Client.Unity.Shared;
+using BlazorWith3d.ExampleApp.Client.Shared;
 using BlazorWith3d.Unity;
-using BlazorWith3d.Unity.Shared;
 using UnityEngine;
 
 namespace ExampleApp

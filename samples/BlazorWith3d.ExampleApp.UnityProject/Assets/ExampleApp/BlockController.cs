@@ -1,5 +1,4 @@
-﻿using BlazorWith3d.ExampleApp.Client.Unity.Shared;
-using BlazorWith3d.Unity;
+﻿using BlazorWith3d.ExampleApp.Client.Shared;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -18,7 +17,7 @@ namespace ExampleApp
 
         [SerializeField] private Vector3 Size;
 
-        [SerializeField] private string? VisualsUri;
+        [SerializeField] private string VisualsUri;
         private readonly AwaitableCompletionSource _dragMessageCounter = new();
 
         private IBlocksOnGridUnityApi _appApi;

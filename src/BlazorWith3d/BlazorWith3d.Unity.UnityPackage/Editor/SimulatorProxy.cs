@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Drawing.Printing;
 using System.Threading.Tasks;
-using BlazorWith3d.Unity.Shared;
+using BlazorWith3d.Shared;
 
 namespace BlazorWith3d.Unity
 {

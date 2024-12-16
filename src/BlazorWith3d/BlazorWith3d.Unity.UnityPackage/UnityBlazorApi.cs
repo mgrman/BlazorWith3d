@@ -4,7 +4,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using AOT;
-using BlazorWith3d.Unity.Shared;
+using BlazorWith3d.Shared;
 using UnityEngine;
 
 namespace BlazorWith3d.Unity

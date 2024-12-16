@@ -6,19 +6,19 @@
       "source": "local",
       "dependencies": {}
     },
-    "com.blazorwith3d.unity": {
-      "version": "file:../../../src/BlazorWith3d.Unity/BlazorWith3d.Unity.UnityPackage",
-      "depth": 0,
-      "source": "local",
-      "dependencies": {
-        "com.blazorwith3d.unity.shared": "1.2.3"
-      }
-    },
-    "com.blazorwith3d.unity.shared": {
-      "version": "file:../../../src/BlazorWith3d.Unity/BlazorWith3d.Unity.Shared",
+    "com.blazorwith3d.shared": {
+      "version": "file:../../../src/BlazorWith3d/BlazorWith3d.Shared",
       "depth": 0,
       "source": "local",
       "dependencies": {}
+    },
+    "com.blazorwith3d.unity": {
+      "version": "file:../../../src/BlazorWith3d/BlazorWith3d.Unity.UnityPackage",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {
+        "com.blazorwith3d.shared": "1.2.3"
+      }
     },
     "com.cysharp.memorypack": {
       "version": "https://github.com/Cysharp/MemoryPack.git?path=src/MemoryPack.Unity/Assets/MemoryPack.Unity#1.21.3",
