@@ -1,5 +1,5 @@
 # BlazorWith3d
- 
+
 [Demo](https://blazorwith3d-a3avcthnbbf3edf4.westeurope-01.azurewebsites.net/)
 
 Define the messages, then a MemoryPack source generator can generate the serialization.
@@ -12,16 +12,16 @@ with potentially another source gen to generate the pure JS wrapper (as sending 
 
 ## TODOs
 
-### Prio 0
-
+### Prio 0 (what to do next)
 
 - Add BabylonJS version of 3d renderer
     - one using Blazor bindings project
 
 - do Isometric or fake-3d in CSS only for HTML version
-- https://developer.mozilla.org/en-US/docs/Web/CSS/transform-function/perspective
+    - https://developer.mozilla.org/en-US/docs/Web/CSS/transform-function/perspective
+    - must refactor it, to recreate the scene approach as in Unity, to make sense of it
 
-### Prio 1
+### Prio 1 (stretch goals)
 
 - Optimize Typescript dev experience
     - add option to live recompile changes
@@ -34,15 +34,15 @@ with potentially another source gen to generate the pure JS wrapper (as sending 
 - Optimize Typescript API
     - remove memory copies during message handling
 
+- consider special WASM only interop, as that might be faster
+
+
+### Prio 2 (make it nicer)
+
 - generate methods directly creating instance inside, ie if internal struct, then the simple method can create an instance directly inside, to make nicer API
-- add reusable singleton support for messages without fields
-
-- Add ThreeJS version of 3d renderer
-    - Using JS interop with messages
-    - one using Blazor bindings project
-
-
-### Prio 2
+    - add reusable singleton support for messages without fields
+    - to support structs and classes
+    - test with pregenerated memory pack Typescript files if struct is working (ie if it is only a limitation of memorypack or blazor interop)
 
 - Incremental source gen
 
@@ -52,20 +52,21 @@ with potentially another source gen to generate the pure JS wrapper (as sending 
 
 - double check catching of exceptions as they happen in "native" code and do not always propagate properly
 
+- test/add support to generator for defining messages from other assemblies
 
-### Prio 3
+- with memory pack the Unity build got slower, investigate why exactly!
+    - e.g. might be worth having a define or something to switch the serialization libraries (have one for faster compile time and one for faster runtime)
+    - could be worth having a method to negotiate the serialization scheme (kinda send supported schemes when connecting to renderer and it picks one)
 
-- add support for defining messages from other assemblies
+### Prio 3 (maybe but not really target of the project)
 
 - consider some generic reactive dictionary or patch requests on object support
     - e.g. that both sides can instantiate kind of reactive dictionry and through generic messages they both can be kept automatically in sync, with changes always propagating to the other side
     - kinda like flux https://facebookarchive.github.io/flux/docs/in-depth-overview/
 
-- with memory pack the Unity build got slower, investigate why!
-    - e.g. might be worth having a define or something to switch the serialization libraries (have one for faster compile time and one for faster runtime)
-
-- Add Maui Blazor with Native android Unity as library
-    -  https://github.com/Unity-Technologies/uaal-example
+- Add ThreeJS version of 3d renderer (NOTE: bonus, as we already have a TS based renderer to ilustrate the approach, ie BabylonJs)
+    - Using JS interop with messages
+    - one using Blazor bindings project
 
 
 ### Not gonna do for now
@@ -74,21 +75,6 @@ with potentially another source gen to generate the pure JS wrapper (as sending 
 
 - even generate structs for message arguments!
     - RESOLUTION not usable until Code generators can be chained (ie then the code can be memorypack usable)
-
-
--  implement own IDs in messages, consider even adding an extra parameter to the communication method. Otherwise you always need to prepend a byte or somethign
-- as then this generator knows nothing about memory pack, and different messages can be serialized differently
-- add support for multiple app interfaces (either count in one assembly, or have an offset in the attribute)
-- Use array segments, encode which message it is using first byte, but add own system as MemoryPack's generator cannot operate on top of mine. Try to keep typed message abstraction layer
-- Hmm, due to limitations of JS interop (seems only byte[] is correctly marshaled, memory ends up base64, span does not work, arraySEgment as number array)
-- it might be best to postpone until stronger need, as only other option is to break abstraction of base layer and add an extra parameter, not worth it now.
-- maybe the ArrayBufferWriter would be still usable here as it still seems faster
-
-| Method            | Mean     | Error    | StdDev    | Median   |
-|------------------ |---------:|---------:|----------:|---------:|
-| ByteArray         | 49.65 ns | 4.785 ns | 14.109 ns | 43.82 ns |
-| ArrayBufferWriter | 34.29 ns | 0.441 ns |  0.413 ns | 34.28 ns |
-- sadly without chaining source generators, this does not work. As none of the types generated can be them MemoryPack compatible (as it uses own source gen)
 
 - consider dev mode using only Unity's JSON serialization, as that is faster to build (less dlls), also to test switching serialization options 
   - RESOLUTION not gonna do, instead there is option for debugging directly in Unity via websockets
