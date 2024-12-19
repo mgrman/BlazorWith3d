@@ -14,30 +14,44 @@ with potentially another source gen to generate the pure JS wrapper (as sending 
 
 ### Prio 0 (what to do next)
 
-- Add BabylonJS version of 3d renderer
+- Add ThreeJS version of 3d renderer 
     - one using Blazor bindings project
 
 - do Isometric or fake-3d in CSS only for HTML version
     - https://developer.mozilla.org/en-US/docs/Web/CSS/transform-function/perspective
     - must refactor it, to recreate the scene approach as in Unity, to make sense of it
 
+- Unify visuals of all 4 renderers
+
+- Implement all API messages (instead of rectangular shape, add GLB loading) 
+  - remove rectangular shape
+  - implement drag from palette
+  - implement GLB
+  - add pointer APIs
+  - consider pointer move and click to drag to be initiated via HTML (ie not in engine)
+    - so all input handling is outside the 3D part (reduce complexity of the 3d part)
+    - so in the end the 3d part just renders things where the bussiness logic tells it to
+  - add camera transform setting (and getting, as to have a request to set but I can get the real one)
+
+- 
 ### Prio 1 (stretch goals)
+
+- Consider again the messages with responses to be added via the generated code
 
 - Optimize Typescript dev experience
     - add option to live recompile changes
     - add debugging support to IDEs
     - switch to Vite as everybody's using it ( see https://doc.babylonjs.com/guidedLearning/usingVite/ )
-
+ 
 - Maui app with native Unity build
     https://docs.unity3d.com/6000.1/Documentation/Manual/UnityasaLibrary-Windows.html
+
+### Prio 2 (make it nicer)
 
 - Optimize Typescript API
     - remove memory copies during message handling
 
 - consider special WASM only interop, as that might be faster
-
-
-### Prio 2 (make it nicer)
 
 - generate methods directly creating instance inside, ie if internal struct, then the simple method can create an instance directly inside, to make nicer API
     - add reusable singleton support for messages without fields
@@ -64,9 +78,6 @@ with potentially another source gen to generate the pure JS wrapper (as sending 
     - e.g. that both sides can instantiate kind of reactive dictionry and through generic messages they both can be kept automatically in sync, with changes always propagating to the other side
     - kinda like flux https://facebookarchive.github.io/flux/docs/in-depth-overview/
 
-- Add ThreeJS version of 3d renderer (NOTE: bonus, as we already have a TS based renderer to ilustrate the approach, ie BabylonJs)
-    - Using JS interop with messages
-    - one using Blazor bindings project
 
 
 ### Not gonna do for now
