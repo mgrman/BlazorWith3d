@@ -10,31 +10,65 @@ so source gen supports the low level binary api
 if renderer wants, it can implement this high level API only
 with potentially another source gen to generate the pure JS wrapper (as sending messages back to .NET needs some boilerplate)
 
+## Renderers
+
+### Unity WebGL (interop with Unity WASM)
+
+### BabylonJS (interop with TypeScript)
+
+### Pure HTML (developed directly in Blazor)
+
+## Blazor 
+
+
+### Compilation flags
+
+https://learn.microsoft.com/en-us/aspnet/core/blazor/performance?view=aspnetcore-9.0
+
+https://learn.microsoft.com/en-us/aspnet/core/blazor/webassembly-build-tools-and-aot?view=aspnetcore-9.0
+
+https://github.com/dotnet/runtime/blob/main/src/mono/wasm/features.md
+
+### Render modes
+
+Auto mode is supported
+
+### Maui
+
+Blazor Maui Hybrid is supported (only tested as Desktop app)
+https://learn.microsoft.com/en-us/aspnet/core/blazor/hybrid/tutorials/maui-blazor-web-app?view=aspnetcore-9.0
+
 ## TODOs
 
 ### Prio 0 (what to do next)
 
-- Add ThreeJS version of 3d renderer 
-    - one using Blazor bindings project
-
+- Implement all API messages (instead of rectangular shape, add GLB loading)
+    - remove rectangular shape
+    - implement GLB
+    - add raycast scene API
+    - consider pointer move and click to drag to be initiated via HTML (ie not in engine)
+        - so all input handling is outside the 3D part (reduce complexity of the 3d part)
+        - so in the end the 3d part just renders things where the bussiness logic tells it to
+    - add camera transform setting (and getting, as to have a request to set but I can get the real one)
+    - unify different coordinate systems
+    - add setting of background color
+    - even background plane should be just a mesh to load
+    - Unify visuals of all 4 renderers and all mouse input is done via blazor 
+    - ie limit the 3d renderer to only the parts really necessary to be done in 3d (e.g. no mouse input, yes raycasting, yes rendering)
+  
 - do Isometric or fake-3d in CSS only for HTML version
     - https://developer.mozilla.org/en-US/docs/Web/CSS/transform-function/perspective
     - must refactor it, to recreate the scene approach as in Unity, to make sense of it
+    - should use pre-rendered images
+    - mainly as otherwise it is hard to render depth
 
-- Unify visuals of all 4 renderers
 
-- Implement all API messages (instead of rectangular shape, add GLB loading) 
-  - remove rectangular shape
-  - implement drag from palette
-  - implement GLB
-  - add pointer APIs
-  - consider pointer move and click to drag to be initiated via HTML (ie not in engine)
-    - so all input handling is outside the 3D part (reduce complexity of the 3d part)
-    - so in the end the 3d part just renders things where the bussiness logic tells it to
-  - add camera transform setting (and getting, as to have a request to set but I can get the real one)
 
-- 
 ### Prio 1 (stretch goals)
+
+- Investigate and optimize render modes and stream rendering and better handling of Maui limitations for render mode
+  https://learn.microsoft.com/en-us/aspnet/core/blazor/components/render-modes?view=aspnetcore-9.0
+  https://learn.microsoft.com/en-us/aspnet/core/blazor/components/rendering?view=aspnetcore-9.0#streaming-rendering
 
 - Consider again the messages with responses to be added via the generated code
 
@@ -89,3 +123,7 @@ with potentially another source gen to generate the pure JS wrapper (as sending 
 
 - consider dev mode using only Unity's JSON serialization, as that is faster to build (less dlls), also to test switching serialization options 
   - RESOLUTION not gonna do, instead there is option for debugging directly in Unity via websockets
+
+- Add ThreeJS version of 3d renderer using Blazor bindings project
+  - https://github.com/HomagGroup/Blazor3D-Core
+    - RESOLUTION not going to do it as the library is not exactly production ready (e.g. Orbit controls cannot be disabled)
