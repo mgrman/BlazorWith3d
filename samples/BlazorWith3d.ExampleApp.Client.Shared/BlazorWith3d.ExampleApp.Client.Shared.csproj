@@ -35,6 +35,6 @@
         <ProjectReference Include="..\..\src\BlazorWith3d\BlazorWith3d.Shared\BlazorWith3d.Shared.csproj" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="MemoryPack" Version="1.21.3"  />
+        <ProjectReference Include="..\..\src\MemoryPack\MemoryPack\MemoryPack.csproj" />
     </ItemGroup>
 </Project>
