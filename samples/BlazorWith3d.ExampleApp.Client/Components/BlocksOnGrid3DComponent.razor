@@ -96,7 +96,7 @@
         <td>
         </td>
     </tr>
-    @foreach (var block in _blocks)
+    @foreach (var block in _instances)
     {
         <tr>
             <td>
@@ -179,7 +179,7 @@
     int _perfTestCount=100;
 
     private List<AddBlockTemplate> _templates = new();
-    private List<AddBlockInstance> _blocks = new();
+    private List<AddBlockInstance> _instances = new();
 
     private IBlocksOnGrid3DApp? _rendererApi;
     private DotNetObjectReference<JsProxy>? _jsProxyReference;
@@ -207,10 +207,34 @@
 
     private async Task LoadInitialState()
     {
-        _templates = new List<AddBlockTemplate>();
-        _blocks =  new List<AddBlockInstance>();
+        _templates = await LocalStorage.GetItemAsync<List<AddBlockTemplate>>("_templates") ?? new List<AddBlockTemplate>();
+        _instances = await LocalStorage.GetItemAsync<List<AddBlockInstance>>("_blocks") ?? new List<AddBlockInstance>();
 
-        _newIdCounter = _templates.Select(o => o.TemplateId).Concat(_blocks.Select(o => o.BlockId)).DefaultIfEmpty(-1).Max() + 1;
+        bool bad=false;
+        foreach (var template in _templates)
+        {
+            if (template.Size == null)
+            {
+                bad = true;
+                break;
+            }
+        }
+        foreach (var instance in _instances)
+        {
+            if (instance.Position == null)
+            {
+                bad = true;
+                break;
+            }
+        }
+
+        if (bad)
+        {
+            _templates = new List<AddBlockTemplate>();
+            _instances = new List<AddBlockInstance>();
+        }
+        
+        _newIdCounter = _templates.Select(o => o.TemplateId).Concat(_instances.Select(o => o.BlockId)).DefaultIfEmpty(-1).Max() + 1;
         
         StateHasChanged();
         await ReplayState();
@@ -281,7 +305,7 @@
             await _rendererApi.InvokeAddBlockTemplate(template);
         }
 
-        foreach (var block in _blocks)
+        foreach (var block in _instances)
         {
             await _rendererApi.InvokeAddBlockInstance(block);
         }
@@ -304,7 +328,7 @@
         Task.Run(async () =>
         {
             await LocalStorage.SetItemAsync("_templates", _templates);
-            await LocalStorage.SetItemAsync("_blocks", _blocks);
+            await LocalStorage.SetItemAsync("_blocks", _instances);
         });
     }
 
@@ -322,7 +346,7 @@
     private async Task AddBlock()
     {
         var msg = new AddBlockInstance { BlockId = _newIdCounter++, Position = new PackableVector2(new Vector2(_newBlockPositionX,_newBlockPositionY)) , RotationZ = _newBlockRotationZ, TemplateId = _newBlockTemplateId };
-        _blocks.Add(msg);
+        _instances.Add(msg);
         SaveToLocalStorage();
         
         if (_rendererApi != null)
@@ -333,7 +357,7 @@
 
     private async Task RemoveBlock(int id)
     {
-        _blocks.RemoveAll(o => o.BlockId == id);
+        _instances.RemoveAll(o => o.BlockId == id);
         SaveToLocalStorage();
         if (_rendererApi != null)
         {
@@ -433,7 +457,7 @@
             return;
         }
 
-        var instance = _blocks.FirstOrDefault(o => o.BlockId == raycastResponse.HitBlockId);
+        var instance = _instances.FirstOrDefault(o => o.BlockId == raycastResponse.HitBlockId);
         
         var offsetX =raycastResponse.HitWorld.X - instance.Position.X;
         var offsetY =  raycastResponse.HitWorld.Y - instance.Position.Y;
