@@ -2,7 +2,7 @@
   "profiles": {
     "MemoryPack.Generator": {
       "commandName": "DebugRoslynComponent",
-      "targetProject": "..\\..\\sandbox\\SandboxConsoleApp\\SandboxConsoleApp.csproj"
+      "targetProject": "..\\..\\..\\samples\\BlazorWith3d.ExampleApp.Client.Shared\\BlazorWith3d.ExampleApp.Client.Shared.csproj"
     }
   }
 }

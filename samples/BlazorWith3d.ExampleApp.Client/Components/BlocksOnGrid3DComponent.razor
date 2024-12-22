@@ -209,30 +209,6 @@
     {
         _templates = await LocalStorage.GetItemAsync<List<AddBlockTemplate>>("_templates") ?? new List<AddBlockTemplate>();
         _instances = await LocalStorage.GetItemAsync<List<AddBlockInstance>>("_blocks") ?? new List<AddBlockInstance>();
-
-        bool bad=false;
-        foreach (var template in _templates)
-        {
-            if (template.Size == null)
-            {
-                bad = true;
-                break;
-            }
-        }
-        foreach (var instance in _instances)
-        {
-            if (instance.Position == null)
-            {
-                bad = true;
-                break;
-            }
-        }
-
-        if (bad)
-        {
-            _templates = new List<AddBlockTemplate>();
-            _instances = new List<AddBlockInstance>();
-        }
         
         _newIdCounter = _templates.Select(o => o.TemplateId).Concat(_instances.Select(o => o.BlockId)).DefaultIfEmpty(-1).Max() + 1;
         

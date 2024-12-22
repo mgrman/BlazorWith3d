@@ -171,7 +171,8 @@ public partial class MemoryPackGenerator : IIncrementalGenerator
                 {
                     return (node is ClassDeclarationSyntax
                                  or RecordDeclarationSyntax
-                                 or InterfaceDeclarationSyntax);
+                                 or InterfaceDeclarationSyntax
+                                 or StructDeclarationSyntax);
                 },
                 transform: static (context, token) =>
                 {

@@ -70,7 +70,7 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
 
     [MemoryPackable]
     [GenerateTypeScript]
-    public partial class PackableMatrix4x4
+    public partial struct PackableMatrix4x4
     {
         public float M11;
         public float M12;
@@ -89,10 +89,6 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
         public float M43;
         public float M44;
 
-        [MemoryPackConstructor]
-        public PackableMatrix4x4()
-        {
-        }
 
         public PackableMatrix4x4(Matrix4x4 matrix)
         {
@@ -139,16 +135,11 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
 
     [MemoryPackable]
     [GenerateTypeScript]
-    public partial class PackableVector3
+    public partial struct PackableVector3
     {
         public float X;
         public float Y;
         public float Z;
-
-        [MemoryPackConstructor]
-        public PackableVector3()
-        {
-        }
 
         public PackableVector3(Vector3 vec)
         {
@@ -169,15 +160,10 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
 
     [MemoryPackable]
     [GenerateTypeScript]
-    public partial class PackableVector2
+    public partial struct PackableVector2
     {
         public float X;
         public float Y;
-
-        [MemoryPackConstructor]
-        public PackableVector2()
-        {
-        }
 
         public PackableVector2(Vector2 vec)
         {
@@ -196,16 +182,11 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
 
     [MemoryPackable]
     [GenerateTypeScript]
-    public partial class PackableRay
+    public partial struct PackableRay
     {
         public PackableVector3 Origin;
         public PackableVector3 Direction;
-
-        [MemoryPackConstructor]
-        public PackableRay()
-        {
-        }
-
+        
         public PackableRay(Ray ray)
         {
             this.Origin = new PackableVector3(ray.Origin);
