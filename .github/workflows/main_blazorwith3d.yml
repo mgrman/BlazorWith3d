@@ -63,6 +63,7 @@ jobs:
           targetPlatform: WebGL
           projectPath: samples/BlazorWith3d.ExampleApp.UnityProject/
           buildsPath: publish/mywebglapp
+          customParameters: -isCiBuild
 
       - name: Upload artifact for unity build
         uses: actions/upload-artifact@v4
