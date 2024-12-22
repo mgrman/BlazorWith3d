@@ -1,13 +1,23 @@
-﻿namespace BlazorWith3d.ExampleApp.Client.Services;
+﻿
+using BlazorWith3d.ExampleApp.AspNet.WebAssembly;
 
-public class ServerFlagProvider: IFlagProvider
+using Microsoft.AspNetCore.Components;
+
+namespace BlazorWith3d.ExampleApp.Client.Services;
+
+public class ServerFlagProvider: BaseBrowserFlagProvider
 {
-    public ServerFlagProvider(IWebHostEnvironment environment)
+    public ServerFlagProvider(IWebHostEnvironment environment, CookieStorageAccessor cookieStorageAccessor)
+        :base(cookieStorageAccessor)
     {
-        IsUnityRelayEnabled= environment.IsDevelopment();
+        _isUnityRelayEnabled = environment.IsDevelopment();
     }
-    
-    public bool IsUnityRelayEnabled { get; private set; }
 
-    public bool IsWindowsBuildLinkEnabled => true;
+    private readonly bool _isUnityRelayEnabled;
+
+
+    public override bool IsUnityRelayEnabled => _isUnityRelayEnabled;
+
+    public override bool IsWindowsBuildLinkEnabled => true;
+
 }

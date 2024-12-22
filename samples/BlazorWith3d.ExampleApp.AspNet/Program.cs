@@ -18,7 +18,9 @@ builder.Services.AddBlazoredLocalStorage(c =>
 });
 
 builder.Services.AddSingleton<DebugRelayUnityApi>();
-builder.Services.AddSingleton<IFlagProvider,ServerFlagProvider>();
+builder.Services.AddScoped<IFlagProvider,ServerFlagProvider>();
+builder.Services.AddScoped<CookieStorageAccessor>();
+builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 

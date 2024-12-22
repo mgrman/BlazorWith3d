@@ -1,4 +1,6 @@
-﻿@using BlazorWith3d.ExampleApp.Client.Components
+﻿@using BlazorWith3d.ExampleApp.AspNet.WebAssembly
+@using BlazorWith3d.ExampleApp.Client.Components
+@inject IHttpContextAccessor HttpContextAccessor 
 <!DOCTYPE html>
 <html lang="en">
 
@@ -13,10 +15,20 @@
     <link rel="icon" type="image/png" href="favicon.png"/>
     <HeadOutlet/>
 </head>
-
 <body>
-    <Routes  @rendermode="InteractiveAuto"/>
+    <Routes @rendermode="@GetRenderMode()" />
     <script src="_framework/blazor.web.js"></script>
 </body>
 
 </html>
+
+
+@code{
+    public IComponentRenderMode GetRenderMode()
+    {
+        var renderModeName = HttpContextAccessor?.HttpContext?.Request.Cookies[BaseBrowserFlagProvider.RenderModeCookieName];
+
+        return BaseBrowserFlagProvider.GetRenderModeForRequest(renderModeName) ?? BaseBrowserFlagProvider.SupportedRenderModes.First();
+    }
+
+}

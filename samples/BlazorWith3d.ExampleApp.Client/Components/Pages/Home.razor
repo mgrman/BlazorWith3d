@@ -10,5 +10,52 @@ Welcome to your BlazorWith3d app.
 
 @if (FlagProvider.IsWindowsBuildLinkEnabled)
 {
-  <a href="/windowsApp.zip"> Download Windows MAUI build</a>
+    <a href="/windowsApp.zip"> Download Windows MAUI build</a>
+}
+
+@if (FlagProvider.SupportedRenderModes.Length > 1)
+{
+    <InputSelect @bind-Value="_renderModeName">
+        @foreach (var renderMode in FlagProvider.SupportedRenderModes)
+        {
+            <option value="@renderMode.GetType().Name">@(renderMode.GetType().Name)</option>
+        }
+    </InputSelect>
+    <text>// refresh the page after value change!</text>
+}
+
+
+@code {
+    string? _renderModeName
+    {
+        get
+        {
+            return  _renderMode?.GetType().Name ?? "";
+        }
+
+        set
+        {
+            _renderMode = FlagProvider.SupportedRenderModes.FirstOrDefault(o => o.GetType().Name == value);
+            FlagProvider.SetRenderMode(_renderMode);
+        }
+
+    }
+
+    IComponentRenderMode? _renderMode;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            await base.OnAfterRenderAsync(firstRender);
+            return;
+        }
+
+        _renderMode =await FlagProvider.GetRenderMode();
+        StateHasChanged();
+
+        await base.OnAfterRenderAsync(firstRender);
+        return;
+    }
+
 }

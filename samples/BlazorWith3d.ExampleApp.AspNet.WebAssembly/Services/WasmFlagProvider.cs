@@ -1,10 +1,18 @@
 using BlazorWith3d.ExampleApp.Client.Services;
 
+using Microsoft.AspNetCore.Components;
+
 namespace BlazorWith3d.ExampleApp.AspNet.WebAssembly;
 
-public class WasmFlagProvider: IFlagProvider
+public class WasmFlagProvider: BaseBrowserFlagProvider
 {
-    public bool IsUnityRelayEnabled => false;
+    public WasmFlagProvider(CookieStorageAccessor cookieStorageAccessor)
+        :base(cookieStorageAccessor)
+    {
+    }
 
-    public bool IsWindowsBuildLinkEnabled => true;
+    public override bool IsUnityRelayEnabled => false;
+
+    public override bool IsWindowsBuildLinkEnabled => true;
+
 }

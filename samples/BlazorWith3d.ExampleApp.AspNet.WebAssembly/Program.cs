@@ -13,7 +13,8 @@ builder.Services.AddBlazoredLocalStorage(c =>
     c.JsonSerializerOptions.IgnoreReadOnlyFields = false;
     c.JsonSerializerOptions.IgnoreReadOnlyProperties = false;
 });
-builder.Services.AddSingleton<IFlagProvider,WasmFlagProvider>();
+builder.Services.AddSingleton<IFlagProvider, WasmFlagProvider>();
+builder.Services.AddSingleton<CookieStorageAccessor>();
 
 await builder.Build().RunAsync();
 
