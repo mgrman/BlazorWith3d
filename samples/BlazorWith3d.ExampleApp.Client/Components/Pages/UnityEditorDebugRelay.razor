@@ -1,10 +1,56 @@
 ﻿@page "/debug/local-unity"
 @using BlazorWith3d.ExampleApp.Client.Components
 @using BlazorWith3d.ExampleApp.Client.Unity.Components
+@using BlazorWith3d.Shared
+@using BlazorWith3d.Unity
 @rendermode InteractiveServer
+@inject DebugRelayUnityApi DebugRelayUnityApi
+@implements IDisposable
 
 <PageTitle>Local debug instance</PageTitle>
 
 <BlocksOnGrid3DComponent >
-    <BlocksOnGridUnityDebugRelay></BlocksOnGridUnityDebugRelay>
+    @if (debugApi != null)
+    {
+        <BlocksOnGridUnityDebugRelay DebugApi="debugApi"></BlocksOnGridUnityDebugRelay>
+    }
 </BlocksOnGrid3DComponent>
+
+
+@code{
+
+    IBinaryApi debugApi;
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            await base.OnAfterRenderAsync(firstRender);
+            return;
+        }
+
+        DebugRelayUnityApi.ConnectedApi += DebugRelayUnityApiOnConnectedApi;
+        
+        
+        
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    private void DebugRelayUnityApiOnConnectedApi(DebugRelayUnityApi.BinaryApiForSocket? obj)
+    {
+        InvokeAsync(() =>
+        {
+            debugApi = null;
+            StateHasChanged();
+            debugApi = new BinaryApiThreadWrapper(obj, InvokeAsync);
+            StateHasChanged();
+        });
+    }
+
+    public void Dispose()
+    {
+        DebugRelayUnityApi.ConnectedApi -= DebugRelayUnityApiOnConnectedApi;
+    }
+
+}

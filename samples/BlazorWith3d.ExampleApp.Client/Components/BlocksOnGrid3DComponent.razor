@@ -1,5 +1,6 @@
 ﻿@using System.Diagnostics
 @using System.Diagnostics.CodeAnalysis
+@using System.Numerics
 @using Blazored.LocalStorage
 @using BlazorWith3d.ExampleApp.Client.Shared
 @using BlazorWith3d.Unity
@@ -8,7 +9,9 @@
 @inject ILocalStorageService LocalStorage
 @inject IServiceProvider Services
 @inject ILogger<BlocksOnGrid3DComponent> Logger
+@inject IJSRuntime JsRuntime
 @implements I3DAppController
+@implements IAsyncDisposable
 
 <text>@(RendererInfo.Name) @(RendererInfo.IsInteractive?"Interactive":"Static")</text>
 
@@ -36,19 +39,19 @@
     {
         <tr>
             <td>
-                @template.id
+                @template.TemplateId
             </td>
             <td>
-                @template.sizeX
+                @template.Size.X
             </td>
             <td>
-                @template.sizeY
+                @template.Size.Y
             </td>
             <td>
-                @template.sizeZ
+                @template.Size.Z
             </td>
             <td>
-                <button @onclick="() => RemoveTemplate(template.id)">Remove</button>
+                <button @onclick="() => RemoveTemplate(template.TemplateId)">Remove</button>
             </td>
         </tr>
     }
@@ -97,22 +100,22 @@
     {
         <tr>
             <td>
-                @block.blockId
+                @block.BlockId
             </td>
             <td>
-                @block.positionX
+                @block.Position.X
             </td>
             <td>
-                @block.positionY
+                @block.Position.Y
             </td>
             <td>
-                @block.rotationZ
+                @block.RotationZ
             </td>
             <td>
-                @block.templateId
+                @block.TemplateId
             </td>
             <td>
-                <button @onclick="() => RemoveBlock(block.blockId)">Remove</button>
+                <button @onclick="() => RemoveBlock(block.BlockId)">Remove</button>
             </td>
         </tr>
     }
@@ -134,7 +137,7 @@
             <InputNumber @bind-Value="_newBlockTemplateId"></InputNumber>
         </td>
         <td>
-            <button @onclick="AddBlock" disabled="@(!_templates.Any(o => o.id == _newBlockTemplateId))">Add</button>
+            <button @onclick="AddBlock" disabled="@(!_templates.Any(o => o.TemplateId == _newBlockTemplateId))">Add</button>
         </td>
     </tr>
 </table>
@@ -148,9 +151,13 @@
         @_perfResponse
     </div>
 }
-<CascadingValue Value="this" IsFixed="true">
-    @ChildContent
-</CascadingValue>
+
+<div @ref="_rendererContainerReference" @onmousedown="OnMouseDown"  style="width: 500px; height: 500px; position: relative; border: red 1px solid">
+
+    <CascadingValue Value="this" IsFixed="true">
+        @ChildContent
+    </CascadingValue>
+</div>
 
 @code {
 
@@ -171,10 +178,21 @@
     string? _perfResponse;
     int _perfTestCount=100;
 
-    private List<(int id, float sizeX, float sizeY, float sizeZ)> _templates = new();
-    private List<(int blockId, float positionX, float positionY, float rotationZ, int templateId)> _blocks = new();
+    private List<AddBlockTemplate> _templates = new();
+    private List<AddBlockInstance> _blocks = new();
 
     private IBlocksOnGrid3DApp? _rendererApi;
+    private DotNetObjectReference<JsProxy>? _jsProxyReference;
+
+    private int _requestIdCounter = 0;
+    private Dictionary<int, TaskCompletionSource<RaycastResponse>> _activeRaycasts = new();
+    private UnityAppInitialized _appState;
+    private (AddBlockInstance instance, float offsetX,float offsetY)? _dragging;
+    private IJSObjectReference module;
+    private IJSObjectReference? _mouseEventsDispose;
+
+    private ElementReference _rendererContainerReference;
+    private Dictionary<int, TaskCompletionSource<ScreenToWorldRayResponse>>  _activeScreenToRay=new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -183,15 +201,16 @@
             await LoadInitialState();
         }
 
+         _jsProxyReference = DotNetObjectReference.Create(new JsProxy(OnMouseMove, OnMouseUp));
         await base.OnInitializedAsync();
     }
 
     private async Task LoadInitialState()
     {
-        _templates = await LocalStorage.GetItemAsync<List<(int id, float sizeX, float sizeY, float sizeZ)>>("_templates") ?? new List<(int id, float sizeX, float sizeY, float sizeZ)>();
-        _blocks = await LocalStorage.GetItemAsync<List<(int blockId, float positionX, float positionY, float rotationZ, int templateId)>>("_blocks") ?? new List<(int blockId, float positionX, float positionY, float rotationZ, int templateId)>();
+        _templates = new List<AddBlockTemplate>();
+        _blocks =  new List<AddBlockInstance>();
 
-        _newIdCounter = _templates.Select(o => o.id).Concat(_blocks.Select(o => o.blockId)).DefaultIfEmpty(-1).Max() + 1;
+        _newIdCounter = _templates.Select(o => o.TemplateId).Concat(_blocks.Select(o => o.BlockId)).DefaultIfEmpty(-1).Max() + 1;
         
         StateHasChanged();
         await ReplayState();
@@ -204,6 +223,9 @@
             await base.OnAfterRenderAsync(firstRender);
             return;
         }
+        var moduleTask = new Lazy<Task<IJSObjectReference>>(() => JsRuntime.InvokeAsync<IJSObjectReference>("import", "./_content/BlazorWith3d.ExampleApp.Client/globalMouseEvents.js").AsTask());
+        module = await moduleTask.Value;
+        
         await LoadInitialState();
         await base.OnAfterRenderAsync(firstRender);
     }
@@ -213,16 +235,16 @@
         if (_rendererApi != null)
         {
             _rendererApi.OnUnityAppInitialized -= OnAppInitialized;
-            _rendererApi.OnBlockPoseChanging -= OnBlockPoseChanging;
-            _rendererApi.OnBlockPoseChanged -= OnBlockPoseChanged;
+            _rendererApi.OnRaycastResponse -= OnRaycastResponse;
+            _rendererApi.OnScreenToWorldRayResponse -= OnScreenToWorldRayResponse;
         }
         
         _rendererApi = rendererApi;
         if (_rendererApi != null)
         {
             _rendererApi.OnUnityAppInitialized += OnAppInitialized;
-            _rendererApi.OnBlockPoseChanging += OnBlockPoseChanging;
-            _rendererApi.OnBlockPoseChanged += OnBlockPoseChanged;
+            _rendererApi.OnRaycastResponse += OnRaycastResponse;
+            _rendererApi.OnScreenToWorldRayResponse += OnScreenToWorldRayResponse;
 
             _rendererApi.StartProcessingMessages();
             _rendererApi.InvokeBlazorControllerInitialized(new BlazorControllerInitialized());
@@ -232,36 +254,19 @@
          ReplayState();
     }
 
-    private void OnBlockPoseChanged(BlockPoseChanged obj)
+    private void OnScreenToWorldRayResponse(ScreenToWorldRayResponse obj)
     {
-        var blockIndex = _blocks.FindIndex(o => o.blockId == obj.BlockId);
-        var block = _blocks[blockIndex];
-
-        _blocks[blockIndex] = (block.blockId, obj.PositionX, obj.PositionY, obj.RotationZ, block.templateId);
-        SaveToLocalStorage();
-        StateHasChanged();
+        _activeScreenToRay[obj.RequestId].SetResult(obj);
     }
 
-    private void OnBlockPoseChanging(BlockPoseChanging arg)
+    private void OnRaycastResponse(RaycastResponse obj)
     {
-        if (_rendererApi == null)
-        {
-            return;
-        }
-        
-        _rendererApi.InvokeBlockPoseChangeValidated(new BlockPoseChangeValidated
-        {
-            BlockId = arg.BlockId,
-            IsValid = true,
-            NewPositionX = arg.PositionX,
-            NewPositionY = (float)Math.Round(arg.PositionY, 0),
-            NewRotationZ = arg.RotationZ,
-            ChangingRequestId = arg.ChangingRequestId
-        });
+        _activeRaycasts[obj.RequestId].SetResult(obj);
     }
 
     private async void OnAppInitialized(UnityAppInitialized arg)
     {
+        _appState = arg;
     }
 
     private async ValueTask ReplayState()
@@ -273,21 +278,19 @@
         
         foreach (var template in _templates)
         {
-            var msg = new AddBlockTemplate { TemplateId = template.id, SizeX = template.sizeX, SizeY = template.sizeY, SizeZ = template.sizeZ };
-            await _rendererApi.InvokeAddBlockTemplate(msg);
+            await _rendererApi.InvokeAddBlockTemplate(template);
         }
 
         foreach (var block in _blocks)
         {
-            var msg = new AddBlockInstance { BlockId = block.blockId, PositionX = block.positionX, PositionY = block.positionY, RotationZ = block.rotationZ, TemplateId = block.templateId };
-            await _rendererApi.InvokeAddBlockInstance(msg);
+            await _rendererApi.InvokeAddBlockInstance(block);
         }
     }
 
     private async Task AddTemplate()
     {
-        var msg = new AddBlockTemplate { TemplateId = _newIdCounter++, SizeX = _newTemplateSizeX, SizeY = _newTemplateSizeY, SizeZ = _newTemplateSizeZ };
-        _templates.Add((msg.TemplateId, msg.SizeX, msg.SizeY, msg.SizeZ));
+        var msg = new AddBlockTemplate { TemplateId = _newIdCounter++, Size = new PackableVector3(new Vector3(_newTemplateSizeX, _newTemplateSizeY, _newTemplateSizeZ)) };
+        _templates.Add(msg);
         SaveToLocalStorage();
         
         if (_rendererApi != null)
@@ -307,7 +310,7 @@
 
     private async Task RemoveTemplate(int id)
     {
-        _templates.RemoveAll(o => o.id == id);
+        _templates.RemoveAll(o => o.TemplateId == id);
         SaveToLocalStorage();
         
         if (_rendererApi != null)
@@ -318,8 +321,8 @@
 
     private async Task AddBlock()
     {
-        var msg = new AddBlockInstance { BlockId = _newIdCounter++, PositionX = _newBlockPositionX, PositionY = _newBlockPositionY, RotationZ = _newBlockRotationZ, TemplateId = _newBlockTemplateId };
-        _blocks.Add((msg.BlockId, msg.PositionX, msg.PositionY, msg.RotationZ, msg.TemplateId));
+        var msg = new AddBlockInstance { BlockId = _newIdCounter++, Position = new PackableVector2(new Vector2(_newBlockPositionX,_newBlockPositionY)) , RotationZ = _newBlockRotationZ, TemplateId = _newBlockTemplateId };
+        _blocks.Add(msg);
         SaveToLocalStorage();
         
         if (_rendererApi != null)
@@ -330,7 +333,7 @@
 
     private async Task RemoveBlock(int id)
     {
-        _blocks.RemoveAll(o => o.blockId == id);
+        _blocks.RemoveAll(o => o.BlockId == id);
         SaveToLocalStorage();
         if (_rendererApi != null)
         {
@@ -384,6 +387,151 @@
                 tcs.SetResult();
             }
         }
+    }
+
+    private class JSVector2
+    {
+        public float X { get; set; }
+        
+        public float Y{ get; set; }
+    }
+    
+    private async Task OnMouseDown( MouseEventArgs e)
+    {
+       var offset= await module.InvokeAsync<JSVector2>("ConvertPageToOffset", _rendererContainerReference, e.PageX, e.PageY);
+        var rayOrigin = new Vector3((float)offset.X,(float) offset.Y, 0);
+
+        
+        var screenToRayId = _requestIdCounter++;
+        var tcs1=new TaskCompletionSource<ScreenToWorldRayResponse>();
+        _activeScreenToRay[screenToRayId] = tcs1;
+
+        await _rendererApi.InvokeRequestScreenToWorldRay(new RequestScreenToWorldRay()
+        {
+            RequestId = screenToRayId,
+            Screen = new PackableVector2(new Vector2(offset.X,offset.Y))
+        });
+        var screenToRayResponse=await tcs1.Task;
+        
+        
+        var raycastId = _requestIdCounter++;
+
+        var tcs=new TaskCompletionSource<RaycastResponse>();
+        _activeRaycasts[raycastId] = tcs;
+
+        await _rendererApi.InvokeRequestRaycast(new RequestRaycast()
+        {
+            RequestId = raycastId,
+            Ray = screenToRayResponse.Ray
+        });
+        var raycastResponse=await tcs.Task;
+
+        //#error raycast is somehow not hitting anything in unity!!!
+        
+        if (!raycastResponse.HitBlockId.HasValue)
+        {
+            return;
+        }
+
+        var instance = _blocks.FirstOrDefault(o => o.BlockId == raycastResponse.HitBlockId);
+        
+        var offsetX =raycastResponse.HitWorld.X - instance.Position.X;
+        var offsetY =  raycastResponse.HitWorld.Y - instance.Position.Y;
+         _dragging = (instance,offsetX,offsetY);
+         
+         _mouseEventsDispose = await module.InvokeAsync<IJSObjectReference>("InitializeGlobalMouseEvents", _rendererContainerReference, _jsProxyReference, nameof(JsProxy.OnMouseMove), nameof(JsProxy.OnMouseUp));
+    }
+    
+    private async void OnMouseMove(float offsetX, float offsetY)
+    {
+        if (!_dragging.HasValue)
+        {
+            return;
+        }
+        
+        var dragging = _dragging.Value;
+        
+        
+        var screenToRayId = _requestIdCounter++;
+        var tcs1=new TaskCompletionSource<ScreenToWorldRayResponse>();
+        _activeScreenToRay[screenToRayId] = tcs1;
+
+        await _rendererApi.InvokeRequestScreenToWorldRay(new RequestScreenToWorldRay()
+        {
+            RequestId = screenToRayId,
+            Screen = new PackableVector2(new Vector2(offsetX,offsetY))
+        });
+        var screenToRayResponse=await tcs1.Task;
+
+
+        
+        // TODO make configurable
+        var worldToPlane = Matrix4x4.Identity; // as this defines the drag plane
+
+        var rayOrigin = screenToRayResponse.Ray.Origin.ToVector3();
+        var rayDirection = screenToRayResponse.Ray.Direction.ToVector3();
+
+        rayOrigin=Vector3.Transform(rayOrigin,worldToPlane);
+        rayDirection=Vector3.TransformNormal(rayDirection,worldToPlane);
+        
+        
+        var plane = new Plane(new Vector3(0, 0, 1), 0);
+        var potentialHit= plane.Raycast(new Ray(rayOrigin, rayDirection));
+        if (potentialHit == null)
+        {
+            throw new InvalidOperationException();
+        }
+
+        var hit = potentialHit.Value;
+        
+        var newPositionX = hit.X - dragging.offsetX;
+        var newPositionY = hit.Y - dragging.offsetY;
+
+
+        newPositionY = (float)Math.Round(newPositionY, 0);
+
+
+        dragging.instance.Position = new PackableVector2(new Vector2(newPositionX, newPositionY));
+        
+        _rendererApi.InvokeUpdateBlockInstance(new UpdateBlockInstance()
+        {
+            BlockId = dragging.instance.BlockId,
+            Position= new PackableVector2(new Vector2(newPositionX,newPositionY)),
+            RotationZ= dragging.instance.RotationZ,
+        });
+        StateHasChanged();
+    }
+    
+    private void OnMouseUp()
+    {
+        if (!_dragging.HasValue)
+        {
+            return;
+        }
+        
+        _dragging = null;
+        
+        _mouseEventsDispose?.InvokeVoidAsync("Dispose");
+    }
+
+    private class JsProxy(Action<float,float> onMouseMove,Action onMouseUp)
+    {
+        [JSInvokable]
+        public void OnMouseMove(float screenX, float screenY)
+        {
+            onMouseMove(screenX,screenY);
+        }
+        [JSInvokable]
+        public void OnMouseUp()
+        {
+            onMouseUp();
+        }
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        _jsProxyReference?.Dispose();
+        return ValueTask.CompletedTask;
     }
 
 }

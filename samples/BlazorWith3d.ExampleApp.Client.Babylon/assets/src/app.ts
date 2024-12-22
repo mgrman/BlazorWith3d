@@ -11,7 +11,10 @@ import {
     Vector2,
     Tools,
     Matrix,
-    DirectionalLight
+    DirectionalLight,
+    PhysicsRaycastResult,
+    Ray,
+    Quaternion
 } from "@babylonjs/core";
 import {AddBlockInstance} from "com.blazorwith3d.exampleapp.client.shared/memorypack/AddBlockInstance";
 import {
@@ -21,13 +24,14 @@ import {PerfCheck} from "com.blazorwith3d.exampleapp.client.shared/memorypack/Pe
 import {AddBlockTemplate} from "com.blazorwith3d.exampleapp.client.shared/memorypack/AddBlockTemplate";
 import {RemoveBlockInstance} from "com.blazorwith3d.exampleapp.client.shared/memorypack/RemoveBlockInstance";
 import {RemoveBlockTemplate} from "com.blazorwith3d.exampleapp.client.shared/memorypack/RemoveBlockTemplate";
-import {StartDraggingBlock} from "com.blazorwith3d.exampleapp.client.shared/memorypack/StartDraggingBlock";
-import {BlockPoseChangeValidated} from "com.blazorwith3d.exampleapp.client.shared/memorypack/BlockPoseChangeValidated";
-import {UnityAppInitialized} from "com.blazorwith3d.exampleapp.client.shared/memorypack/UnityAppInitialized";
-import {BlockPoseChanging} from "com.blazorwith3d.exampleapp.client.shared/memorypack/BlockPoseChanging";
-import {BlockPoseChanged} from "com.blazorwith3d.exampleapp.client.shared/memorypack/BlockPoseChanged";
+import { UnityAppInitialized } from "com.blazorwith3d.exampleapp.client.shared/memorypack/UnityAppInitialized";
+import { UpdateBlockInstance } from "com.blazorwith3d.exampleapp.client.shared/memorypack/UpdateBlockInstance";
 import { BlocksOnGridUnityApi } from "com.blazorwith3d.exampleapp.client.shared/memorypack/BlocksOnGridUnityApi";
 import {BlazorBinaryApi} from "com.blazorwith3d.exampleapp.client.shared/BlazorBinaryApi";
+import { RequestRaycast } from "com.blazorwith3d.exampleapp.client.shared/memorypack/RequestRaycast";
+import { RequestScreenToWorldRay } from "com.blazorwith3d.exampleapp.client.shared/memorypack/RequestScreenToWorldRay";
+import { ScreenToWorldRayResponse } from "com.blazorwith3d.exampleapp.client.shared/memorypack/ScreenToWorldRayResponse";
+import { RaycastResponse } from "com.blazorwith3d.exampleapp.client.shared/memorypack/RaycastResponse";
 
 export function InitializeBabylonApp(canvas: HTMLCanvasElement, dotnetObject: any, onMessageReceivedMethodName: string) {
 
@@ -41,7 +45,7 @@ export class DebugApp {
     private _sendMessage: (msgBytes: Uint8Array) => Promise<any>;
     private scene: Scene;
     private templates: Array<AddBlockTemplate> = new Array<AddBlockTemplate>();
-    private instances: Array<[instance: AddBlockInstance, mesh: Mesh, drag: PointerDragBehavior]> = new Array<[instance: AddBlockInstance, mesh: Mesh, drag: PointerDragBehavior]>();
+    private instances: Array<[instance: AddBlockInstance, mesh: Mesh]> = new Array<[instance: AddBlockInstance, mesh: Mesh]>();
 
     private changingRequestId: number = 0;
     private plane: Mesh;
@@ -50,25 +54,34 @@ export class DebugApp {
 
     constructor(canvas: HTMLCanvasElement, sendMessage: (msgBytes: Uint8Array) => Promise<any>) {
 
+        canvas.style.width = "100%";
+        canvas.style.height = "100%";
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+
+
         // initialize babylon scene and engine
         var engine = new Engine(canvas, true);
         this.scene = new Scene(engine);
-
-        var camera = new FreeCamera("Camera", new Vector3(0, 0, 10), this.scene);
-        camera.setTarget(Vector3.Zero());
-        var light1 = new DirectionalLight("light1", new Vector3(0, 3, 0), this.scene);
-        light1.direction = new Vector3(-1.144162, -2.727118, -1.981747)
+        this.scene.preventDefaultOnPointerDown = false;
+        this.scene.preventDefaultOnPointerUp = false;
 
        this._binaryApi= new BlazorBinaryApi(sendMessage);
         this._blazorApp=new BlocksOnGridUnityApi(this._binaryApi);
 
-        this.plane = MeshBuilder.CreatePlane("plane", {
-            width: 10,
-            height: 10,
-            sideOrientation: Mesh.DOUBLESIDE
+        this.plane = new Mesh("plane", this.scene);
+        // plane handled the conversion to Blazor coordinate system
+        this.plane.rotation = new Vector3(Tools.ToRadians(0), Tools.ToRadians(180), Tools.ToRadians(180));
 
-        }, this.scene);
-        this.plane.rotation = new Vector3(Tools.ToRadians(4.92), Tools.ToRadians(159.77 - 180), Tools.ToRadians(180));
+
+        var camera = new FreeCamera("Camera", new Vector3(0, 0, 10), this.scene);
+        camera.target = new Vector3(0, 0, 0)
+        camera.upVector = new Vector3(0, -1, 0)
+        camera.parent = this.plane;
+
+
+        var light1 = new DirectionalLight("light1", new Vector3(0, 0, 1).applyRotationQuaternion(Quaternion.FromEulerAngles(Tools.ToRadians(-130), Tools.ToRadians(30), Tools.ToRadians(0))), this.scene);
+        light1.parent = this.plane;
 
 
         // hide/show the Inspector
@@ -93,9 +106,11 @@ export class DebugApp {
         this._blazorApp.OnAddBlockTemplate=msg=>this.OnAddBlockTemplate(msg);
         this._blazorApp.OnAddBlockInstance=msg=>this.OnAddBlockInstance(msg);
         this._blazorApp.OnRemoveBlockInstance=msg=>this.OnRemoveBlockInstance(msg);
-        this._blazorApp.OnRemoveBlockTemplate=msg=>this.OnRemoveBlockTemplate(msg);
-        this._blazorApp.OnStartDraggingBlock=msg=>this.OnStartDraggingBlock(msg);
-        this._blazorApp.OnBlockPoseChangeValidated=msg=>this.OnBlockPoseChangeValidated(msg);
+        this._blazorApp.OnRemoveBlockTemplate = msg => this.OnRemoveBlockTemplate(msg);
+        this._blazorApp.OnUpdateBlockInstance = msg => this.OnUpdateBlockInstance(msg);
+        this._blazorApp.OnRequestRaycast = msg => this.OnRequestRaycast(msg);
+        this._blazorApp.OnRequestScreenToWorldRay = msg => this.OnRequestScreenToWorldRay(msg);
+
 
         this._blazorApp.StartProcessingMessages();
 
@@ -110,21 +125,17 @@ export class DebugApp {
         console.log("Quit called");
     }
 
-    protected OnBlockPoseChangeValidated(obj: BlockPoseChangeValidated) {
+    protected OnUpdateBlockInstance(obj: UpdateBlockInstance) {
         console.log("BlockPoseChangeValidated", obj);
 
 
-        const [instance, mesh, drag] = this.instances.find(o => o[0].blockId === obj.blockId);
+        const [instance, mesh] = this.instances.find(o => o[0].blockId === obj.blockId);
 
-        instance.positionX = obj.newPositionX;
-        instance.positionY = obj.newPositionY;
-        instance.rotationZ = obj.newRotationZ;
+        instance.position = obj.position;
+        instance.rotationZ = obj.rotationZ;
         this.UpdateMeshPosition(mesh, instance);
     }
 
-    protected OnStartDraggingBlock(obj: StartDraggingBlock) {
-        console.log("StartDraggingBlock IS NOT SUPPORTED YET", obj);
-    }
 
     protected OnRemoveBlockTemplate(obj: RemoveBlockTemplate) {
         console.log("RemoveBlockTemplate", obj);
@@ -135,7 +146,7 @@ export class DebugApp {
         console.log("RemoveBlockInstance", obj);
 
 
-        const [instance, mesh, drag] = this.instances.find(o => o[0].blockId === obj.blockId);
+        const [instance, mesh] = this.instances.find(o => o[0].blockId === obj.blockId);
         this.instances = this.instances.filter(o => o[0].blockId !== obj.blockId);
 
         this.scene.removeMesh(mesh);
@@ -147,66 +158,71 @@ export class DebugApp {
         var template = this.templates.find(o => o.templateId === obj.templateId);
 
         var mesh: Mesh = MeshBuilder.CreateBox("box" + obj.blockId, {
-            width: template.sizeX,
-            height: template.sizeY,
-            depth: template.sizeZ
+            width: template.size.x,
+            height: template.size.y,
+            depth: template.size.z
         }, this.scene);
         mesh.parent = this.plane;
-        mesh.position = new Vector3(0, 0, template.sizeZ / 2);
+        mesh.position = new Vector3(0, 0, template.size.z / 2);
         this.UpdateMeshPosition(mesh, obj);
 
-        var pointerDragBehavior = new PointerDragBehavior({dragPlaneNormal: new Vector3(0, 0, 1)});
-        pointerDragBehavior.useObjectOrientationForDragging = false;
-        pointerDragBehavior.updateDragPlane = false;
-
-        var initialPoint: Vector2;
-
-
-        const matrix = Matrix.Invert(this.plane.computeWorldMatrix(true));
-
-        pointerDragBehavior.onDragStartObservable.add((event) => {
-            console.log("dragStart");
-            console.log(event);
-
-            var localPoint = Vector3.TransformCoordinates(event.dragPlanePoint, matrix);
-
-            initialPoint = new Vector2(localPoint.x - obj.positionX, localPoint.y - obj.positionY);
-        });
-        pointerDragBehavior.onDragObservable.add((event) => {
-            console.log("drag");
-            console.log(event);
-
-            var localPoint = Vector3.TransformCoordinates(event.dragPlanePoint, matrix);
-
-            this._blazorApp.InvokeBlockPoseChanging({
-
-                blockId: obj.blockId,
-                changingRequestId: this.changingRequestId++,
-                positionX: localPoint.x - initialPoint.x,
-                positionY: localPoint.y - initialPoint.y,
-                rotationZ: obj.rotationZ
-            }).then();
-        });
-        pointerDragBehavior.onDragEndObservable.add((event) => {
-            console.log("dragEnd");
-            console.log(event);
-            this._blazorApp.InvokeBlockPoseChanged({
-                blockId: obj.blockId,
-                positionX: obj.positionX,
-                positionY: obj.positionY,
-                rotationZ: obj.rotationZ
-            });
-        });
-        pointerDragBehavior.moveAttached = false;
-        pointerDragBehavior.attach(mesh);
-        this.instances.push([obj, mesh, pointerDragBehavior]);
+        this.instances.push([obj, mesh,]);
     }
 
     private UpdateMeshPosition = (mesh: Mesh, obj: AddBlockInstance) => {
 
-        mesh.position = new Vector3(obj.positionX, obj.positionY, mesh.position.z);
+        mesh.position = new Vector3(obj.position.x, obj.position.y, mesh.position.z);
         mesh.rotation = new Vector3(0, 0, obj.rotationZ);
     }
+
+    protected OnRequestScreenToWorldRay(msg: RequestScreenToWorldRay): void {
+
+        
+
+        var ray = this.scene.createPickingRay(msg.screen.x, msg.screen.y, Matrix.Identity(), this.scene.activeCamera);	
+
+        var worldToBlazor = Matrix.Invert(this.plane.computeWorldMatrix(true));
+
+        // convert ray to expected blazor world coordinate system
+        ray = new Ray(Vector3.TransformCoordinates(ray.origin, worldToBlazor), Vector3.TransformNormal(ray.direction, worldToBlazor), ray.length, ray.epsilon);
+
+
+
+        this._blazorApp.InvokeScreenToWorldRayResponse({
+            requestId:msg.requestId,
+            ray: {
+                origin: { x: ray.origin.x, y: ray.origin.y, z: ray.origin.z },
+                direction: { x: ray.direction.x, y: ray.direction.y, z: ray.direction.z }
+            }
+        })
+    }
+
+    protected OnRequestRaycast(msg: RequestRaycast): void {
+
+        var start = new Vector3(msg.ray.origin.x, msg.ray.origin.y, msg.ray.origin.z);
+        var dir = new Vector3(msg.ray.direction.x, msg.ray.direction.y, msg.ray.direction.z);
+
+        var blazorToWorld = this.plane.computeWorldMatrix(true)
+        var worldToBlazor = Matrix.Invert(this.plane.computeWorldMatrix(true));
+
+        var ray = new Ray(Vector3.TransformCoordinates(start, blazorToWorld), Vector3.TransformNormal(dir, blazorToWorld));
+
+        var pickingInfo = this.scene.pickWithRay(ray);
+
+        var response = new RaycastResponse();
+        response.requestId = msg.requestId;
+        response.hitWorld = start;
+
+        if (pickingInfo.hit ) {
+
+            
+            const [instance, mesh] = this.instances.find(o => o[1] === pickingInfo.pickedMesh);
+            response.hitBlockId = instance.blockId;
+            response.hitWorld = Vector3.TransformCoordinates(pickingInfo.pickedPoint, worldToBlazor) ;
+        }
+         this._blazorApp.InvokeRaycastResponse(response);
+    }
+
 
     protected OnAddBlockTemplate(obj: AddBlockTemplate) {
         console.log("AddBlockTemplate", obj);
@@ -227,17 +243,6 @@ export class DebugApp {
     protected OnBlazorControllerInitialized(obj: BlazorControllerInitialized) {
 
         console.log("OnBlazorControllerInitialized", obj);
-
-        this.templates = new Array<AddBlockTemplate>();
-
-
-        for (const i of this.instances) {
-            const [instance, mesh, drag] = i;
-
-            this.scene.removeMesh(mesh);
-        }
-
-        this.instances = new Array<[instance: AddBlockInstance, mesh: Mesh, drag: PointerDragBehavior]>();
 
     }
 

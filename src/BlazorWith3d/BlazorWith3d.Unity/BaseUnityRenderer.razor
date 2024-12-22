@@ -5,9 +5,9 @@
 @using Microsoft.Extensions.Logging
 @implements IAsyncDisposable
 
-<div @ref="_containerElementReference" class="unity-container">
+<div @ref="_containerElementReference" class="unity-container" style="width: 100%; height: 100%; position: relative;"  >
 
-    <canvas id="unity-canvas" width="960" height="600" tabindex="-1"></canvas>
+    <canvas id="unity-canvas" width="100" height="100" tabindex="-1"></canvas>
     <div id="unity-loading-bar">
         <div id="unity-logo"></div>
         <div id="unity-progress-bar-empty">

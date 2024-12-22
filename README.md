@@ -12,6 +12,20 @@ with potentially another source gen to generate the pure JS wrapper (as sending 
 
 ## Renderers
 
+- coordinate systems
+  - Blazor
+    - RightHanded
+    - Screen (0,0) in top left
+    - World X:right, Y: down, Z: toCamera
+  - Unity
+    - LeftHanded
+    - Screen (0,0) is Bottom Left
+    - World X:right, Y: up, Z : fromCamera
+  - Babylon
+    - LeftHanded
+    - Screen (0,0) in top left
+    - World X:right, Y: up, Z : fromCamera
+
 ### Unity WebGL (interop with Unity WASM)
 
 ### BabylonJS (interop with TypeScript)
@@ -42,19 +56,24 @@ https://learn.microsoft.com/en-us/aspnet/core/blazor/hybrid/tutorials/maui-blazo
 
 ### Prio 0 (what to do next)
 
+- add support for negotiation of serialization modes
+    - so unity can do DEBUG build with JSON only serializaion
+
+- add ThreeJS as Babylon is too highlevel sometimes
+
+- consider memorypack fork with Typescript struct support
+
 - Implement all API messages (instead of rectangular shape, add GLB loading)
     - remove rectangular shape
     - implement GLB
-    - add raycast scene API
-    - consider pointer move and click to drag to be initiated via HTML (ie not in engine)
-        - so all input handling is outside the 3D part (reduce complexity of the 3d part)
-        - so in the end the 3d part just renders things where the bussiness logic tells it to
-    - add camera transform setting (and getting, as to have a request to set but I can get the real one)
-    - unify different coordinate systems
-    - add setting of background color
-    - even background plane should be just a mesh to load
-    - Unify visuals of all 4 renderers and all mouse input is done via blazor 
-    - ie limit the 3d renderer to only the parts really necessary to be done in 3d (e.g. no mouse input, yes raycasting, yes rendering)
+    - implement colliders support
+
+- Unify visuals of all 4 renderers
+  - add camera transform setting (and getting, as to have a request to set but I can get the real one)
+  - unify different coordinate systems
+  - add setting of background color
+  - even background plane should be just a mesh to load
+  - ie limit the 3d renderer to only the parts really necessary to be done in 3d (e.g. no mouse input, yes raycasting, yes rendering)
   
 - do Isometric or fake-3d in CSS only for HTML version
     - https://developer.mozilla.org/en-US/docs/Web/CSS/transform-function/perspective
@@ -62,9 +81,12 @@ https://learn.microsoft.com/en-us/aspnet/core/blazor/hybrid/tutorials/maui-blazo
     - should use pre-rendered images
     - mainly as otherwise it is hard to render depth
 
+- consider support for union types to handle collider definition etc
 
 
 ### Prio 1 (stretch goals)
+
+- render screen in unity and stream to blazor for debug mode
 
 - Investigate and optimize render modes and stream rendering and better handling of Maui limitations for render mode
   https://learn.microsoft.com/en-us/aspnet/core/blazor/components/render-modes?view=aspnetcore-9.0
@@ -79,6 +101,7 @@ https://learn.microsoft.com/en-us/aspnet/core/blazor/hybrid/tutorials/maui-blazo
  
 - Maui app with native Unity build
     https://docs.unity3d.com/6000.1/Documentation/Manual/UnityasaLibrary-Windows.html
+
 
 ### Prio 2 (make it nicer)
 

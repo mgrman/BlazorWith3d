@@ -5,54 +5,27 @@ using Microsoft.Extensions.Logging;
 
 namespace BlazorWith3d.Unity;
 
-public class DebugRelayUnityApi:IBinaryApi
+public class DebugRelayUnityApi
 {
     private readonly ILogger<DebugRelayUnityApi> _logger;
     private WebSocket? _webSocket;
-    private readonly List<byte[]> _unsentMessages= new();
-    private readonly BackgroundMessageBuffer _unhandledMessages= new();
-    private Func<Action,Task>?  _handleThread;
 
-    public Action<byte[]>? MainMessageHandler { get => _unhandledMessages.MainMessageHandler; set => _unhandledMessages.MainMessageHandler = value; }
-
+    public event Action<BinaryApiForSocket?> ConnectedApi;
+    
     public DebugRelayUnityApi(ILogger<DebugRelayUnityApi> logger)
     {
         _logger = logger;
     }
     
-    public void HandleThread(Func<Action,Task> action)
-    {
-        _unhandledMessages.HandleThread = action;
-    }
     
-    public async ValueTask SendMessage(byte[] bytes)
-    {
-        if (_webSocket?.State != WebSocketState.Open)
-        {
-            _unsentMessages.Add(bytes);
-            return;
-        }
-
-        await SendMessageInner(bytes);
-    }
-
-    private async Task SendMessageInner(byte[] bytes)
-    {
-        await _webSocket!.SendAsync(bytes,
-            WebSocketMessageType.Binary,
-            true,
-            CancellationToken.None);
-    }
-
+    
     public async Task HandleWebSocket(WebSocket webSocket)
     {
         _webSocket = webSocket;
+
+        var api = new BinaryApiForSocket(webSocket);
+        ConnectedApi?.Invoke(api);
         
-        foreach (var unsentMessage in _unsentMessages)
-        {
-            await SendMessageInner(unsentMessage);
-        }
-        _unsentMessages.Clear();
         
         
         var buffer =new ArraySegment<byte>( new byte[1024 * 4]);
@@ -63,7 +36,7 @@ public class DebugRelayUnityApi:IBinaryApi
             {
                 var receiveResult = await webSocket.ReceiveAsync(buffer, CancellationToken.None);
                 var msg = buffer.Slice(0, receiveResult.Count).ToArray();
-                _unhandledMessages.InvokeMessageAsync(msg);
+                api._unhandledMessages.InvokeMessage(msg);
             }
             catch (WebSocketException ex)
             {
@@ -74,7 +47,32 @@ public class DebugRelayUnityApi:IBinaryApi
                 _logger.LogError(ex,"HandleWebSocket OnMessageFromUnity error");
             }
         }
+    }
 
-        
+
+    public class BinaryApiForSocket : IBinaryApi
+    {
+        private readonly WebSocket _webSocket;
+        public readonly ReceiveMessageBuffer _unhandledMessages= new();
+
+        public BinaryApiForSocket(WebSocket webSocket)
+        {
+            _webSocket = webSocket;
+        }
+
+        public Action<byte[]>? MainMessageHandler { get => _unhandledMessages.MainMessageHandler; set => _unhandledMessages.MainMessageHandler = value; }
+
+        public async ValueTask SendMessage(byte[] bytes)
+        {
+            if (_webSocket.State != WebSocketState.Open)
+            {
+                throw new InvalidOperationException();
+            }
+
+            await _webSocket.SendAsync(bytes,
+                WebSocketMessageType.Binary,
+                true,
+                CancellationToken.None);
+        }
     }
 }

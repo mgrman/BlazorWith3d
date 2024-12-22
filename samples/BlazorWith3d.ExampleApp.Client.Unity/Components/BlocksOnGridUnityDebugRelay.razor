@@ -1,7 +1,7 @@
 ﻿@using BlazorWith3d.ExampleApp.Client.Shared
+@using BlazorWith3d.Shared
 @using BlazorWith3d.Unity
 @using Microsoft.Extensions.Logging
-@inject DebugRelayUnityApi DebugRelayUnityApi
 @inject ILogger<BlocksOnGridUnityDebugRelay> Logger
 @implements IDisposable
 
@@ -10,6 +10,10 @@
 
     [CascadingParameter] 
     public required I3DAppController ParentApp { get; set; }
+    
+    
+    [Parameter] 
+    public IBinaryApi DebugApi { get; set; }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -19,9 +23,8 @@
             return;
         }
 
-        DebugRelayUnityApi.HandleThread(InvokeAsync);
         
-        unityAppApi = new BlocksOnGrid3DApp(DebugRelayUnityApi);
+        unityAppApi = new BlocksOnGrid3DApp(DebugApi);
         ParentApp.InitializeRenderer(unityAppApi);
     }
 
