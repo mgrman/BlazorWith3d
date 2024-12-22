@@ -56,6 +56,8 @@ https://learn.microsoft.com/en-us/aspnet/core/blazor/hybrid/tutorials/maui-blazo
 
 ### Prio 0 (what to do next)
 
+- bring back localStorage of data
+
 - add support for negotiation of serialization modes
     - so unity can do DEBUG build with JSON only serializaion
 
