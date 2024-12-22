@@ -58,12 +58,7 @@ https://learn.microsoft.com/en-us/aspnet/core/blazor/hybrid/tutorials/maui-blazo
 
 - bring back localStorage of data
 
-- add support for negotiation of serialization modes
-    - so unity can do DEBUG build with JSON only serializaion
-
 - add ThreeJS as Babylon is too highlevel sometimes
-
-- consider memorypack fork with Typescript struct support
 
 - Implement all API messages (instead of rectangular shape, add GLB loading)
     - remove rectangular shape
@@ -107,6 +102,9 @@ https://learn.microsoft.com/en-us/aspnet/core/blazor/hybrid/tutorials/maui-blazo
 
 ### Prio 2 (make it nicer)
 
+
+- consider memorypack fork with Typescript struct support
+- 
 - Optimize Typescript API
     - remove memory copies during message handling
 
@@ -133,6 +131,10 @@ https://learn.microsoft.com/en-us/aspnet/core/blazor/hybrid/tutorials/maui-blazo
 
 ### Prio 3 (maybe but not really target of the project)
 
+
+- add support for negotiation of serialization modes
+    - so unity can do DEBUG build with JSON only serializaion
+    - 
 - consider some generic reactive dictionary or patch requests on object support
     - e.g. that both sides can instantiate kind of reactive dictionry and through generic messages they both can be kept automatically in sync, with changes always propagating to the other side
     - kinda like flux https://facebookarchive.github.io/flux/docs/in-depth-overview/
