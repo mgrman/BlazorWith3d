@@ -14,6 +14,7 @@
         <IsRoslynComponent>true</IsRoslynComponent>
         <PackageTags>serializer</PackageTags>
         <Description>Code generator for MemoryPack.</Description>
+      <OutputPath>..\..\BlazorWith3d\BlazorWith3d.Unity.UnityPackage\MemoryPackFork\MemoryPack.Generator</OutputPath>
     </PropertyGroup>
 
     <ItemGroup>

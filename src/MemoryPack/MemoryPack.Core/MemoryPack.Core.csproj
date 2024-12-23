@@ -9,6 +9,7 @@
         <NoWarn>$(NoWarn);CS1591;CA2255</NoWarn>
         <PackageTags>serializer</PackageTags>
         <Description>Core libraries(attribute, logics) of MemoryPack.</Description>
+      <OutputPath>..\..\BlazorWith3d\BlazorWith3d.Unity.UnityPackage\MemoryPackFork\MemoryPack.Core</OutputPath>
     </PropertyGroup>
 
     <ItemGroup>
