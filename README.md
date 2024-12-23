@@ -56,7 +56,6 @@ https://learn.microsoft.com/en-us/aspnet/core/blazor/hybrid/tutorials/maui-blazo
 
 ### Prio 0 (what to do next)
 
-
 - add ThreeJS as Babylon is too highlevel sometimes
 
 - Implement all API messages (instead of rectangular shape, add GLB loading)
