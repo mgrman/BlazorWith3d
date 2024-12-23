@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace BlazorWith3d.ExampleApp.Client.Babylon;
 
-public class BlocksOnGridBabylonRenderer:BaseBabylonRenderer, IDisposable
+public class BlocksOnGridBabylonRenderer:BaseJsRenderer, IDisposable
 {
     private BlocksOnGrid3DApp? unityAppApi;
 
@@ -16,7 +16,7 @@ public class BlocksOnGridBabylonRenderer:BaseBabylonRenderer, IDisposable
     [Inject]
     public required ILogger<BlocksOnGridBabylonRenderer> Logger { get; set; }
 
-    public override string BabylonAppPath => Assets["./_content/BlazorWith3d.ExampleApp.Client.Babylon/clientassets/blazorwith3d-exampleapp-client-babylon-bundle.js"];
+    public override string JsAppPath => Assets["./_content/BlazorWith3d.ExampleApp.Client.Babylon/clientassets/blazorwith3d-exampleapp-client-babylon-bundle.js"];
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

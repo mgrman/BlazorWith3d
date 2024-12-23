@@ -1,7 +1,7 @@
 ﻿@using BlazorWith3d.Shared
 @using Microsoft.JSInterop
 @inject IJSRuntime JsRuntime
-@inject ILogger<BaseBabylonRenderer> Logger
+@inject ILogger<BaseJsRenderer> Logger
 @implements BlazorWith3d.Shared.IBinaryApi
 @using Microsoft.Extensions.Logging
 @implements IAsyncDisposable
@@ -15,9 +15,9 @@
 
     private ElementReference _containerElementReference;
     private IJSObjectReference? module;
-    private IJSObjectReference? _babylonApp;
+    private IJSObjectReference? _typescriptApp;
     
-    public virtual string BabylonAppPath => "";
+    public virtual string JsAppPath => "";
     
     private DotNetObjectReference<JsMessageReceiverProxy>? _messageReceiverProxyReference;
     private readonly List<byte[]> _unsentMessages = new();
@@ -25,11 +25,11 @@
 
     public async ValueTask DisposeAsync()
     {
-        if (_babylonApp != null)
+        if (_typescriptApp != null)
         {
-            await _babylonApp.InvokeVoidAsync("Quit");
-            await _babylonApp.DisposeAsync();
-            _babylonApp = null;
+            await _typescriptApp.InvokeVoidAsync("Quit");
+            await _typescriptApp.DisposeAsync();
+            _typescriptApp = null;
         }
 
         _messageReceiverProxyReference?.Dispose();
@@ -50,20 +50,20 @@
             return;
         }
 
-        if (string.IsNullOrEmpty(BabylonAppPath))
+        if (string.IsNullOrEmpty(JsAppPath))
         {
-            throw new InvalidOperationException("BabylonAppPath is not overriden!");
+            throw new InvalidOperationException($"{nameof(JsAppPath)} is not overriden!");
         }
 
 
         var moduleTask = new Lazy<Task<IJSObjectReference>>(() => JsRuntime.InvokeAsync
         <IJSObjectReference>
-            ("import", BabylonAppPath).AsTask());
+            ("import", JsAppPath).AsTask());
         
         module = await moduleTask.Value;
         
         
-        _babylonApp = await module.InvokeAsync<IJSObjectReference>("InitializeBabylonApp", _containerElementReference,_messageReceiverProxyReference,nameof(JsMessageReceiverProxy.OnMessageBytesReceived) );
+        _typescriptApp = await module.InvokeAsync<IJSObjectReference>("InitializeApp", _containerElementReference,_messageReceiverProxyReference,nameof(JsMessageReceiverProxy.OnMessageBytesReceived) );
 
         foreach (var msg in _unsentMessages)
         {
@@ -88,7 +88,7 @@
     
     public async ValueTask SendMessage(byte[] messageBytes)
     {
-        if (_babylonApp == null)
+        if (_typescriptApp == null)
         {
             _unsentMessages.Add(messageBytes);
             return;
@@ -96,7 +96,7 @@
 
         try
         {
-            await _babylonApp.InvokeVoidAsync("ProcessMessage", messageBytes);
+            await _typescriptApp.InvokeVoidAsync("ProcessMessage", messageBytes);
         }
         catch (Exception ex)
         {
