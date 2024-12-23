@@ -56,6 +56,8 @@ https://learn.microsoft.com/en-us/aspnet/core/blazor/hybrid/tutorials/maui-blazo
 
 ### Prio 0 (what to do next)
 
+- consider memorypack fork with Typescript struct support // see memorypack-fork branch
+    - maybe different serialization library for interop with Typescript would be better, as structs would help and prevent a lot of type conversions
 
 - add ThreeJS as Babylon is too highlevel sometimes
 
@@ -102,8 +104,6 @@ https://learn.microsoft.com/en-us/aspnet/core/blazor/hybrid/tutorials/maui-blazo
 ### Prio 2 (make it nicer)
 
 
-- consider memorypack fork with Typescript struct support // see memorypack-fork branch
-- 
 - Optimize Typescript API
     - remove memory copies during message handling
 
