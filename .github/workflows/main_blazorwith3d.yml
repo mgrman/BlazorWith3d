@@ -45,8 +45,14 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: dotnet tool build generator
+      - name: dotnet tool build BlazorWith3d.CodeGenerator
         run: dotnet build "src/BlazorWith3d/BlazorWith3d.CodeGenerator/BlazorWith3d.CodeGenerator.csproj" -c Release
+
+      - name: dotnet tool build MemoryPack.Core
+        run: dotnet build "src/MemoryPack/MemoryPack.Core/MemoryPack.Core.csproj" -c Release
+
+      - name: dotnet tool build MemoryPack.Generator
+        run: dotnet build "src/MemoryPack/MemoryPack.Generator/MemoryPack.Generator.csproj" -c Release
 
       - name: dotnet tool restore
         run: dotnet tool restore
