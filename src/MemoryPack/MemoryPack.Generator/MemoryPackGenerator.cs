@@ -172,6 +172,8 @@ public partial class MemoryPackGenerator : IIncrementalGenerator
                     return (node is ClassDeclarationSyntax
                                  or RecordDeclarationSyntax
                                  or InterfaceDeclarationSyntax
+                                 // !!! BlazorWith3d change
+                                 //);
                                  or StructDeclarationSyntax);
                 },
                 transform: static (context, token) =>

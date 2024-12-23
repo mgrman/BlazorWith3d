@@ -8,8 +8,9 @@ This way we reduce the need for classes in C# code and therefore reduce the amou
 
 Changes:
 - Changed GenerateTypeScriptAttribute in MemoryPack.Core to be allowed on structs as well
-- in MemoryPackGenerator.Emitter changed EmitSerializeMembers method to force use EmitSerialize method if the member type has GenerateTypeScript attribute
-- MemoryPackGenerator.Parser change setting of IsUnmanagedType property, to also need for the type to not have GenerateTypeScript attribute (ie type with the attribute is never considered unmanaged)
-- MemoryPackGenerator.Parser change ParseMemberKind method to consider memberType.IsUnmanagedType only if the member type does not have GenerateTypeScript attribute
+- in MemoryPackGenerator.cs add StructDeclarationSyntax as allowed value to typeScriptDeclarations predicate
+- in MemoryPackGenerator.Emitter.cs changed EmitSerializeMembers method to force use EmitSerialize method if the member type has GenerateTypeScript attribute
+- in MemoryPackGenerator.Parser.cs change setting of IsUnmanagedType property, to also need for the type to not have GenerateTypeScript attribute (ie type with the attribute is never considered unmanaged)
+- in MemoryPackGenerator.Parser.cs change ParseMemberKind method to consider memberType.IsUnmanagedType only if the member type does not have GenerateTypeScript attribute
 
 Rest of changes are more to make the fork work within my repo
