@@ -313,7 +313,7 @@
 
     private async Task AddTemplate()
     {
-        var msg = new AddBlockTemplate { TemplateId = _newIdCounter++, Size = new PackableVector3(new Vector3(_newTemplateSizeX, _newTemplateSizeY, _newTemplateSizeZ)) };
+        var msg = new AddBlockTemplate { TemplateId = _newIdCounter++, Size = new Vector3(_newTemplateSizeX, _newTemplateSizeY, _newTemplateSizeZ) };
         _templates.Add(msg);
         SaveToLocalStorage();
         
@@ -345,7 +345,7 @@
 
     private async Task AddBlock()
     {
-        var msg = new AddBlockInstance { BlockId = _newIdCounter++, Position = new PackableVector2(new Vector2(_newBlockPositionX,_newBlockPositionY)) , RotationZ = _newBlockRotationZ, TemplateId = _newBlockTemplateId };
+        var msg = new AddBlockInstance { BlockId = _newIdCounter++, Position = new Vector2(_newBlockPositionX,_newBlockPositionY) , RotationZ = _newBlockRotationZ, TemplateId = _newBlockTemplateId };
         _instances.Add(msg);
         SaveToLocalStorage();
         
@@ -433,7 +433,7 @@
         await _rendererApi.InvokeRequestScreenToWorldRay(new RequestScreenToWorldRay()
         {
             RequestId = screenToRayId,
-            Screen = new PackableVector2(new Vector2(offset.X,offset.Y))
+            Screen = new Vector2(offset.X,offset.Y)
         });
         var screenToRayResponse=await tcs1.Task;
         
@@ -483,7 +483,7 @@
         await _rendererApi.InvokeRequestScreenToWorldRay(new RequestScreenToWorldRay()
         {
             RequestId = screenToRayId,
-            Screen = new PackableVector2(new Vector2(offsetX,offsetY))
+            Screen = new Vector2(offsetX,offsetY)
         });
         var screenToRayResponse=await tcs1.Task;
 
@@ -515,12 +515,12 @@
         newPositionY = (float)Math.Round(newPositionY, 0);
 
 
-        dragging.instance.Position = new PackableVector2(new Vector2(newPositionX, newPositionY));
+        dragging.instance.Position = new Vector2(newPositionX, newPositionY);
         
         _rendererApi.InvokeUpdateBlockInstance(new UpdateBlockInstance()
         {
             BlockId = dragging.instance.BlockId,
-            Position= new PackableVector2(new Vector2(newPositionX,newPositionY)),
+            Position= new Vector2(newPositionX,newPositionY),
             RotationZ= dragging.instance.RotationZ,
         });
         StateHasChanged();

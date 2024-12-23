@@ -173,7 +173,7 @@ namespace ExampleApp
 
             await _appApi.InvokeScreenToWorldRayResponse(new ScreenToWorldRayResponse()
             {
-                RequestId = obj.RequestId, Ray = ray.ToNumerics().ToPackable()
+                RequestId = obj.RequestId, Ray = ray.ToNumerics()
             });
             return;
         }
@@ -204,7 +204,7 @@ namespace ExampleApp
                 RequestId = obj.RequestId,
                 HitBlockId = hitController.BlockId, 
                 // convert result to blazor world coordinate system
-                HitWorld =  transform.worldToLocalMatrix.MultiplyPoint(hit.point).ToNumerics().ToPackable()
+                HitWorld =  transform.worldToLocalMatrix.MultiplyPoint(hit.point).ToNumerics()
             });
         }
     }

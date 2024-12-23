@@ -56,7 +56,6 @@ https://learn.microsoft.com/en-us/aspnet/core/blazor/hybrid/tutorials/maui-blazo
 
 ### Prio 0 (what to do next)
 
-- bring back localStorage of data
 
 - add ThreeJS as Babylon is too highlevel sometimes
 
@@ -103,8 +102,6 @@ https://learn.microsoft.com/en-us/aspnet/core/blazor/hybrid/tutorials/maui-blazo
 ### Prio 2 (make it nicer)
 
 
-- consider memorypack fork with Typescript struct support
-- 
 - Optimize Typescript API
     - remove memory copies during message handling
 
@@ -154,3 +151,16 @@ https://learn.microsoft.com/en-us/aspnet/core/blazor/hybrid/tutorials/maui-blazo
 - Add ThreeJS version of 3d renderer using Blazor bindings project
   - https://github.com/HomagGroup/Blazor3D-Core
     - RESOLUTION not going to do it as the library is not exactly production ready (e.g. Orbit controls cannot be disabled)
+
+
+- consider memorypack fork with Typescript struct support // see memorypack-fork branch
+    - maybe different serialization library for interop with Typescript would be better, as structs would help and prevent a lot of type conversions
+    - Or Do not use binaryApi with Tyoescript?
+      - Consider using types direct via normal blazor interop, to generate TS /c# code facilitating the boilerplate  
+      - Or at least benchmark it
+    - Otherwise the mempack or protobuf could work
+    - Or just leave class only? Maybe should benchmark it to be sure
+    - !!! try with a struct which has reference type to force the class like serialization!!!
+    - RESOLUTION: this works but there is still the issue that System.Numerics classes are not supoprted, so an in between type has to be used.
+      - due to this only system unmanaged types are supported and then custom types, no 3rd party lib types
+      - FULL SOLUTION NEEDS GENERATION OF typescript readers reading the Unmanaged types
