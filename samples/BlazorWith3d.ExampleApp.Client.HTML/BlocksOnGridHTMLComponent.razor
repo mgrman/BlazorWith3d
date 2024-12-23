@@ -21,7 +21,7 @@
             var brightness = (byte)(((template.Size.Y - minHeight) / heightRange) * 255);
             var color = ColorTranslator.ToHtml(Color.FromArgb(brightness, 0, 0));
             <div class="my-component" 
-            style="user-select: none; position: absolute; width: @ToStringCSS((template.Size.X)*scale)px; height: @ToStringCSS((template.Size.Y)*scale)px; background-color: @color; left: @ToStringCSS((instance.Position.X-template.Size.X/2+offsetX)*scale)px; top: @ToStringCSS((instance.Position.Y-template.Size.Y/2+offsetY)*scale)px; rotate: @ToStringCSS(instance.RotationZ)deg;"
+            style="user-select: none; position: absolute; width: @ToStringCSS((template.Size.X)*scale)px; height: @ToStringCSS((template.Size.Y)*scale)px; background-color: @color; left: @ToStringCSS((instance.Position.X-template.Size.X/2+offsetX)*scale)px; bottom: @ToStringCSS((instance.Position.Y-template.Size.Y/2+offsetY)*scale)px; rotate: @ToStringCSS(instance.RotationZ)deg;"
             >
                 @instance.BlockId
             </div>
@@ -199,7 +199,7 @@
     public event Action<ScreenToWorldRayResponse>? OnScreenToWorldRayResponse;
     public ValueTask InvokeRequestScreenToWorldRay(RequestScreenToWorldRay msg)
     {
-        var worldToScreen = Matrix4x4.Multiply(Matrix4x4.CreateTranslation(new Vector3(offsetX, offsetY, 0)),Matrix4x4.CreateScale(new Vector3(scale, scale, 1)));
+        var worldToScreen = Matrix4x4.Multiply(Matrix4x4.Multiply(Matrix4x4.CreateScale(new Vector3(1, -1, 1)),Matrix4x4.CreateTranslation(new Vector3(offsetX, offsetY, 0))),Matrix4x4.CreateScale(new Vector3(scale, scale, 1)));
         
         var screenToWorld = Matrix4x4.Invert(worldToScreen, out var temp1) ? temp1 : throw new InvalidOperationException("Non invertable matrix");
         
@@ -215,5 +215,10 @@
             Ray=new Ray(rayOrigin,rayDirection)
         });
         return ValueTask.CompletedTask;
+    }
+    
+    public float ConvertToRadians(float angle)
+    {
+        return ((float)Math.PI / 180) * angle;
     }
 }

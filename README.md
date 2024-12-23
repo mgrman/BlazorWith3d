@@ -16,15 +16,22 @@ with potentially another source gen to generate the pure JS wrapper (as sending 
   - Blazor
     - RightHanded
     - Screen (0,0) in top left
-    - World X:right, Y: down, Z: toCamera
+    - World X:right, Y: up, Z: toCamera
   - Unity
     - LeftHanded
     - Screen (0,0) is Bottom Left
     - World X:right, Y: up, Z : fromCamera
+    - camera looks in PositiveZ
   - Babylon
     - LeftHanded
     - Screen (0,0) in top left
     - World X:right, Y: up, Z : fromCamera
+    - camera looks in PositiveZ
+  - ThreeJS
+    - RightHanded
+    - Screen (0,0) in center (positive in direction of top right)
+    - World X:right, Y: up, Z : toCamera
+    - camera looks in NegativeZ
 
 ### Unity WebGL (interop with Unity WASM)
 
@@ -56,7 +63,7 @@ https://learn.microsoft.com/en-us/aspnet/core/blazor/hybrid/tutorials/maui-blazo
 
 ### Prio 0 (what to do next)
 
-- add ThreeJS as Babylon is too highlevel sometimes
+- fix bug by adding conversion of Unity/Babylon LeftHanded system to RightHanded system
 
 - Implement all API messages (instead of rectangular shape, add GLB loading)
     - remove rectangular shape
