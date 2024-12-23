@@ -177,7 +177,7 @@
         {
             RequestId = msg.RequestId,
             HitBlockId = hit?.BlockId,
-            HitWorld = new PackableVector3(new Vector3(pos.X,pos.Y, hit!=null?_templates[hit.TemplateId].Size.Z:pos.Z))
+            HitWorld = new Vector3(pos.X,pos.Y, hit!=null?_templates[hit.TemplateId].Size.Z:pos.Z)
         });
         
         return ValueTask.CompletedTask;
@@ -212,7 +212,7 @@
         OnScreenToWorldRayResponse?.Invoke(new ScreenToWorldRayResponse()
         {
             RequestId = msg.RequestId,
-            Ray=new PackableRay(new Ray(rayOrigin,rayDirection))
+            Ray=new Ray(rayOrigin,rayDirection)
         });
         return ValueTask.CompletedTask;
     }
