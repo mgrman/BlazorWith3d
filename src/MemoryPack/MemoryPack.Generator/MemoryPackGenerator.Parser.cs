@@ -109,6 +109,9 @@ public partial class TypeMeta
             .ToArray();
 
         this.IsValueType = symbol.IsValueType;
+
+        // !!! BlazorWith3d change
+        //this.IsUnmanagedType = symbol.IsUnmanagedType;
         this.IsUnmanagedType = symbol.IsUnmanagedType && !symbol.ContainsAttribute(reference.GenerateTypeScriptAttribute);
         this.IsInterfaceOrAbstract = symbol.IsAbstract;
         this.IsUnion = symbol.ContainsAttribute(reference.MemoryPackUnionAttribute);
@@ -748,6 +751,8 @@ partial class MemberMeta
         {
             return MemberKind.Enum;
         }
+        // !!! BlazorWith3d change
+        //else if (memberType.IsUnmanagedType)
         else if (memberType.IsUnmanagedType && !memberType.ContainsAttribute(references.GenerateTypeScriptAttribute))
         {
             if (memberType is INamedTypeSymbol unmanagedNts)

@@ -789,6 +789,8 @@ partial {{classOrStructOrRecord}} {{TypeName}}
         var sb = new StringBuilder();
         for (int i = 0; i < members.Length; i++)
         {
+            // !!! BlazorWith3d change
+            //if (!(members[i].Kind is MemberKind.Unmanaged or MemberKind.Enum or MemberKind.UnmanagedNullable) || toTempWriter)
             if (members[i].MemberType.ContainsAttribute(reference.GenerateTypeScriptAttribute) || !(members[i].Kind is MemberKind.Unmanaged or MemberKind.Enum or MemberKind.UnmanagedNullable) || toTempWriter)
             {
                 sb.Append(indent);
