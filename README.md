@@ -58,6 +58,12 @@ https://learn.microsoft.com/en-us/aspnet/core/blazor/hybrid/tutorials/maui-blazo
 
 - consider memorypack fork with Typescript struct support // see memorypack-fork branch
     - maybe different serialization library for interop with Typescript would be better, as structs would help and prevent a lot of type conversions
+    - Or Do not use binaryApi with Tyoescript?
+      - Consider using types direct via normal blazor interop, to generate TS /c# code facilitating the boilerplate  
+      - Or at least benchmark it
+    - Otherwise the mempack or protobuf could work
+    - Or just leave class only? Maybe should benchmark it to be sure
+    - !!! try with a struct which has reference type to force the class like serialization!!!
 
 - add ThreeJS as Babylon is too highlevel sometimes
 
