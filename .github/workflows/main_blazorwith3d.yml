@@ -99,10 +99,10 @@ jobs:
       - name: dotnet workload install maui
         run: dotnet workload install maui
 
-      - name: Build with dotnet
+      - name: Build with dotnet to resolve a bug in the JS based libraries, which need a build call first
         run: dotnet build "samples/BlazorWith3d.ExampleApp.Maui/BlazorWith3d.ExampleApp.Maui.csproj" -c Release
 
-      - name: Build MAUI with dotnet
+      - name: Publish MAUI with dotnet
         run: dotnet publish "samples/BlazorWith3d.ExampleApp.Maui/BlazorWith3d.ExampleApp.Maui.csproj" -f net9.0-windows10.0.19041.0 -c Release -p:RuntimeIdentifierOverride=win10-x64 -p:WindowsPackageType=None -p:WindowsAppSDKSelfContained=true --output "publish/windowsApp"
 
       - name: zip app
