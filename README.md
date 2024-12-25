@@ -63,11 +63,23 @@ https://learn.microsoft.com/en-us/aspnet/core/blazor/hybrid/tutorials/maui-blazo
 
 ## TODOs
 
+
+benchmarks
+
+- Server
+  - Interop (avg 0,48 ms)
+  - MemoryPack (avg 0,56 ms)
+- WASM
+  - Interop (avg 0.50 ms)
+  - MemoryPack (avg 0.33 ms)
+
 ### Prio 0 (what to do next)
 
 
 - Test threejs Integration with direct js interop Ie without binary api
     - ie benchmark if binary API is better than normal JS interop
+    - generate typescript interface API to implement as check
+    - fix message processing start/stop in the interop version
 
 - try again to get matrix for screen to world as that would reduce the need for extra interop call
 

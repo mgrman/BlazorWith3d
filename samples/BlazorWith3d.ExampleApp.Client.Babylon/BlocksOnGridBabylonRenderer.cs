@@ -4,7 +4,7 @@ using BlazorWith3d.ExampleApp.Client.Shared;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
 
-namespace BlazorWith3d.ExampleApp.Client.Babylon;
+namespace BlazorWith3d.ExampleApp.Client.ThreeJs;
 
 public class BlocksOnGridBabylonRenderer:BaseJsRenderer, IDisposable
 {

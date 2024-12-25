@@ -48,6 +48,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MemoryPack.Core", "src\Memo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d.ExampleApp.Client.ThreeJS", "samples\BlazorWith3d.ExampleApp.Client.ThreeJS\BlazorWith3d.ExampleApp.Client.ThreeJS.csproj", "{0BF99FAE-100B-4A82-816F-7E5C9BD96FFF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d.ExampleApp.Client.ThreeJS.DirectInterop", "samples\BlazorWith3d.ExampleApp.Client.ThreeJS.DirectInterop\BlazorWith3d.ExampleApp.Client.ThreeJS.DirectInterop.csproj", "{081C0DAA-7704-4024-BDCB-0A63A53DE9F1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -114,6 +116,10 @@ Global
 		{0BF99FAE-100B-4A82-816F-7E5C9BD96FFF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0BF99FAE-100B-4A82-816F-7E5C9BD96FFF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0BF99FAE-100B-4A82-816F-7E5C9BD96FFF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{081C0DAA-7704-4024-BDCB-0A63A53DE9F1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{081C0DAA-7704-4024-BDCB-0A63A53DE9F1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{081C0DAA-7704-4024-BDCB-0A63A53DE9F1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{081C0DAA-7704-4024-BDCB-0A63A53DE9F1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -134,6 +140,7 @@ Global
 		{C0A522D6-75D9-4414-8BBD-9E19435EA6C3} = {F9B3F897-7C97-4DA4-A0F0-C3D5095AE10A}
 		{1CCC63D0-FDC1-41BC-A4D8-4500444D510F} = {F9B3F897-7C97-4DA4-A0F0-C3D5095AE10A}
 		{0BF99FAE-100B-4A82-816F-7E5C9BD96FFF} = {44CB5B1C-A284-45E6-BFB7-C58D73AE7037}
+		{081C0DAA-7704-4024-BDCB-0A63A53DE9F1} = {44CB5B1C-A284-45E6-BFB7-C58D73AE7037}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {66A8D527-8D61-4D7B-AAFB-AE9DEF0B3757}

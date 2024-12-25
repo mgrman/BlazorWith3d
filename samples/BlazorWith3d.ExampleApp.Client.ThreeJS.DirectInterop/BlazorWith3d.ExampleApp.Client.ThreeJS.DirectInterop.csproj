@@ -1,0 +1,84 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <LangVersion>preview</LangVersion>
+    </PropertyGroup>
+
+
+    <ItemGroup>
+        <SupportedPlatform Include="browser" />
+        <Content Update="assets\**" Pack="false" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Remove="assets\*" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="assets\*" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="9.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\BlazorWith3d\BlazorWith3d.JsApp\BlazorWith3d.JsApp.csproj" />
+        <ProjectReference Include="..\..\src\BlazorWith3d\BlazorWith3d.Shared\BlazorWith3d.Shared.csproj" />
+        <ProjectReference Include="..\BlazorWith3d.ExampleApp.Client.Shared\BlazorWith3d.ExampleApp.Client.Shared.csproj" />
+    </ItemGroup>
+
+
+    <ItemGroup>
+        <Folder Include="wwwroot\" />
+    </ItemGroup>
+
+    <!-- Adapted from https://github.com/aspnet/AspLabs/blob/d193d1660e54f4c65f86a9938ffa1a424b37b3a6/src/ClientAssets/Microsoft.AspNetCore.ClientAssets/build/netstandard2.0/Microsoft.AspNetCore.ClientAssets.targets -->
+    <!-- with change to use wwwroot as build output as otherwise the Maui build was not liking it-->
+    <!-- !!! THERE IS A BUG, babylon js file is not there if you do publish on maui app without any build calls before !!!-->
+    <PropertyGroup>
+        <ClientAssetsDirectory Condition="'$(ClientAssetsDirectory)' == ''">assets\</ClientAssetsDirectory>
+        <ClientAssetsRestoreInputs Condition="'$(ClientAssetsRestoreInputs)' == ''">$(ClientAssetsDirectory)package-lock.json;$(ClientAssetsDirectory)package.json</ClientAssetsRestoreInputs>
+        <ClientAssetsRestoreOutputs Condition="'$(ClientAssetsRestoreOutputs)' == ''">$(ClientAssetsDirectory)node_modules\.package-lock.json</ClientAssetsRestoreOutputs>
+        <ClientAssetsRestoreCommand Condition="'$(ClientAssetsRestoreCommand)' == ''">npm install</ClientAssetsRestoreCommand>
+        <ClientAssetsBuildCommand Condition="'$(ClientAssetsBuildCommand)' == ''">npm run build:$(Configuration)</ClientAssetsBuildCommand>
+        <ClientAssetsBuildOutputParameter Condition="'$(ClientAssetsBuildOutputParameter)' == ''">--output-path</ClientAssetsBuildOutputParameter>
+
+        <ClientAssetsRestoreInputs>$(MSBuildProjectFile);$(ClientAssetsRestoreInputs)</ClientAssetsRestoreInputs>
+
+        <!-- Run restore only once for multi targeting builds -->
+        <ClientAssetsRestoreBeforeTargets Condition="'$(TargetFramework)' == ''">DispatchToInnerBuilds</ClientAssetsRestoreBeforeTargets>
+        <!-- Allow multitargeting projects to choose the target framework in which they run by setting this value to true only for a given target framework -->
+        <ShouldRunClientAssetsBuild Condition="'$(ShouldRunClientAssetsBuild)' == ''">true</ShouldRunClientAssetsBuild>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ClientAssetsInputs Include="$(ClientAssetsDirectory)**" Exclude="$(DefaultItemExcludes)" />
+    </ItemGroup>
+
+    <Target Name="ClientAssetsRestore" BeforeTargets="$(ClientAssetsRestoreBeforeTargets)" Inputs="$(ClientAssetsRestoreInputs)" Outputs="$(ClientAssetsRestoreOutputs)">
+        <Message Importance="high" Text="Running $(ClientAssetsRestoreCommand)..." />
+        <Exec Command="$(ClientAssetsRestoreCommand)" WorkingDirectory="$(ClientAssetsDirectory)" />
+    </Target>
+
+    <Target Name="ClientAssetsBuild" Condition="'$(ShouldRunClientAssetsBuild)' == 'true'" DependsOnTargets="ClientAssetsRestore" BeforeTargets="AssignTargetPaths" Inputs="@(ClientAssetsInputs)" Outputs="$(IntermediateOutputPath)clientassetsbuild.complete.txt">
+
+        <PropertyGroup>
+            <_ClientAssetsOutputFullPath>$([System.IO.Path]::GetFullPath('wwwroot\clientassets'))/</_ClientAssetsOutputFullPath>
+        </PropertyGroup>
+
+        <MakeDir Directories="$(_ClientAssetsOutputFullPath)" />
+        <Exec Command="$(ClientAssetsBuildCommand) -- $(ClientAssetsBuildOutputParameter) $(_ClientAssetsOutputFullPath)" WorkingDirectory="$(ClientAssetsDirectory)" />
+
+        <ItemGroup>
+            <_ClientAssetsBuildOutput Include="wwwroot\clientassets\**"></_ClientAssetsBuildOutput>
+        </ItemGroup>
+
+        <WriteLinesToFile File="wwwroot\clientassetsbuild.complete.txt" Lines="@(_ClientAssetsBuildOutput)" />
+    </Target>
+
+
+</Project>

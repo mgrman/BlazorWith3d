@@ -137,8 +137,7 @@
     public ValueTask InvokeUpdateBlockInstance(UpdateBlockInstance msg)
     {
         var instance = _instances.FirstOrDefault(o => o.BlockId == msg.BlockId);
-        instance.Position.X = msg.Position.X;
-        instance.Position.Y = msg.Position.Y;
+        instance.Position = new PackableVector2(){X=msg.Position.X,Y= msg.Position.Y};
         instance.RotationZ = msg.RotationZ;
         StateHasChanged();
         return ValueTask.CompletedTask;

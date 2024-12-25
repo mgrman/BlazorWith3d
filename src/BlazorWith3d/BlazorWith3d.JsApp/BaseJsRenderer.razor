@@ -15,7 +15,7 @@
 
     private ElementReference _containerElementReference;
     private IJSObjectReference? module;
-    private IJSObjectReference? _typescriptApp;
+    protected IJSObjectReference? _typescriptApp;
     
     public virtual string JsAppPath => "";
     
@@ -37,8 +37,13 @@
 
     protected override void OnInitialized()
     {
-        _messageReceiverProxyReference = DotNetObjectReference.Create(new JsMessageReceiverProxy(OnMessageBytesReceived));
+        _messageReceiverProxyReference = DotNetObjectReference.Create(CreateReceiverProxy(OnMessageBytesReceived));
         base.OnInitialized();
+    }
+
+    protected virtual JsMessageReceiverProxy CreateReceiverProxy(Action<byte[]> onMessageBytesReceived)
+    {
+        return new JsMessageReceiverProxy(onMessageBytesReceived);
     }
 
 
@@ -104,7 +109,7 @@
         }
     }
     
-    private class JsMessageReceiverProxy(Action<byte[]> onMessageBytesReceived)
+    protected class JsMessageReceiverProxy(Action<byte[]> onMessageBytesReceived)
     {
         [JSInvokable]
         public void OnMessageBytesReceived(byte[] msg)

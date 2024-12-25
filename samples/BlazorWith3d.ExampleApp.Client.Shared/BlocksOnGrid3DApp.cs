@@ -56,11 +56,11 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
     [GenerateTypeScript]
     public partial class PerfCheck : IMessageToUnity, IMessageToBlazor
     {
-        public float Aaa;
-        public double Bbb;
-        public long Ccc;
-        public string? Ddd;
-        public int Id;
+        public float Aaa { get; set; }
+        public double Bbb{ get; set; }
+        public long Ccc{ get; set; }
+        public string? Ddd{ get; set; }
+        public int Id{ get; set; }
     }
 
     [MemoryPackable]
@@ -73,22 +73,22 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
     [GenerateTypeScript]
     public partial struct PackableMatrix4x4
     {
-        public float M11;
-        public float M12;
-        public float M13;
-        public float M14;
-        public float M21;
-        public float M22;
-        public float M23;
-        public float M24;
-        public float M31;
-        public float M32;
-        public float M33;
-        public float M34;
-        public float M41;
-        public float M42;
-        public float M43;
-        public float M44;
+        public float M11{ get; set; }
+        public float M12{ get; set; }
+        public float M13{ get; set; }
+        public float M14{ get; set; }
+        public float M21{ get; set; }
+        public float M22{ get; set; }
+        public float M23{ get; set; }
+        public float M24{ get; set; }
+        public float M31{ get; set; }
+        public float M32{ get; set; }
+        public float M33{ get; set; }
+        public float M34{ get; set; }
+        public float M41{ get; set; }
+        public float M42{ get; set; }
+        public float M43{ get; set; }
+        public float M44{ get; set; }
 
 
         public static implicit operator PackableMatrix4x4(Matrix4x4 matrix)
@@ -140,9 +140,9 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
     [GenerateTypeScript]
     public partial struct PackableVector3
     {
-        public float X;
-        public float Y;
-        public float Z;
+        public float X{ get; set; }
+        public float Y{ get; set; }
+        public float Z{ get; set; }
 
         public static implicit operator PackableVector3(Vector3 vec)
         {
@@ -168,8 +168,8 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
     [GenerateTypeScript]
     public partial struct PackableVector2
     {
-        public float X;
-        public float Y;
+        public float X{ get; set; }
+        public float Y{ get; set; }
 
         public static implicit operator PackableVector2(Vector2 vec)
         {
@@ -192,8 +192,8 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
     [GenerateTypeScript]
     public partial struct PackableRay
     {
-        public PackableVector3 Origin;
-        public PackableVector3 Direction;
+        public PackableVector3 Origin{ get; set; }
+        public PackableVector3 Direction{ get; set; }
 
 
         public static implicit operator PackableRay(Ray ray)
@@ -217,8 +217,8 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
     [GenerateTypeScript]
     public partial class AddBlockTemplate : IMessageToUnity
     {
-        public PackableVector3 Size;
-        public int TemplateId;
+        public PackableVector3 Size{ get; set; }
+        public int TemplateId{ get; set; }
         public string? VisualsUri;
     }
 
@@ -227,66 +227,66 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
     [GenerateTypeScript]
     public partial class AddBlockInstance : IMessageToUnity
     {
-        public int BlockId;
-        public PackableVector2 Position;
-        public float RotationZ;
-        public int TemplateId;
+        public int BlockId{ get; set; }
+        public PackableVector2 Position{ get; set; }
+        public float RotationZ{ get; set; }
+        public int TemplateId{ get; set; }
     }
 
     [MemoryPackable]
     [GenerateTypeScript]
     public partial class RemoveBlockInstance : IMessageToUnity
     {
-        public int BlockId;
+        public int BlockId{ get; set; }
     }
 
     [MemoryPackable]
     [GenerateTypeScript]
     public partial class RemoveBlockTemplate : IMessageToUnity
     {
-        public int TemplateId;
+        public int TemplateId{ get; set; }
     }
 
     [MemoryPackable]
     [GenerateTypeScript]
     public partial class UpdateBlockInstance : IMessageToUnity
     {
-        public int BlockId;
-        public PackableVector2 Position;
-        public float RotationZ;
+        public int BlockId{ get; set; }
+        public PackableVector2 Position{ get; set; }
+        public float RotationZ{ get; set; }
     }
 
     [MemoryPackable]
     [GenerateTypeScript]
     public partial class RequestRaycast : IMessageToUnity
     {
-        public int RequestId;
-        public PackableRay Ray;
+        public int RequestId{ get; set; }
+        public PackableRay Ray{ get; set; }
     }
 
     [MemoryPackable]
     [GenerateTypeScript]
     public partial class RaycastResponse : IMessageToBlazor
     {
-        public int RequestId;
-        public PackableVector3 HitWorld;
-        public int? HitBlockId;
+        public int RequestId{ get; set; }
+        public PackableVector3 HitWorld{ get; set; }
+        public int? HitBlockId{ get; set; }
     }
 
     [MemoryPackable]
     [GenerateTypeScript]
     public partial class RequestScreenToWorldRay : IMessageToUnity
     {
-        public int RequestId;
-        public PackableVector2 Screen;
+        public int RequestId{ get; set; }
+        public PackableVector2 Screen{ get; set; }
     }
 
     [MemoryPackable]
     [GenerateTypeScript]
     public partial class ScreenToWorldRayResponse : IMessageToBlazor
     {
-        public int RequestId;
-        public PackableRay Ray;
+        public int RequestId{ get; set; }
+        public PackableRay Ray{ get; set; }
     }
 
 }
