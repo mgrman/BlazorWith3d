@@ -9,6 +9,8 @@ namespace ExampleApp
 {
     public class ExampleAppInitializer : MonoBehaviour
     {
+        public static Uri HostUrl = null;
+        
         [SerializeField] private BlockController _templatePrefab;
 
         private readonly Dictionary<int, BlockController> _blocks = new();
@@ -30,6 +32,7 @@ namespace ExampleApp
             _templateRoot = new GameObject("BlockTemplateRoot");
             _templateRoot.SetActive(false);
             _templateRoot.transform.parent = transform;
+            
 
 #if UNITY_EDITOR
 
@@ -40,6 +43,7 @@ namespace ExampleApp
                 var blazorApp = new BlocksOnGrid3DApp(simulatorProxy.UnityApi);
                 var simulator = gameObject.AddComponent<BlazorSimulator>();
                 simulator.Initialize(blazorApp);
+                HostUrl = null;
             }
             else
             {
@@ -47,8 +51,14 @@ namespace ExampleApp
                 _asyncDisposables.Add(relay);
                 var blazorApi = relay;
                 _appApi = new BlocksOnGridUnityApi(blazorApi);
+                
+                var uriBuilder = new UriBuilder(_backendWebsocketUrl);
+                uriBuilder.Scheme="http";
+                uriBuilder.Path = "";
+                HostUrl = uriBuilder.Uri;
             }
 #else
+            HostUrl = new Uri(Application.absoluteURL);
             var blazorApi = new UnityBlazorApi();
             _appApi = new BlocksOnGridUnityApi(blazorApi);
 #endif

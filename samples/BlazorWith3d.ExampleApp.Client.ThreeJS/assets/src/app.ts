@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {GLTF, GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {AddBlockInstance} from "com.blazorwith3d.exampleapp.client.shared/memorypack/AddBlockInstance";
 import {
     BlazorControllerInitialized
@@ -15,6 +16,7 @@ import { RequestRaycast } from "com.blazorwith3d.exampleapp.client.shared/memory
 import { RequestScreenToWorldRay } from "com.blazorwith3d.exampleapp.client.shared/memorypack/RequestScreenToWorldRay";
 import { ScreenToWorldRayResponse } from "com.blazorwith3d.exampleapp.client.shared/memorypack/ScreenToWorldRayResponse";
 import { RaycastResponse } from "com.blazorwith3d.exampleapp.client.shared/memorypack/RaycastResponse";
+import {Group, Mesh} from "three";
 
 export function InitializeApp(canvas: HTMLCanvasElement, dotnetObject: any, onMessageReceivedMethodName: string) {
 
@@ -25,8 +27,8 @@ export function InitializeApp(canvas: HTMLCanvasElement, dotnetObject: any, onMe
 
 
 export class DebugApp {
-    private templates: Array<AddBlockTemplate> = new Array<AddBlockTemplate>();
-    private instances: Array<[instance: AddBlockInstance, mesh: THREE.Mesh]> = new Array<[instance: AddBlockInstance, mesh: THREE.Mesh]>();
+    private templates:  { [id: number] : {template: AddBlockTemplate, visuals: GLTF} } = {};
+    private instances:  { [id: number] : {instance: AddBlockInstance, mesh: THREE.Mesh, visuals: THREE.Group}} = {};
 
     private _blazorApp: BlocksOnGridUnityApi;
     private _binaryApi: BlazorBinaryApi;
@@ -48,8 +50,7 @@ export class DebugApp {
        this._binaryApi= new BlazorBinaryApi(sendMessage);
         this._blazorApp=new BlocksOnGridUnityApi(this._binaryApi);
 
-
-
+        
         this.camera = new THREE.PerspectiveCamera( 60, canvas.width / canvas.height, 0.1, 100 );
         this.camera.position.z = 10;
         // the camera in ThreeJS is looking down negativeZ direciton, so no need to rotate
@@ -77,9 +78,6 @@ export class DebugApp {
 
 
         this.raycaster = new THREE.Raycaster();
-
-
-
 
         this._blazorApp.OnBlazorControllerInitialized=msg=>this.OnBlazorControllerInitialized(msg);
         this._blazorApp.OnPerfCheck=msg=>this.OnPerfCheck(msg);
@@ -109,35 +107,35 @@ export class DebugApp {
         console.log("BlockPoseChangeValidated", obj);
 
 
-        const [instance, mesh] = this.instances.find(o => o[0].blockId === obj.blockId);
+        const {instance, mesh} = this.instances[obj.blockId];
 
         instance.position = obj.position;
         instance.rotationZ = obj.rotationZ;
-        this.UpdateMeshPosition(mesh, instance);
+        this.UpdateMeshPosition( obj.blockId);
     }
 
 
     protected OnRemoveBlockTemplate(obj: RemoveBlockTemplate) {
         console.log("RemoveBlockTemplate", obj);
-        this.templates = this.templates.filter(o => o.templateId !== obj.templateId);
+
+        delete this.templates[obj.templateId];
     }
 
     protected OnRemoveBlockInstance(obj: RemoveBlockInstance) {
         console.log("RemoveBlockInstance", obj);
 
 
-        const [instance, mesh] = this.instances.find(o => o[0].blockId === obj.blockId);
-        this.instances = this.instances.filter(o => o[0].blockId !== obj.blockId);
-
+        const {instance, mesh} = this.instances[obj.blockId];
         this.scene.remove(mesh);
+        delete this.instances[obj.blockId];
     }
 
     protected OnAddBlockInstance(obj: AddBlockInstance) {
         console.log("AddBlockInstance", obj);
 
-        var template = this.templates.find(o => o.templateId === obj.templateId);
+        var {template, visuals } = this.templates[obj.templateId];
 
-
+        
         const geometry = new THREE.BoxGeometry(template.size.x,template.size.y,template.size.z);
         
         const material = new THREE.MeshPhongMaterial( { color: 0xaaaaaa   } );
@@ -145,16 +143,31 @@ export class DebugApp {
         var mesh = new THREE.Mesh( geometry, material );
         mesh.position.set(0, 0, template.size.z / 2);
         this.scene.add( mesh );
-        
-        this.UpdateMeshPosition(mesh, obj);
 
-        this.instances.push([obj, mesh,]);
+
+
+        this.instances[obj.blockId]={instance:obj, mesh, visuals:null};
+        
+        this.UpdateMeshPosition(obj.blockId);
+
+
+        if(visuals!=null) {
+            this.InstantiateGlft(visuals, obj, mesh);
+        }
     }
 
-    private UpdateMeshPosition = (mesh: THREE.Mesh, obj: AddBlockInstance) => {
+    private UpdateMeshPosition( blockId: number)  {
 
-        mesh.position.set(obj.position.x, obj.position.y, mesh.position.z);
-        mesh.rotation.set(0, 0, THREE.MathUtils.degToRad(obj.rotationZ));
+        var {instance, mesh, visuals} = this.instances[blockId];
+        
+        mesh.position.set(instance.position.x, instance.position.y, mesh.position.z);
+        mesh.rotation.set(0, 0, THREE.MathUtils.degToRad(instance.rotationZ));
+        
+        if(visuals!=null) {
+
+            visuals.position.set(instance.position.x, instance.position.y,0);
+            visuals.rotation.set(0, 0, THREE.MathUtils.degToRad(instance.rotationZ));
+        }
     }
 
     protected OnRequestScreenToWorldRay(msg: RequestScreenToWorldRay): void {
@@ -196,18 +209,70 @@ export class DebugApp {
         response.hitWorld = origin;
 
         if ( intersects.length > 0 ) {
-            
-            const [instance, mesh] = this.instances.find(o => o[1] === intersects[0].object);
+
+            let instance:AddBlockInstance=null;
+            for(let t in this.instances) {
+                if (this.instances[t].mesh === intersects[0].object) {
+                    instance = this.instances[t].instance;
+                }
+            }
             response.hitBlockId = instance.blockId;
             response.hitWorld = intersects[0].point;
         }
          this._blazorApp.InvokeRaycastResponse(response);
     }
+    protected OnAddBlockTemplate(template: AddBlockTemplate) {
+        console.log("AddBlockTemplate", template);
+
+        this.templates[template.templateId]={template, visuals:null};
+        if(template.visualsUri!=null) {
+            const loader = new GLTFLoader();
+            
+            loader.load(
+                template.visualsUri,
+                (gltf) => {
+                    // called when the resource is loaded
+                    
+                    if(Object.hasOwn(this.templates, template.templateId) ) {
+                        this.templates[template.templateId].visuals=gltf;
+                    }
+                    
+                    for (let i in this.instances) {
+                        
+                        let instance=this.instances[i];
+                        if(instance.instance.templateId == template.templateId) {
+                            
+                            this.InstantiateGlft(gltf,instance.instance, instance.mesh);
+                        }
+                        
+                    }
+                    
+                },
+                (xhr) => {
+                    // called while loading is progressing
+                    console.log(`${(xhr.loaded / xhr.total * 100)}% loaded`);
+                },
+                (error) => {
+                    // called when loading has errors
+                    console.error('An error happened', error);
+                },
+            );
+        }
 
 
-    protected OnAddBlockTemplate(obj: AddBlockTemplate) {
-        console.log("AddBlockTemplate", obj);
-        this.templates.push(obj);
+    }
+
+    private InstantiateGlft(gltf: GLTF, instance: AddBlockInstance, mesh: Mesh) {
+
+        mesh.visible=false;
+        
+        const model = gltf.scene.clone();
+
+        model.position.set(mesh.position.x,mesh.position.y,0);
+        model.rotation.copy(mesh.rotation);
+        this.scene.add(model);
+        
+        this.instances[instance.blockId].visuals=model;
     }
 
     protected OnPerfCheck(obj: PerfCheck) {

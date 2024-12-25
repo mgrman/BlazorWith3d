@@ -65,28 +65,24 @@ https://learn.microsoft.com/en-us/aspnet/core/blazor/hybrid/tutorials/maui-blazo
 
 ### Prio 0 (what to do next)
 
-- Implement all API messages (instead of rectangular shape, add GLB loading)
-    - rectangular shape becomes box collider
-    - implement GLB loading
-    - add top down thumbnail image of model (for HTML)
+
+- Test threejs Integration with direct js interop Ie without binary api
+    - ie benchmark if binary API is better than normal JS interop
+
+- try again to get matrix for screen to world as that would reduce the need for extra interop call
 
 - Unify visuals of all 4 renderers
   - add camera transform setting (and getting, as to have a request to set but I can get the real one)
   - unify different coordinate systems
   - add setting of background color
   - even background plane should be just a mesh to load
-  - ie limit the 3d renderer to only the parts really necessary to be done in 3d (e.g. no mouse input, yes raycasting, yes rendering)
   
-- try again to get matrix for screen to world as that would reduce the need for extra interop call
 
 - do Isometric or fake-3d in CSS only for HTML version
     - https://developer.mozilla.org/en-US/docs/Web/CSS/transform-function/perspective
     - must refactor it, to recreate the scene approach as in Unity, to make sense of it
     - should use pre-rendered images
     - mainly as otherwise it is hard to render depth
-
-- Test threejs Integration with direct js interop Ie without binary api
-  - ie benchmark if binary API is better than normal JS interop
 
 ### Prio 1 (stretch goals)
 
@@ -108,6 +104,12 @@ https://learn.microsoft.com/en-us/aspnet/core/blazor/hybrid/tutorials/maui-blazo
 
 
 ### Prio 2 (make it nicer)
+
+- add Visuals Transform setting so it can be customized and reused
+
+- implement GLB loading for babylon
+- check if current GLTF instancing in Unity is working
+- add top down thumbnail image of model (for HTML)
 
 - consider support for union types to handle collider definition etc
 

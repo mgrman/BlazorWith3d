@@ -32,6 +32,9 @@
             sizeZ
         </td>
         <td>
+            Visuals
+        </td>
+        <td>
         </td>
     </tr>
     </thead>
@@ -51,6 +54,9 @@
                 @template.Size.Z
             </td>
             <td>
+                @template.VisualsUri
+            </td>
+            <td>
                 <button @onclick="() => RemoveTemplate(template.TemplateId)">Remove</button>
             </td>
         </tr>
@@ -68,6 +74,15 @@
         </td>
         <td>
             <InputNumber @bind-Value="_newTemplateSizeZ"></InputNumber>
+        </td>
+        <td>
+            <InputSelect @bind-Value="_newTemplateAsset">
+                <option value="">None</option>
+                @foreach (var (asset,index) in GltfAssets.Select((o,i)=>(o,i)))
+                {
+                    <option value="@index">@asset.name</option>
+                }
+            </InputSelect>
         </td>
         <td>
             <button @onclick="AddTemplate">Add</button>
@@ -169,6 +184,7 @@
     float _newTemplateSizeX = 1;
     float _newTemplateSizeY = 1;
     float _newTemplateSizeZ = 1;
+    int? _newTemplateAsset = null;
 
     float _newBlockPositionX;
     float _newBlockPositionY;
@@ -193,6 +209,9 @@
 
     private ElementReference _rendererContainerReference;
     private Dictionary<int, TaskCompletionSource<ScreenToWorldRayResponse>>  _activeScreenToRay=new();
+
+    private static (string name, string url )[] GltfAssets = [ ("BoomBox", "./_content/BlazorWith3d.ExampleApp.Client/gltf/BoomBox.glb")];
+    
 
     protected override async Task OnInitializedAsync()
     {
@@ -289,7 +308,7 @@
 
     private async Task AddTemplate()
     {
-        var msg = new AddBlockTemplate { TemplateId = _newIdCounter++, Size = new Vector3(_newTemplateSizeX, _newTemplateSizeY, _newTemplateSizeZ) };
+        var msg = new AddBlockTemplate { TemplateId = _newIdCounter++, Size = new Vector3(_newTemplateSizeX, _newTemplateSizeY, _newTemplateSizeZ), VisualsUri = _newTemplateAsset==null?null:GltfAssets[_newTemplateAsset.Value].url};
         _templates.Add(msg);
         SaveToLocalStorage();
         

@@ -1,4 +1,6 @@
-﻿using BlazorWith3d.ExampleApp.Client.Shared;
+﻿using System;
+
+using BlazorWith3d.ExampleApp.Client.Shared;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -15,18 +17,31 @@ namespace ExampleApp
         private AddBlockInstance _instance;
 
         public int BlockId =>_instance.BlockId;
-        
+
         public void Initialize(AddBlockTemplate msg)
         {
             _template = msg;
 
-            _cubePlaceholderVisuals.transform.localScale = new Vector3(_template.Size.X, _template.Size.Y, _template.Size.Z);
-            _cubePlaceholderVisuals.transform.localPosition = new Vector3(0, 0, -_template.Size.Z / 2);
+            _cubePlaceholderVisuals.transform.localScale =
+                new Vector3(_template.Size.X, _template.Size.Y, _template.Size.Z);
+            _cubePlaceholderVisuals.transform.localPosition = new Vector3(0, 0, _template.Size.Z / 2);
+            _cubePlaceholderVisuals.transform.localRotation =Quaternion.Euler(0,180,0);
+
+            if (msg.VisualsUri != null)
+            {
+                _cubePlaceholderVisuals.GetComponent<MeshRenderer>().enabled = false;
+                
+                var gltf = gameObject.AddComponent<GLTFast.GltfAsset>();
+
+                var absUrl =  new Uri(ExampleAppInitializer.HostUrl, msg.VisualsUri).AbsoluteUri;
+                gltf.Url=absUrl;
+                gltf.Load(absUrl);
+            }
         }
 
         public BlockController CreateInstance(AddBlockInstance msg)
         {
-            var blockGo = Instantiate(this, this.transform.parent.parent);
+            var blockGo = Instantiate(this.gameObject, this.transform.parent.parent).GetComponent<BlockController>();
             blockGo._template = this._template;
 
             blockGo.InitializeInstance(msg);
@@ -53,7 +68,7 @@ namespace ExampleApp
         private void UpdatePose()
         {
             transform.localPosition = new Vector3(_instance.Position.X, _instance.Position.Y, 0);
-            transform.localRotation = Quaternion.Euler(0, 0, _instance.RotationZ);
+            transform.localRotation = Quaternion.Euler(0, 180, _instance.RotationZ);
         }
     }
 }
