@@ -389,8 +389,62 @@ public class HelloSourceGenerator : ISourceGenerator
         {
             sb.AppendLine($"import {{{type}}} from \"./{type}\";");
         }
+        
+        
+        sb.AppendLine($"export interface I{info.typeName}_EventHandler");
+        using (sb.IndentWithCurlyBrackets())
+        {
+            foreach (var @event in info.events)
+            {
+                sb.AppendLine($"On{@event.typeName}(msg: {@event.typeName}): void;");
+            }
+        }
+        
+        sb.AppendLine($"export interface I{info.typeName}_MethodInvoker");
+        using (sb.IndentWithCurlyBrackets())
+        {
+            foreach (var (@event, i) in info.methods.EnumerateWithIndex())
+            {
+                sb.AppendLine($"Invoke{@event.typeName}(msg: {@event.typeName}): Promise<void>");
+            }
+        }
+        
+        sb.AppendLine($"export class {info.typeName}_MethodInvoker_DirectInterop implements I{info.typeName}_MethodInvoker");
+        using (sb.IndentWithCurlyBrackets())
+        {
+            sb.AppendLine($"private _dotnetObject: any;");
 
-        sb.AppendLine($"export class {info.typeName}");
+            sb.AppendLine($"constructor( dotnetObject: any)");
+            using (sb.IndentWithCurlyBrackets())
+            {
+                sb.AppendLine($"this._dotnetObject = dotnetObject;");
+            }
+            
+            foreach (var (@event, i) in info.methods.EnumerateWithIndex())
+            {
+                sb.AppendLine($"public Invoke{@event.typeName}(msg: {@event.typeName}): Promise<void>");
+                using (sb.IndentWithCurlyBrackets())
+                {
+                    sb.AppendLine($"this._dotnetObject.invokeMethodAsync(\"On{@event.typeName}\", msg);");
+                }
+            }
+        }
+        
+        sb.AppendLine($"export interface I{info.typeName}");
+        using (sb.IndentWithCurlyBrackets())
+        {
+            foreach (var @event in info.events)
+            {
+                sb.AppendLine($"On{@event.typeName}?: (msg: {@event.typeName}) => void;");
+            }
+
+            foreach (var (@event, i) in info.methods.EnumerateWithIndex())
+            {
+                sb.AppendLine($"Invoke{@event.typeName}(msg: {@event.typeName}): Promise<void>");
+            }
+        }
+
+        sb.AppendLine($"export class {info.typeName} implements  I{info.typeName}, I{info.typeName}_MethodInvoker");
         using (sb.IndentWithCurlyBrackets())
         {
             sb.AppendLine($"private _binaryApi: IBinaryApi;");
@@ -401,8 +455,6 @@ public class HelloSourceGenerator : ISourceGenerator
             {
                 sb.AppendLine($"this._binaryApi = binaryApi;");
                 sb.AppendLine($"this._messageHandler= (msg)=>this.ProcessMessages(msg);");
-    
-    
             }
 
             sb.AppendLines(
@@ -423,6 +475,16 @@ public StopProcessingMessages():void
     this._binaryApi.mainMessageHandler = null;
 }".Split(new[] { "\r\n", "\n" }, StringSplitOptions.None));
 
+            
+            sb.AppendLine($"public SetUpUsingEventHandler(handler: I{info.typeName}_EventHandler)");
+            using (sb.IndentWithCurlyBrackets())
+            {
+                foreach (var @event in info.events)
+                {
+                    sb.AppendLine($"this.On{@event.typeName} = msg => handler.On{@event.typeName}(msg);");
+                }
+            }
+            
             foreach (var @event in info.events)
             {
                 sb.AppendLine($"public On{@event.typeName}?: (msg: {@event.typeName}) => void;");

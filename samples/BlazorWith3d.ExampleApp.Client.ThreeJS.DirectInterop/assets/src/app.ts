@@ -10,22 +10,40 @@ import {RemoveBlockInstance} from "com.blazorwith3d.exampleapp.client.shared/mem
 import {RemoveBlockTemplate} from "com.blazorwith3d.exampleapp.client.shared/memorypack/RemoveBlockTemplate";
 import { UnityAppInitialized } from "com.blazorwith3d.exampleapp.client.shared/memorypack/UnityAppInitialized";
 import { UpdateBlockInstance } from "com.blazorwith3d.exampleapp.client.shared/memorypack/UpdateBlockInstance";
-import { BlocksOnGridUnityApi } from "com.blazorwith3d.exampleapp.client.shared/memorypack/BlocksOnGridUnityApi";
+import {
+    BlocksOnGridUnityApi, BlocksOnGridUnityApi_MethodInvoker_DirectInterop,
+    IBlocksOnGridUnityApi, IBlocksOnGridUnityApi_EventHandler,
+    IBlocksOnGridUnityApi_MethodInvoker
+} from "com.blazorwith3d.exampleapp.client.shared/memorypack/BlocksOnGridUnityApi";
 import {BlazorBinaryApi} from "com.blazorwith3d.exampleapp.client.shared/BlazorBinaryApi";
 import { RequestRaycast } from "com.blazorwith3d.exampleapp.client.shared/memorypack/RequestRaycast";
 import { RequestScreenToWorldRay } from "com.blazorwith3d.exampleapp.client.shared/memorypack/RequestScreenToWorldRay";
 import { ScreenToWorldRayResponse } from "com.blazorwith3d.exampleapp.client.shared/memorypack/ScreenToWorldRayResponse";
 import { RaycastResponse } from "com.blazorwith3d.exampleapp.client.shared/memorypack/RaycastResponse";
 
-export function InitializeApp(canvas: HTMLCanvasElement, dotnetObject: any, _) {
+
+export function InitializeApp_BinaryApi(canvas: HTMLCanvasElement, dotnetObject: any, onMessageReceivedMethodName: string) {
+    var sendMessageCallback: (msgBytes: Uint8Array) => Promise<any> = msgBytes => dotnetObject.invokeMethodAsync(onMessageReceivedMethodName, msgBytes);
+
+
+    var binaryApi= new BlazorBinaryApi(sendMessageCallback);
+    var blazorApp=new BlocksOnGridUnityApi(binaryApi);
+    
+    var app= new DebugApp(canvas, blazorApp);
+
+    blazorApp.SetUpUsingEventHandler(app);
+    
+    return app;
+}
+
+export function InitializeApp_DirectInterop(canvas: HTMLCanvasElement, dotnetObject: any) {
 
     var sendMessageCallback: (methodName:string, msg: any) => Promise<any> = (methodName, msg)  => dotnetObject.invokeMethodAsync(methodName, msg);
 
-    return new DebugApp(canvas, sendMessageCallback);
+    return new DebugApp(canvas, new BlocksOnGridUnityApi_MethodInvoker_DirectInterop(dotnetObject));
 }
 
-
-export class DebugApp {
+export class DebugApp implements IBlocksOnGridUnityApi_EventHandler{
     private templates:  { [id: number] : {template: AddBlockTemplate, visuals: GLTF} } = {};
     private instances:  { [id: number] : {instance: AddBlockInstance, mesh: THREE.Mesh, visuals: THREE.Group}} = {};
 
@@ -34,12 +52,12 @@ export class DebugApp {
     renderer: THREE.WebGLRenderer;
     private raycaster: THREE.Raycaster;
     private canvas: HTMLCanvasElement;
-    private _invokeMethod: (methodName: string, msg: any) => Promise<any>;
+    private _methodInvoker: IBlocksOnGridUnityApi_MethodInvoker;
 
-    constructor(canvas: HTMLCanvasElement, invokeMethod: (methodName:string, msg: any) => Promise<any>) {
+    constructor(canvas: HTMLCanvasElement, methodInvoker: IBlocksOnGridUnityApi_MethodInvoker) {
 
         this.canvas=canvas;
-        this._invokeMethod = invokeMethod;
+        this._methodInvoker = methodInvoker;
         canvas.style.width = "100%";
         canvas.style.height = "100%";
         canvas.width = canvas.offsetWidth;
@@ -73,7 +91,7 @@ export class DebugApp {
 
         this.raycaster = new THREE.Raycaster();
 
-        this._invokeMethod("InvokeUnityAppInitialized",new UnityAppInitialized()).then(_ => console.log("UnityAppInitialized invoked"));
+        this._methodInvoker.InvokeUnityAppInitialized(new UnityAppInitialized()).then(_ => console.log("UnityAppInitialized invoked"));
     }
 
     public Quit(): void {
@@ -163,7 +181,7 @@ export class DebugApp {
         this.raycaster.setFromCamera( pointer, this.camera );
         const ray=this.raycaster.ray;
 
-        this._invokeMethod("InvokeScreenToWorldRayResponse",{
+        this._methodInvoker.InvokeScreenToWorldRayResponse({
             requestId:msg.requestId,
             ray: {
                 origin: { x: ray.origin.x, y: ray.origin.y, z: ray.origin.z },
@@ -196,7 +214,7 @@ export class DebugApp {
             response.hitBlockId = instance.blockId;
             response.hitWorld = intersects[0].point;
         }
-        this._invokeMethod("InvokeRaycastResponse",response);
+        this._methodInvoker.InvokeRaycastResponse(response);
     }
     public OnAddBlockTemplate(template: AddBlockTemplate) {
         console.log("AddBlockTemplate", template);
@@ -254,7 +272,7 @@ export class DebugApp {
 
     public OnPerfCheck(obj: PerfCheck)
     {
-        this._invokeMethod("InvokePerfCheck",
+        this._methodInvoker.InvokePerfCheck(
             {
                 aaa: obj.aaa,
                 bbb: obj.bbb,
