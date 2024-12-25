@@ -69,10 +69,10 @@ public class BlocksOnGridThreeJSDirectRenderer:BaseJsRenderer, IDisposable, IBlo
             return;
         }
 
+
+        await base.OnAfterRenderAsync(firstRender);
         
         ParentApp.InitializeRenderer(this);
-        
-        await base.OnAfterRenderAsync(firstRender);
     }
 
     public void Dispose()

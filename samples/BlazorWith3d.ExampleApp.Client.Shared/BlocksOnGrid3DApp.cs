@@ -219,7 +219,7 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
     {
         public PackableVector3 Size{ get; set; }
         public int TemplateId{ get; set; }
-        public string? VisualsUri;
+        public string? VisualsUri{ get; set; }
     }
 
 

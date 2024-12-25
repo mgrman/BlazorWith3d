@@ -79,7 +79,6 @@ benchmarks
 - Test threejs Integration with direct js interop Ie without binary api
     - ie benchmark if binary API is better than normal JS interop
     - generate typescript interface API to implement as check
-    - fix message processing start/stop in the interop version
 
 - try again to get matrix for screen to world as that would reduce the need for extra interop call
 
