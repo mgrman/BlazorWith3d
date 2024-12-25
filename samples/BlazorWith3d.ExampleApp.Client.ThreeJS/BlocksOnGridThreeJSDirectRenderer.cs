@@ -8,17 +8,22 @@ using Microsoft.JSInterop;
 
 namespace BlazorWith3d.ExampleApp.Client.ThreeJs;
 
-public class BlocksOnGridThreeJSDirectRenderer : BaseJsBinaryApiRenderer, IDisposable, IBlocksOnGrid3DApp
+public class BlocksOnGridThreeJSDirectRenderer : BaseJsRenderer, IDisposable, IBlocksOnGrid3DApp
 {
     private BlocksOnGrid3DApp? unityAppApi;
 
     [CascadingParameter] 
     public required I3DAppController ParentApp { get; set; }
     
-    public override string JsAppPath => Assets["./_content/BlazorWith3d.ExampleApp.Client.ThreeJS.DirectInterop/clientassets/blazorwith3d-exampleapp-client-threejs-bundle.js"];
+    public override string JsAppPath => Assets["./_content/BlazorWith3d.ExampleApp.Client.ThreeJS/clientassets/blazorwith3d-exampleapp-client-threejs-bundle.js"];
 
-    protected override string InitializeMethodName => "InitializeApp_DirectInterop";
+    protected string InitializeMethodName => "InitializeApp_DirectInterop";
     
+    protected override async Task<IJSObjectReference?> InitializeJsApp(IJSObjectReference module, DotNetObjectReference<JsMessageReceiverProxy> messageReceiverProxyReference)
+    { 
+        return await module.InvokeAsync<IJSObjectReference>(InitializeMethodName, _containerElementReference,messageReceiverProxyReference);
+    }
+
     protected override JsMessageReceiverProxy CreateReceiverProxy()
     {
         return new ExtendedJsMessageReceiverProxy(this);
@@ -26,33 +31,33 @@ public class BlocksOnGridThreeJSDirectRenderer : BaseJsBinaryApiRenderer, IDispo
 
     protected class ExtendedJsMessageReceiverProxy(
         BlocksOnGridThreeJSDirectRenderer app)
-        : JsMessageReceiverProxy()
+        : JsMessageReceiverProxy(),  IBlocksOnGrid3DApp_EventHandler
     {
         private readonly BlocksOnGridThreeJSDirectRenderer _app = app;
 
 
         [JSInvokable]
-        public void InvokePerfCheck(PerfCheck msg)
+        public void OnPerfCheck(PerfCheck msg)
         {
             app.OnPerfCheck?.Invoke(msg);
 
         }
 
         [JSInvokable]
-        public void InvokeUnityAppInitialized(UnityAppInitialized msg)
+        public void OnUnityAppInitialized(UnityAppInitialized msg)
         {
 
             app.OnUnityAppInitialized?.Invoke(msg);
         }
 
         [JSInvokable]
-        public void InvokeRaycastResponse(RaycastResponse msg)
+        public void OnRaycastResponse(RaycastResponse msg)
         {
             app.OnRaycastResponse?.Invoke(msg);
         }
 
         [JSInvokable]
-        public void InvokeScreenToWorldRayResponse(ScreenToWorldRayResponse msg)
+        public void OnScreenToWorldRayResponse(ScreenToWorldRayResponse msg)
         {
             app.OnScreenToWorldRayResponse?.Invoke(msg);
         }

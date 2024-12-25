@@ -127,6 +127,24 @@ public class HelloSourceGenerator : ISourceGenerator
                 }
             }
             
+            sb.AppendLine($"public partial interface I{info.typeName}_EventHandler");
+            using (sb.IndentWithCurlyBrackets())
+            {
+                foreach (var e in info.events)
+                {
+                    sb.AppendLine($"void On{e.typeName}({e.typeName} msg);");
+                }
+            }
+            
+            sb.AppendLine($"public partial interface I{info.typeName}_MethodInvoker");
+            using (sb.IndentWithCurlyBrackets())
+            {
+                foreach (var m in info.methods)
+                {
+                    sb.AppendLine($"ValueTask Invoke{m.typeName}({m.typeName} msg);");
+                }
+            }
+            
             sb.AppendLine();
             sb.AppendLine($"public partial  class {info.typeName}: I{info.typeName}{(info.generateObjectApi?", I3DAppObjectApi":"")}, IDisposable");
             using (sb.IndentWithCurlyBrackets())
@@ -425,7 +443,7 @@ public class HelloSourceGenerator : ISourceGenerator
                 sb.AppendLine($"public Invoke{@event.typeName}(msg: {@event.typeName}): Promise<void>");
                 using (sb.IndentWithCurlyBrackets())
                 {
-                    sb.AppendLine($"this._dotnetObject.invokeMethodAsync(\"On{@event.typeName}\", msg);");
+                    sb.AppendLine($"return this._dotnetObject.invokeMethodAsync(\"On{@event.typeName}\", msg);");
                 }
             }
         }

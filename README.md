@@ -75,6 +75,8 @@ benchmarks
 
 ### Prio 0 (what to do next)
 
+- generate blazor interop code, preferably in  another project referencing the types in shared
+
 - try again to get matrix for screen to world as that would reduce the need for extra interop call
 
 - Unify visuals of all renderers
@@ -90,10 +92,11 @@ benchmarks
     - should use pre-rendered images
     - mainly as otherwise it is hard to render depth
 
+
+
 ### Prio 1 (stretch goals)
 
-- generate typescript interface API to implement as check so binaryApi and directInterop can share implementation
-    - also generate the code on blazor side to invoke and get callbacks
+
   
 - render screen in unity and stream to blazor for debug mode
 

@@ -23,17 +23,23 @@ import { RaycastResponse } from "com.blazorwith3d.exampleapp.client.shared/memor
 
 
 export function InitializeApp_BinaryApi(canvas: HTMLCanvasElement, dotnetObject: any, onMessageReceivedMethodName: string) {
-    var sendMessageCallback: (msgBytes: Uint8Array) => Promise<any> = msgBytes => dotnetObject.invokeMethodAsync(onMessageReceivedMethodName, msgBytes);
+    let sendMessageCallback: (msgBytes: Uint8Array) => Promise<any> = msgBytes => dotnetObject.invokeMethodAsync(onMessageReceivedMethodName, msgBytes);
 
 
-    var binaryApi= new BlazorBinaryApi(sendMessageCallback);
-    var blazorApp=new BlocksOnGridUnityApi(binaryApi);
+    let binaryApi= new BlazorBinaryApi(sendMessageCallback);
+    let blazorApp=new BlocksOnGridUnityApi(binaryApi);
 
-    var app= new DebugApp(canvas, blazorApp);
+    let app= new DebugApp(canvas, blazorApp);
 
     blazorApp.SetUpUsingEventHandler(app);
 
-    return app;
+    blazorApp.StartProcessingMessages();
+
+    let appAsAny :any =app ;
+    appAsAny.ProcessMessage= msg=> {
+        binaryApi.onMessageReceived(msg);
+    }
+    return appAsAny;
 }
 
 export function InitializeApp_DirectInterop(canvas: HTMLCanvasElement, dotnetObject: any) {

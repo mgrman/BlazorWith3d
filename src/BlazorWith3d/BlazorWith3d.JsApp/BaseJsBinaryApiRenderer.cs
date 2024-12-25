@@ -51,7 +51,7 @@ public class BaseJsBinaryApiRenderer:BaseJsRenderer, IBinaryApi
 
     protected override async Task<IJSObjectReference?> InitializeJsApp(IJSObjectReference module, DotNetObjectReference<JsMessageReceiverProxy> messageReceiverProxyReference)
     { 
-        return await module.InvokeAsync<IJSObjectReference>("InitializeApp", _containerElementReference,messageReceiverProxyReference,nameof(BinaryApiJsMessageReceiverProxy.OnMessageBytesReceived) );
+        return await module.InvokeAsync<IJSObjectReference>(InitializeMethodName, _containerElementReference,messageReceiverProxyReference,nameof(BinaryApiJsMessageReceiverProxy.OnMessageBytesReceived) );
     }
 
     public Action<byte[]>? MainMessageHandler
