@@ -75,14 +75,9 @@ benchmarks
 
 ### Prio 0 (what to do next)
 
-
-- Test threejs Integration with direct js interop Ie without binary api
-    - ie benchmark if binary API is better than normal JS interop
-    - generate typescript interface API to implement as check
-
 - try again to get matrix for screen to world as that would reduce the need for extra interop call
 
-- Unify visuals of all 4 renderers
+- Unify visuals of all renderers
   - add camera transform setting (and getting, as to have a request to set but I can get the real one)
   - unify different coordinate systems
   - add setting of background color
@@ -97,6 +92,9 @@ benchmarks
 
 ### Prio 1 (stretch goals)
 
+- generate typescript interface API to implement as check so binaryApi and directInterop can share implementation
+    - also generate the code on blazor side to invoke and get callbacks
+  
 - render screen in unity and stream to blazor for debug mode
 
 - Investigate and optimize render modes and stream rendering and better handling of Maui limitations for render mode
