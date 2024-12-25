@@ -13,7 +13,7 @@ with potentially another source gen to generate the pure JS wrapper (as sending 
 ## Renderers
 
 - coordinate systems
-  - Blazor
+  - Blazor (adjustable as the app should choose this)
     - RightHanded
     - Screen (0,0) in top left
     - World X:right, Y: up, Z: toCamera
@@ -22,16 +22,19 @@ with potentially another source gen to generate the pure JS wrapper (as sending 
     - Screen (0,0) is Bottom Left
     - World X:right, Y: up, Z : fromCamera
     - camera looks in PositiveZ
+    - Rotation order Z, X, Y (when going local to world)
   - Babylon
     - LeftHanded
     - Screen (0,0) in top left
     - World X:right, Y: up, Z : fromCamera
     - camera looks in PositiveZ
+    - Rotation order Y, X, Z (when going local to world)
   - ThreeJS
     - RightHanded
     - Screen (0,0) in center (positive in direction of top right)
     - World X:right, Y: up, Z : toCamera
     - camera looks in NegativeZ
+    - Rotation order X, Y, Z (when going local to world) but can be chosen
 
 ### Unity WebGL (interop with Unity WASM)
 
@@ -40,7 +43,6 @@ with potentially another source gen to generate the pure JS wrapper (as sending 
 ### Pure HTML (developed directly in Blazor)
 
 ## Blazor 
-
 
 ### Compilation flags
 
@@ -52,7 +54,7 @@ https://github.com/dotnet/runtime/blob/main/src/mono/wasm/features.md
 
 ### Render modes
 
-Auto mode is supported
+All render modes, including Auto mode are supported ( render mode can be chosen on the Home page)
 
 ### Maui
 
@@ -63,12 +65,10 @@ https://learn.microsoft.com/en-us/aspnet/core/blazor/hybrid/tutorials/maui-blazo
 
 ### Prio 0 (what to do next)
 
-- fix bug by adding conversion of Unity/Babylon LeftHanded system to RightHanded system
-
 - Implement all API messages (instead of rectangular shape, add GLB loading)
-    - remove rectangular shape
-    - implement GLB
-    - implement colliders support
+    - rectangular shape becomes box collider
+    - implement GLB loading
+    - add top down thumbnail image of model (for HTML)
 
 - Unify visuals of all 4 renderers
   - add camera transform setting (and getting, as to have a request to set but I can get the real one)
@@ -77,14 +77,16 @@ https://learn.microsoft.com/en-us/aspnet/core/blazor/hybrid/tutorials/maui-blazo
   - even background plane should be just a mesh to load
   - ie limit the 3d renderer to only the parts really necessary to be done in 3d (e.g. no mouse input, yes raycasting, yes rendering)
   
+- try again to get matrix for screen to world as that would reduce the need for extra interop call
+
 - do Isometric or fake-3d in CSS only for HTML version
     - https://developer.mozilla.org/en-US/docs/Web/CSS/transform-function/perspective
     - must refactor it, to recreate the scene approach as in Unity, to make sense of it
     - should use pre-rendered images
     - mainly as otherwise it is hard to render depth
 
-- consider support for union types to handle collider definition etc
-
+- Test threejs Integration with direct js interop Ie without binary api
+  - ie benchmark if binary API is better than normal JS interop
 
 ### Prio 1 (stretch goals)
 
@@ -107,6 +109,7 @@ https://learn.microsoft.com/en-us/aspnet/core/blazor/hybrid/tutorials/maui-blazo
 
 ### Prio 2 (make it nicer)
 
+- consider support for union types to handle collider definition etc
 
 - Optimize Typescript API
     - remove memory copies during message handling

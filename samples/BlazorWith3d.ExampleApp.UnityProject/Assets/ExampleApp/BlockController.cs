@@ -21,7 +21,7 @@ namespace ExampleApp
             _template = msg;
 
             _cubePlaceholderVisuals.transform.localScale = new Vector3(_template.Size.X, _template.Size.Y, _template.Size.Z);
-            _cubePlaceholderVisuals.transform.localPosition = new Vector3(0, 0, _template.Size.Z / 2);
+            _cubePlaceholderVisuals.transform.localPosition = new Vector3(0, 0, -_template.Size.Z / 2);
         }
 
         public BlockController CreateInstance(AddBlockInstance msg)

@@ -60,7 +60,7 @@ export class DebugApp {
         const directionalLight = new THREE.DirectionalLight( 0xffffff, 1 );
         directionalLight.position.set(0,0,0);
         
-        directionalLight.target.position.copy(new THREE.Vector3(0, 0, -1).applyEuler(new THREE.Euler(THREE.MathUtils.degToRad(-18.747), THREE.MathUtils.degToRad(-53.995), THREE.MathUtils.degToRad(0))));
+        directionalLight.target.position.copy(new THREE.Vector3(0, 0, -1).applyEuler(new THREE.Euler(THREE.MathUtils.degToRad(-30), THREE.MathUtils.degToRad(-50), THREE.MathUtils.degToRad(0))));
         
         this.scene.add( directionalLight );
         this.scene.add( directionalLight.target );

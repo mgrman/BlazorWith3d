@@ -71,10 +71,10 @@ export class DebugApp {
 
         this.plane = new Mesh("plane", this.scene);
         // plane handled the conversion to Blazor coordinate system
-        this.plane.rotation = new Vector3(Tools.ToRadians(0), Tools.ToRadians(180), Tools.ToRadians(90));
+        this.plane.rotation = new Vector3(Tools.ToRadians(0), Tools.ToRadians(0), Tools.ToRadians(0));
 
 
-        var camera = new FreeCamera("Camera", new Vector3(0, 0, 10), this.scene);
+        var camera = new FreeCamera("Camera", new Vector3(0, 0, -10), this.scene);
         // camera.rotation.x = Tools.ToRadians(0);
         // camera.rotation.y = Tools.ToRadians(180);
         // camera.rotation.y = Tools.ToRadians(90);
@@ -82,10 +82,10 @@ export class DebugApp {
         camera.parent = this.plane;
         
         camera.target = new Vector3(0, 0, 0)
-        camera.upVector = new Vector3(0, 0, 1)
+        camera.upVector = new Vector3(0, 1, 0)
 
 
-        var light1 = new DirectionalLight("light1", new Vector3(0, 0, 1).applyRotationQuaternion(Quaternion.FromEulerAngles(Tools.ToRadians(-130), Tools.ToRadians(30), Tools.ToRadians(0))), this.scene);
+        var light1 = new DirectionalLight("light1", new Vector3(0, 0, 1).applyRotationQuaternion(Quaternion.FromEulerAngles(Tools.ToRadians(53), Tools.ToRadians(-18), Tools.ToRadians(0))), this.scene);
         light1.parent = this.plane;
 
 
@@ -168,7 +168,7 @@ export class DebugApp {
             depth: template.size.z
         }, this.scene);
         mesh.parent = this.plane;
-        mesh.position = new Vector3(0, 0, template.size.z / 2);
+        mesh.position = new Vector3(0, 0, -template.size.z / 2);
         this.UpdateMeshPosition(mesh, obj);
 
         this.instances.push([obj, mesh,]);
