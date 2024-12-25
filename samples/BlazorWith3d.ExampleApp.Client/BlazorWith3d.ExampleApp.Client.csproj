@@ -15,7 +15,6 @@
         <ProjectReference Include="..\BlazorWith3d.ExampleApp.Client.Babylon\BlazorWith3d.ExampleApp.Client.Babylon.csproj" />
         <ProjectReference Include="..\BlazorWith3d.ExampleApp.Client.HTML\BlazorWith3d.ExampleApp.Client.HTML.csproj" />
         <ProjectReference Include="..\BlazorWith3d.ExampleApp.Client.Shared\BlazorWith3d.ExampleApp.Client.Shared.csproj" />
-        <ProjectReference Include="..\BlazorWith3d.ExampleApp.Client.ThreeJS.DirectInterop\BlazorWith3d.ExampleApp.Client.ThreeJS.DirectInterop.csproj" />
         <ProjectReference Include="..\BlazorWith3d.ExampleApp.Client.ThreeJS\BlazorWith3d.ExampleApp.Client.ThreeJS.csproj" />
         <ProjectReference Include="..\BlazorWith3d.ExampleApp.Client.Unity\BlazorWith3d.ExampleApp.Client.Unity.csproj" />
     </ItemGroup>

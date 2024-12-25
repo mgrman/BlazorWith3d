@@ -1,5 +1,6 @@
 ﻿using BlazorWith3d.Babylon;
 using BlazorWith3d.ExampleApp.Client.Shared;
+using BlazorWith3d.JsApp;
 
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
@@ -7,28 +8,25 @@ using Microsoft.JSInterop;
 
 namespace BlazorWith3d.ExampleApp.Client.ThreeJs;
 
-public class BlocksOnGridThreeJSDirectRenderer:BaseJsRenderer, IDisposable, IBlocksOnGrid3DApp
+public class BlocksOnGridThreeJSDirectRenderer : BaseJsBinaryApiRenderer, IDisposable, IBlocksOnGrid3DApp
 {
     private BlocksOnGrid3DApp? unityAppApi;
 
     [CascadingParameter] 
     public required I3DAppController ParentApp { get; set; }
     
-    [Inject]
-    public required ILogger<BlocksOnGridThreeJSDirectRenderer> Logger { get; set; }
+    public override string JsAppPath => Assets["./_content/BlazorWith3d.ExampleApp.Client.ThreeJS.DirectInterop/clientassets/blazorwith3d-exampleapp-client-threejs-bundle.js"];
 
-    public override string JsAppPath => Assets["./_content/BlazorWith3d.ExampleApp.Client.ThreeJS.DirectInterop/clientassets/blazorwith3d-exampleapp-client-threejs-direct-bundle.js"];
-
-    protected override JsMessageReceiverProxy CreateReceiverProxy(Action<byte[]> callback)
+    protected override string InitializeMethodName => "InitializeApp_DirectInterop";
+    
+    protected override JsMessageReceiverProxy CreateReceiverProxy()
     {
-        return new ExtendedJsMessageReceiverProxy(this,callback);
+        return new ExtendedJsMessageReceiverProxy(this);
     }
 
-
     protected class ExtendedJsMessageReceiverProxy(
-        BlocksOnGridThreeJSDirectRenderer app,
-        Action<byte[]> onMessageBytesReceived)
-        : JsMessageReceiverProxy(onMessageBytesReceived)
+        BlocksOnGridThreeJSDirectRenderer app)
+        : JsMessageReceiverProxy()
     {
         private readonly BlocksOnGridThreeJSDirectRenderer _app = app;
 
@@ -58,7 +56,6 @@ public class BlocksOnGridThreeJSDirectRenderer:BaseJsRenderer, IDisposable, IBlo
         {
             app.OnScreenToWorldRayResponse?.Invoke(msg);
         }
-
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -98,11 +95,14 @@ public class BlocksOnGridThreeJSDirectRenderer:BaseJsRenderer, IDisposable, IBlo
     //TODO
     public event Action<byte[], Exception>? OnMessageError;
     
-    
     public event Action<PerfCheck>? OnPerfCheck;
+    
     public event Action<UnityAppInitialized>? OnUnityAppInitialized;
+    
     public event Action<RaycastResponse>? OnRaycastResponse;
+    
     public event Action<ScreenToWorldRayResponse>? OnScreenToWorldRayResponse;
+    
     public async ValueTask InvokeBlazorControllerInitialized(BlazorControllerInitialized msg)
     {
       await  _typescriptApp.InvokeVoidAsync($"On{nameof(BlazorControllerInitialized)}", msg);

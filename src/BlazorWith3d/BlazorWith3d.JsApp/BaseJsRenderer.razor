@@ -2,7 +2,6 @@
 @using Microsoft.JSInterop
 @inject IJSRuntime JsRuntime
 @inject ILogger<BaseJsRenderer> Logger
-@implements BlazorWith3d.Shared.IBinaryApi
 @using Microsoft.Extensions.Logging
 @implements IAsyncDisposable
 
@@ -13,17 +12,16 @@
 
 @code{
 
-    private ElementReference _containerElementReference;
+    protected ElementReference _containerElementReference;
     private IJSObjectReference? module;
     protected IJSObjectReference? _typescriptApp;
     
     public virtual string JsAppPath => "";
     
     private DotNetObjectReference<JsMessageReceiverProxy>? _messageReceiverProxyReference;
-    private readonly List<byte[]> _unsentMessages = new();
-    private readonly ReceiveMessageBuffer _receiveMessageBuffer = new();
 
-    public async ValueTask DisposeAsync()
+
+    public virtual async ValueTask DisposeAsync()
     {
         if (_typescriptApp != null)
         {
@@ -37,13 +35,13 @@
 
     protected override void OnInitialized()
     {
-        _messageReceiverProxyReference = DotNetObjectReference.Create(CreateReceiverProxy(OnMessageBytesReceived));
+        _messageReceiverProxyReference = DotNetObjectReference.Create(CreateReceiverProxy());
         base.OnInitialized();
     }
 
-    protected virtual JsMessageReceiverProxy CreateReceiverProxy(Action<byte[]> onMessageBytesReceived)
+    protected virtual JsMessageReceiverProxy CreateReceiverProxy()
     {
-        return new JsMessageReceiverProxy(onMessageBytesReceived);
+        return new JsMessageReceiverProxy();
     }
 
 
@@ -60,6 +58,11 @@
             throw new InvalidOperationException($"{nameof(JsAppPath)} is not overriden!");
         }
 
+        if (_messageReceiverProxyReference== null)
+        {
+            throw new InvalidOperationException($"{nameof(_messageReceiverProxyReference)} is not initialized!");
+        }
+
 
         var moduleTask = new Lazy<Task<IJSObjectReference>>(() => JsRuntime.InvokeAsync
         <IJSObjectReference>
@@ -68,54 +71,21 @@
         module = await moduleTask.Value;
         
         
-        _typescriptApp = await module.InvokeAsync<IJSObjectReference>("InitializeApp", _containerElementReference,_messageReceiverProxyReference,nameof(JsMessageReceiverProxy.OnMessageBytesReceived) );
+        _typescriptApp = await InitializeJsApp(module, _messageReceiverProxyReference);
 
-        foreach (var msg in _unsentMessages)
-        {
-            await SendMessage(msg);
-        }
 
-        _unsentMessages.Clear();
 
         await base.OnAfterRenderAsync(firstRender);
     }
-    
-    public Action<byte[]>? MainMessageHandler
+
+    protected virtual async Task<IJSObjectReference?> InitializeJsApp(IJSObjectReference module, DotNetObjectReference<JsMessageReceiverProxy> messageReceiverProxyReference)
     {
-        get => _receiveMessageBuffer.MainMessageHandler;
-        set => _receiveMessageBuffer.MainMessageHandler = value;
+        throw new InvalidOperationException();
     }
 
-    private void OnMessageBytesReceived(byte[] messageBytes)
-    {
-        _receiveMessageBuffer.InvokeMessage(messageBytes);
-    }
-    
-    public async ValueTask SendMessage(byte[] messageBytes)
-    {
-        if (_typescriptApp == null)
-        {
-            _unsentMessages.Add(messageBytes);
-            return;
-        }
 
-        try
-        {
-            await _typescriptApp.InvokeVoidAsync("ProcessMessage", messageBytes);
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error sending message");
-        }
-    }
-    
-    protected class JsMessageReceiverProxy(Action<byte[]> onMessageBytesReceived)
+    protected class JsMessageReceiverProxy()
     {
-        [JSInvokable]
-        public void OnMessageBytesReceived(byte[] msg)
-        {
-            onMessageBytesReceived(msg);
-        }
     }
 }
 
