@@ -11,6 +11,7 @@
         <RunAOTCompilation Condition=" '$(Configuration)' != 'Debug' ">true</RunAOTCompilation>
         <PublishTrimmed>true</PublishTrimmed>
         <RootNamespace>BlazorWith3d.ExampleApp.WebAssembly</RootNamespace>
+        <BlazorCacheBootResources>false</BlazorCacheBootResources>
     </PropertyGroup>
 
     <ItemGroup>
