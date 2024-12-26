@@ -58,8 +58,7 @@ namespace ExampleApp
 
         public void UpdatePose(UpdateBlockInstance newPose)
         {
-            _instance.Position.X=newPose.Position.X;
-            _instance.Position.Y = newPose.Position.Y;
+            _instance.Position = newPose.Position;
             _instance.RotationZ = newPose.RotationZ;
 
             UpdatePose();
