@@ -183,18 +183,6 @@
     }
 
 
-    public bool IsProcessingMessages { get; private set; }
-    
-    public void StartProcessingMessages()
-    {
-        //TODO 
-    }
-
-    public void StopProcessingMessages()
-    {
-        //TODO 
-    }
-
     public event Action<ScreenToWorldRayResponse>? OnScreenToWorldRayResponse;
     public ValueTask InvokeRequestScreenToWorldRay(RequestScreenToWorldRay msg)
     {

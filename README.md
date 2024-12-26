@@ -75,6 +75,8 @@ benchmarks
 
 ### Prio 0 (what to do next)
 
+- Consider again the messages with responses to be added via the generated code, as a lot of messages are responses
+
 - generate blazor interop code, preferably in  another project referencing the types in shared
 
 - try again to get matrix for screen to world as that would reduce the need for extra interop call
@@ -104,7 +106,6 @@ benchmarks
   https://learn.microsoft.com/en-us/aspnet/core/blazor/components/render-modes?view=aspnetcore-9.0
   https://learn.microsoft.com/en-us/aspnet/core/blazor/components/rendering?view=aspnetcore-9.0#streaming-rendering
 
-- Consider again the messages with responses to be added via the generated code
 
 - Optimize Typescript dev experience
     - add option to live recompile changes

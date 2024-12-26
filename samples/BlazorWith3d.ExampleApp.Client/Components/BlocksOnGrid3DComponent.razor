@@ -11,6 +11,7 @@
 @inject ILogger<BlocksOnGrid3DComponent> Logger
 @inject IJSRuntime JsRuntime
 @implements I3DAppController
+@implements IBlocksOnGrid3DApp_EventHandler
 @implements IAsyncDisposable
 
 <text>@(RendererInfo.Name) @(RendererInfo.IsInteractive?"Interactive":"Static")</text>
@@ -253,39 +254,38 @@
     {
         if (_rendererApi != null)
         {
-            _rendererApi.OnUnityAppInitialized -= OnAppInitialized;
-            _rendererApi.OnRaycastResponse -= OnRaycastResponse;
-            _rendererApi.OnScreenToWorldRayResponse -= OnScreenToWorldRayResponse;
+            _rendererApi.RemoveEventHandler(this);
         }
         
         _rendererApi = rendererApi;
         if (_rendererApi != null)
         {
-            _rendererApi.OnUnityAppInitialized += OnAppInitialized;
-            _rendererApi.OnRaycastResponse += OnRaycastResponse;
-            _rendererApi.OnScreenToWorldRayResponse += OnScreenToWorldRayResponse;
+            _rendererApi.SetUpUsingEventHandler(this);
 
-            _rendererApi.StartProcessingMessages();
             _rendererApi.InvokeBlazorControllerInitialized(new BlazorControllerInitialized());
         }
-
         
          ReplayState();
     }
 
-    private void OnScreenToWorldRayResponse(ScreenToWorldRayResponse obj)
+    void IBlocksOnGrid3DApp_EventHandler.OnPerfCheck(PerfCheck msg)
+    {
+        // global OnPerfCheck handler is ignored, the event is handled at invocation as it is technical response
+    }
+
+     void IBlocksOnGrid3DApp_EventHandler.OnUnityAppInitialized(UnityAppInitialized msg)
+    {
+        _appState = msg;
+    }
+
+     void IBlocksOnGrid3DApp_EventHandler.OnScreenToWorldRayResponse(ScreenToWorldRayResponse obj)
     {
         _activeScreenToRay[obj.RequestId].SetResult(obj);
     }
 
-    private void OnRaycastResponse(RaycastResponse obj)
+     void IBlocksOnGrid3DApp_EventHandler.OnRaycastResponse(RaycastResponse obj)
     {
         _activeRaycasts[obj.RequestId].SetResult(obj);
-    }
-
-    private async void OnAppInitialized(UnityAppInitialized arg)
-    {
-        _appState = arg;
     }
 
     private async ValueTask ReplayState()

@@ -15,7 +15,7 @@ namespace ExampleApp
 
         private readonly Dictionary<int, BlockController> _blocks = new();
         private readonly Dictionary<int, BlockController> _templates = new();
-        private IBlocksOnGridUnityApi _appApi;
+        private BlocksOnGridUnityApi _appApi;
         private GameObject _templateRoot;
 
         private List<IDisposable> _disposables=new List<IDisposable>();

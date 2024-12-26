@@ -26,6 +26,7 @@
         
         unityAppApi = new BlocksOnGrid3DApp(DebugApi);
         ParentApp.InitializeRenderer(unityAppApi);
+        unityAppApi.StartProcessingMessages();
     }
 
     public void Dispose()

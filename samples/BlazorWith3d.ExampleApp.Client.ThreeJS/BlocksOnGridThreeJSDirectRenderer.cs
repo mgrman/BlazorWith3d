@@ -33,20 +33,15 @@ public class BlocksOnGridThreeJSDirectRenderer : BaseJsRenderer, IDisposable, IB
         BlocksOnGridThreeJSDirectRenderer app)
         : JsMessageReceiverProxy(),  IBlocksOnGrid3DApp_EventHandler
     {
-        private readonly BlocksOnGridThreeJSDirectRenderer _app = app;
-
-
         [JSInvokable]
         public void OnPerfCheck(PerfCheck msg)
         {
             app.OnPerfCheck?.Invoke(msg);
-
         }
 
         [JSInvokable]
         public void OnUnityAppInitialized(UnityAppInitialized msg)
         {
-
             app.OnUnityAppInitialized?.Invoke(msg);
         }
 
@@ -84,17 +79,6 @@ public class BlocksOnGridThreeJSDirectRenderer : BaseJsRenderer, IDisposable, IB
             ParentApp.InitializeRenderer(null);
             unityAppApi.Dispose();
         }
-    }
-
-    public bool IsProcessingMessages { get; }
-    public void StartProcessingMessages()
-    {
-        //TODO
-    }
-
-    public void StopProcessingMessages()
-    {
-        //TODO
     }
 
     //TODO

@@ -106,18 +106,35 @@ public class HelloSourceGenerator : ISourceGenerator
         sb.AppendLine($"namespace {info.@namespace}");
         using (sb.IndentWithCurlyBrackets())
         {
-            sb.AppendLine($"public partial interface I{info.typeName}");
+            sb.AppendLine($"public partial interface I{info.typeName}:I{info.typeName}_MethodInvoker");
             using (sb.IndentWithCurlyBrackets())
             {
-                sb.AppendLine($"bool IsProcessingMessages {{ get; }}");
-                sb.AppendLine($"void StartProcessingMessages();");
-                sb.AppendLine($"void StopProcessingMessages();");
-                
                 sb.AppendLine($"event Action<byte[], Exception> OnMessageError;");
 
                 foreach (var e in info.events)
                 {
                     sb.AppendLine($"event Action<{e.typeName}> On{e.typeName};");
+                }
+                sb.AppendLine();
+                
+                sb.AppendLine();
+                sb.AppendLine($"void SetUpUsingEventHandler(I{info.typeName}_EventHandler eventHandler)");
+                using (sb.IndentWithCurlyBrackets())
+                {
+                    foreach (var e in info.events)
+                    {
+                        sb.AppendLine($"On{e.typeName} += eventHandler.On{e.typeName};");
+                    }
+                }
+                
+                sb.AppendLine();
+                sb.AppendLine($"void RemoveEventHandler(I{info.typeName}_EventHandler eventHandler)");
+                using (sb.IndentWithCurlyBrackets())
+                {
+                    foreach (var e in info.events)
+                    {
+                        sb.AppendLine($"On{e.typeName} -= eventHandler.On{e.typeName};");
+                    }
                 }
 
                 sb.AppendLine();
