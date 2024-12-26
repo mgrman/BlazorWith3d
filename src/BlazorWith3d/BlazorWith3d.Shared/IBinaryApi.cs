@@ -13,7 +13,6 @@ namespace BlazorWith3d.Shared
         ValueTask SendMessage(byte[] bytes);
     }
 
-
     public class BackgroundMessageBuffer
     {
         protected readonly List<byte[]> _unhandledMessages= new();

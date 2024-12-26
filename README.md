@@ -75,8 +75,6 @@ benchmarks
 
 ### Prio 0 (what to do next)
 
-- Add binaryApi with response to optimize interop usecases (as only unity debug socket cannot do this)
-
 - generate blazor interop code, preferably in  another project referencing the types in shared
 
 - try again to get matrix for screen to world as that would reduce the need for extra interop call
@@ -98,7 +96,7 @@ benchmarks
 
 ### Prio 1 (stretch goals)
 
-
+- Add binaryApi with response to optimize interop usecases (as only unity debug socket cannot do this)
   
 - render screen in unity and stream to blazor for debug mode
 
