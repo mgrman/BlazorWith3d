@@ -12,6 +12,7 @@
 @inject IJSRuntime JsRuntime
 @implements I3DAppController
 @implements IAsyncDisposable
+@implements IBlocksOnGrid3DApp_EventHandler
 
 <text>@(RendererInfo.Name) @(RendererInfo.IsInteractive?"Interactive":"Static")</text>
 
@@ -206,7 +207,6 @@
     private IJSObjectReference? _mouseEventsDispose;
 
     private ElementReference _rendererContainerReference;
-    private IDisposable? _rendererApiEventsDisposable;
 
     private static (string name, string url )[] GltfAssets = [ ("BoomBox", "./_content/BlazorWith3d.ExampleApp.Client/gltf/BoomBox.glb")];
     
@@ -249,16 +249,14 @@
 
     public void InitializeRenderer(IBlocksOnGrid3DApp? rendererApi)
     {
-        if (_rendererApiEventsDisposable != null)
+        if (_rendererApi != null)
         {
-            _rendererApiEventsDisposable?.Dispose();
-            _rendererApiEventsDisposable = null;
+            _rendererApi.SetEventHandler(null);
         }
-        
         _rendererApi = rendererApi;
         if (_rendererApi != null)
         {
-            _rendererApiEventsDisposable = _rendererApi.SetUpUsingActions(OnUnityAppInitialized);
+             _rendererApi.SetEventHandler(this);
 
             _rendererApi.InvokeBlazorControllerInitialized(new BlazorControllerInitialized());
         }
@@ -266,7 +264,7 @@
         ReplayState();
     }
 
-    private void OnUnityAppInitialized(UnityAppInitialized msg)
+    public async ValueTask OnUnityAppInitialized(UnityAppInitialized msg)
     {
         _appState = msg;
     }

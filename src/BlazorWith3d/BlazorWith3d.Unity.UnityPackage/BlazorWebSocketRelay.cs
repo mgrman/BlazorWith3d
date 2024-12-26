@@ -22,7 +22,7 @@ namespace BlazorWith3d.Unity
         private static readonly ReceiveMessageBuffer _receiveMessageBuffer = new();
 
 
-        public Action<byte[]>? MainMessageHandler
+        public Func<byte[], ValueTask>? MainMessageHandler
         {
             get => _receiveMessageBuffer.MainMessageHandler;
             set

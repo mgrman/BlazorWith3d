@@ -46,6 +46,7 @@
     private ElementReference _rendererContainerReference;
 
     private IJSObjectReference jsInteropModule;
+    private IBlocksOnGrid3DApp_EventHandler? _eventHandler;
 
     [CascadingParameter] 
     public required I3DAppController ParentApp { get; set; }
@@ -74,10 +75,6 @@
         offsetX = canvasSizeX / 2;
         offsetY = canvasSizeY / 2;
 
-        OnUnityAppInitialized?.Invoke(new UnityAppInitialized()
-        {
-
-        });
         StateHasChanged();
 
         await base.OnAfterRenderAsync(firstRender);
@@ -90,11 +87,6 @@
 
 
     public event Action<byte[], Exception>? OnMessageError;
-    public event Action<PerfCheck>? OnPerfCheck;
-    public event Action<UnityAppInitialized>? OnUnityAppInitialized;
-    public event Action<RaycastResponse>? OnRaycastResponse;
-
-
 
     public ValueTask InvokeBlazorControllerInitialized(BlazorControllerInitialized msg)
     {
@@ -102,10 +94,9 @@
         return ValueTask.CompletedTask;
     }
 
-    public ValueTask InvokePerfCheck(PerfCheck msg)
+    public async ValueTask<PerfCheck> InvokePerfCheck(PerfCheck msg)
     {
-        OnPerfCheck?.Invoke(msg);
-        return ValueTask.CompletedTask;
+        return msg;
     }
 
     public ValueTask InvokeAddBlockTemplate(AddBlockTemplate msg)
@@ -143,7 +134,7 @@
         return ValueTask.CompletedTask;
     }
 
-    public ValueTask InvokeRequestRaycast(RequestRaycast msg)
+    public async ValueTask<RaycastResponse> InvokeRequestRaycast(RequestRaycast msg)
     {
         if (  msg.Ray.Origin.Z!=0)
         {
@@ -172,19 +163,15 @@
                    && pos.Y <= aabb.max.Y;
         });
         
-        OnRaycastResponse?.Invoke(new RaycastResponse()
+        return new RaycastResponse()
         {
-            RequestId = msg.RequestId,
             HitBlockId = hit?.BlockId,
             HitWorld = new Vector3(pos.X,pos.Y, hit!=null?_templates[hit.TemplateId].Size.Z:pos.Z)
-        });
-        
-        return ValueTask.CompletedTask;
+        };
     }
 
 
-    public event Action<ScreenToWorldRayResponse>? OnScreenToWorldRayResponse;
-    public ValueTask InvokeRequestScreenToWorldRay(RequestScreenToWorldRay msg)
+    public async ValueTask<ScreenToWorldRayResponse> InvokeRequestScreenToWorldRay(RequestScreenToWorldRay msg)
     {
         var worldToScreen = Matrix4x4.Multiply(Matrix4x4.Multiply(Matrix4x4.CreateScale(new Vector3(1, -1, 1)),Matrix4x4.CreateTranslation(new Vector3(offsetX, offsetY, 0))),Matrix4x4.CreateScale(new Vector3(scale, scale, 1)));
         
@@ -196,16 +183,15 @@
         rayOrigin=Vector3.Transform(rayOrigin,screenToWorld);
         rayDirection=Vector3.TransformNormal(rayDirection,screenToWorld);
 
-        OnScreenToWorldRayResponse?.Invoke(new ScreenToWorldRayResponse()
+        return new ScreenToWorldRayResponse()
         {
-            RequestId = msg.RequestId,
-            Ray=new Ray(rayOrigin,rayDirection)
-        });
-        return ValueTask.CompletedTask;
+            Ray = new Ray(rayOrigin, rayDirection)
+        };
     }
     
-    public float ConvertToRadians(float angle)
+    public void SetEventHandler(IBlocksOnGrid3DApp_EventHandler? eventHandler)
     {
-        return ((float)Math.PI / 180) * angle;
+        _eventHandler = eventHandler;
+        eventHandler?.OnUnityAppInitialized(new UnityAppInitialized());
     }
 }

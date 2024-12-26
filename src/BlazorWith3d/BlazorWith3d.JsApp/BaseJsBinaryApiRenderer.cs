@@ -54,7 +54,7 @@ public class BaseJsBinaryApiRenderer:BaseJsRenderer, IBinaryApi
         return await module.InvokeAsync<IJSObjectReference>(InitializeMethodName, _containerElementReference,messageReceiverProxyReference,nameof(BinaryApiJsMessageReceiverProxy.OnMessageBytesReceived) );
     }
 
-    public Action<byte[]>? MainMessageHandler
+    public Func<byte[], ValueTask>? MainMessageHandler
     {
         get => _receiveMessageBuffer.MainMessageHandler;
         set => _receiveMessageBuffer.MainMessageHandler = value;

@@ -9,15 +9,15 @@ namespace BlazorWith3d.Shared
     public class BinaryApiThreadWrapper : IBinaryApi
     {
         private readonly IBinaryApi _binaryApi;
-        private readonly Func<Action, Task> _threadHandler;
+        private readonly Func<Func<ValueTask>, ValueTask> _threadHandler;
 
-        public BinaryApiThreadWrapper(IBinaryApi binaryApi, Func<Action, Task> threadHandler)
+        public BinaryApiThreadWrapper(IBinaryApi binaryApi, Func<Func<ValueTask>, ValueTask> threadHandler)
         {
             _binaryApi = binaryApi;
             _threadHandler = threadHandler;
         }
 
-        public Action<byte[]>? MainMessageHandler
+        public Func<byte[], ValueTask>? MainMessageHandler
         {
             get => _binaryApi.MainMessageHandler;
             set
@@ -30,7 +30,7 @@ namespace BlazorWith3d.Shared
                 {
                     _binaryApi.MainMessageHandler = (msg) =>
                     {
-                        _threadHandler(() => value(msg));
+                       return _threadHandler(() => value(msg));
                     };
                 }
             }

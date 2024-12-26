@@ -72,7 +72,7 @@
         await base.OnAfterRenderAsync(firstRender);
     }
 
-    public Action<byte[]>? MainMessageHandler
+    public Func<byte[], ValueTask>? MainMessageHandler
     {
         get => _receiveMessageBuffer.MainMessageHandler;
         set => _receiveMessageBuffer.MainMessageHandler = value;

@@ -31,9 +31,7 @@ export function InitializeApp_BinaryApi(canvas: HTMLCanvasElement, dotnetObject:
 
     let app= new DebugApp(canvas, blazorApp);
 
-    blazorApp.SetUpUsingEventHandler(app);
-
-    blazorApp.StartProcessingMessages();
+    blazorApp.SetEventHandler(app);
 
     let appAsAny :any =app ;
     appAsAny.ProcessMessage= msg=> {
@@ -43,19 +41,16 @@ export function InitializeApp_BinaryApi(canvas: HTMLCanvasElement, dotnetObject:
 }
 
 export function InitializeApp_DirectInterop(canvas: HTMLCanvasElement, dotnetObject: any) {
-
-    var sendMessageCallback: (methodName:string, msg: any) => Promise<any> = (methodName, msg)  => dotnetObject.invokeMethodAsync(methodName, msg);
-
     return new DebugApp(canvas, new BlocksOnGridUnityApi_MethodInvoker_DirectInterop(dotnetObject));
 }
 
 export class DebugApp implements IBlocksOnGridUnityApi_EventHandler{
-    private templates:  { [id: number] : {template: AddBlockTemplate, visuals: GLTF} } = {};
+    private templates:  { [id: number] : any } = {};
     private instances:  { [id: number] : {instance: AddBlockInstance, mesh: THREE.Mesh, visuals: THREE.Group}} = {};
 
     private camera: THREE.PerspectiveCamera;
-    scene: THREE.Scene;
-    renderer: THREE.WebGLRenderer;
+    private scene: THREE.Scene;
+    private renderer: THREE.WebGLRenderer;
     private raycaster: THREE.Raycaster;
     private canvas: HTMLCanvasElement;
     private _methodInvoker: IBlocksOnGridUnityApi_MethodInvoker;
@@ -104,8 +99,8 @@ export class DebugApp implements IBlocksOnGridUnityApi_EventHandler{
         console.log("Quit called");
     }
 
-    public OnUpdateBlockInstance(obj: UpdateBlockInstance) {
-        console.log("BlockPoseChangeValidated", obj);
+    public async OnUpdateBlockInstance(obj: UpdateBlockInstance) : Promise<any> {
+        console.log("OnUpdateBlockInstance", obj);
 
 
         const {instance, mesh} = this.instances[obj.blockId];
@@ -116,13 +111,13 @@ export class DebugApp implements IBlocksOnGridUnityApi_EventHandler{
     }
 
 
-    public OnRemoveBlockTemplate(obj: RemoveBlockTemplate) {
+    public async OnRemoveBlockTemplate(obj: RemoveBlockTemplate): Promise<any>  {
         console.log("RemoveBlockTemplate", obj);
 
         delete this.templates[obj.templateId];
     }
 
-    public OnRemoveBlockInstance(obj: RemoveBlockInstance) {
+    public async OnRemoveBlockInstance(obj: RemoveBlockInstance): Promise<any>  {
         console.log("RemoveBlockInstance", obj);
 
 
@@ -131,7 +126,7 @@ export class DebugApp implements IBlocksOnGridUnityApi_EventHandler{
         delete this.instances[obj.blockId];
     }
 
-    public OnAddBlockInstance(obj: AddBlockInstance) {
+    public async OnAddBlockInstance(obj: AddBlockInstance): Promise<any>  {
         console.log("AddBlockInstance", obj);
 
         var {template, visuals } = this.templates[obj.templateId];
@@ -171,7 +166,7 @@ export class DebugApp implements IBlocksOnGridUnityApi_EventHandler{
         }
     }
 
-    public OnRequestScreenToWorldRay(msg: RequestScreenToWorldRay): void {
+    public async OnRequestScreenToWorldRay(msg: RequestScreenToWorldRay): Promise<ScreenToWorldRayResponse> {
 
         var a=msg;
 
@@ -187,16 +182,15 @@ export class DebugApp implements IBlocksOnGridUnityApi_EventHandler{
         this.raycaster.setFromCamera( pointer, this.camera );
         const ray=this.raycaster.ray;
 
-        this._methodInvoker.InvokeScreenToWorldRayResponse({
-            requestId:msg.requestId,
+        return {
             ray: {
                 origin: { x: ray.origin.x, y: ray.origin.y, z: ray.origin.z },
                 direction: { x: ray.direction.x, y: ray.direction.y, z: ray.direction.z }
             }
-        })
+        }
     }
 
-    public OnRequestRaycast(msg: RequestRaycast): void {
+    public async OnRequestRaycast(msg: RequestRaycast): Promise<RaycastResponse> {
 
         var origin=msg.ray.origin;
         var direction=msg.ray.direction;
@@ -206,7 +200,6 @@ export class DebugApp implements IBlocksOnGridUnityApi_EventHandler{
 
         const intersects = this.raycaster.intersectObjects( this.scene.children, false );
         var response = new RaycastResponse();
-        response.requestId = msg.requestId;
         response.hitWorld = origin;
 
         if ( intersects.length > 0 ) {
@@ -220,9 +213,9 @@ export class DebugApp implements IBlocksOnGridUnityApi_EventHandler{
             response.hitBlockId = instance.blockId;
             response.hitWorld = intersects[0].point;
         }
-        this._methodInvoker.InvokeRaycastResponse(response);
+        return response;
     }
-    public OnAddBlockTemplate(template: AddBlockTemplate) {
+    public async OnAddBlockTemplate(template: AddBlockTemplate):Promise<any>  {
         console.log("AddBlockTemplate", template);
 
         this.templates[template.templateId]={template, visuals:null};
@@ -276,19 +269,12 @@ export class DebugApp implements IBlocksOnGridUnityApi_EventHandler{
         this.instances[instance.blockId].visuals=model;
     }
 
-    public OnPerfCheck(obj: PerfCheck)
+    public async OnPerfCheck(obj: PerfCheck) :Promise<PerfCheck>
     {
-        this._methodInvoker.InvokePerfCheck(
-            {
-                aaa: obj.aaa,
-                bbb: obj.bbb,
-                ccc: obj.ccc,
-                ddd: obj.ddd,
-                id: obj.id
-            }).then();
+       return  obj;
     }
 
-    public OnBlazorControllerInitialized(obj: BlazorControllerInitialized) {
+    public async OnBlazorControllerInitialized(obj: BlazorControllerInitialized) :Promise<void> {
 
         console.log("OnBlazorControllerInitialized", obj);
 

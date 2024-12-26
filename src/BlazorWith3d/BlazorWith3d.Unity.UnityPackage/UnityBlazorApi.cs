@@ -15,7 +15,7 @@ namespace BlazorWith3d.Unity
 
 
 
-        public Action<byte[]>? MainMessageHandler
+        public Func<byte[], ValueTask>? MainMessageHandler
         {
             get => _receiveMessageBuffer.MainMessageHandler;
             set

@@ -11,6 +11,7 @@ namespace BlazorWith3d.ExampleApp.Client.ThreeJS;
 public class BlocksOnGridThreeJSDirectRenderer : BaseJsRenderer, IDisposable, IBlocksOnGrid3DApp
 {
     private BlocksOnGrid3DApp? unityAppApi;
+    private IBlocksOnGrid3DApp_EventHandler? _eventHandler;
 
     [CascadingParameter] 
     public required I3DAppController ParentApp { get; set; }
@@ -33,29 +34,13 @@ public class BlocksOnGridThreeJSDirectRenderer : BaseJsRenderer, IDisposable, IB
         BlocksOnGridThreeJSDirectRenderer app)
         : JsMessageReceiverProxy(),  IBlocksOnGrid3DApp_EventHandler
     {
-        [JSInvokable]
-        public void OnPerfCheck(PerfCheck msg)
-        {
-            app.OnPerfCheck?.Invoke(msg);
-        }
 
         [JSInvokable]
-        public void OnUnityAppInitialized(UnityAppInitialized msg)
+        public async ValueTask OnUnityAppInitialized(UnityAppInitialized msg)
         {
-            app.OnUnityAppInitialized?.Invoke(msg);
+            app._eventHandler?.OnUnityAppInitialized(msg);
         }
 
-        [JSInvokable]
-        public void OnRaycastResponse(RaycastResponse msg)
-        {
-            app.OnRaycastResponse?.Invoke(msg);
-        }
-
-        [JSInvokable]
-        public void OnScreenToWorldRayResponse(ScreenToWorldRayResponse msg)
-        {
-            app.OnScreenToWorldRayResponse?.Invoke(msg);
-        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -65,8 +50,6 @@ public class BlocksOnGridThreeJSDirectRenderer : BaseJsRenderer, IDisposable, IB
             await base.OnAfterRenderAsync(firstRender);
             return;
         }
-
-
         await base.OnAfterRenderAsync(firstRender);
         
         ParentApp.InitializeRenderer(this);
@@ -83,23 +66,20 @@ public class BlocksOnGridThreeJSDirectRenderer : BaseJsRenderer, IDisposable, IB
 
     //TODO
     public event Action<byte[], Exception>? OnMessageError;
-    
-    public event Action<PerfCheck>? OnPerfCheck;
-    
-    public event Action<UnityAppInitialized>? OnUnityAppInitialized;
-    
-    public event Action<RaycastResponse>? OnRaycastResponse;
-    
-    public event Action<ScreenToWorldRayResponse>? OnScreenToWorldRayResponse;
-    
+    public void SetEventHandler(IBlocksOnGrid3DApp_EventHandler? eventHandler)
+    {
+        _eventHandler=eventHandler;
+        
+    }
+
     public async ValueTask InvokeBlazorControllerInitialized(BlazorControllerInitialized msg)
     {
       await  _typescriptApp.InvokeVoidAsync($"On{nameof(BlazorControllerInitialized)}", msg);
     }
 
-    public async ValueTask InvokePerfCheck(PerfCheck msg)
+    public async ValueTask<PerfCheck> InvokePerfCheck(PerfCheck msg)
     {
-        await  _typescriptApp.InvokeVoidAsync($"On{nameof(PerfCheck)}", msg);
+      return  await  _typescriptApp.InvokeAsync<PerfCheck>($"On{nameof(PerfCheck)}", msg);
     }
 
     public async ValueTask InvokeAddBlockTemplate(AddBlockTemplate msg)
@@ -127,13 +107,13 @@ public class BlocksOnGridThreeJSDirectRenderer : BaseJsRenderer, IDisposable, IB
         await  _typescriptApp.InvokeVoidAsync($"On{nameof(UpdateBlockInstance)}", msg);
     }
 
-    public async ValueTask InvokeRequestRaycast(RequestRaycast msg)
+    public async ValueTask<RaycastResponse> InvokeRequestRaycast(RequestRaycast msg)
     {
-        await  _typescriptApp.InvokeVoidAsync($"On{nameof(RequestRaycast)}", msg);
+       return await  _typescriptApp.InvokeAsync<RaycastResponse>($"On{nameof(RequestRaycast)}", msg);
     }
 
-    public async ValueTask InvokeRequestScreenToWorldRay(RequestScreenToWorldRay msg)
+    public async ValueTask<ScreenToWorldRayResponse> InvokeRequestScreenToWorldRay(RequestScreenToWorldRay msg)
     {
-        await  _typescriptApp.InvokeVoidAsync($"On{nameof(RequestScreenToWorldRay)}", msg);
+      return  await  _typescriptApp.InvokeAsync<ScreenToWorldRayResponse>($"On{nameof(RequestScreenToWorldRay)}", msg);
     }
 }

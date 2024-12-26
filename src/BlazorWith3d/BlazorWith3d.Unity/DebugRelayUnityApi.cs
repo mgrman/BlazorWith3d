@@ -60,7 +60,7 @@ public class DebugRelayUnityApi
             _webSocket = webSocket;
         }
 
-        public Action<byte[]>? MainMessageHandler { get => _unhandledMessages.MainMessageHandler; set => _unhandledMessages.MainMessageHandler = value; }
+        public Func<byte[],ValueTask>? MainMessageHandler { get => _unhandledMessages.MainMessageHandler; set => _unhandledMessages.MainMessageHandler = value; }
 
         public async ValueTask SendMessage(byte[] bytes)
         {

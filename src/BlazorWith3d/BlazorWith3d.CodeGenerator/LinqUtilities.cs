@@ -19,12 +19,12 @@ public static class LinqUtilities
         return false;
     }
 
-    public static IEnumerable<(T, int)> EnumerateWithIndex<T>(this IEnumerable<T> source)
+    public static IEnumerable<(T, int)> EnumerateWithIndex<T>(this IEnumerable<T> source, int offset=0)
     {
         var index = 0;
         foreach (var item in source)
         {
-            yield return (item, index);
+            yield return (item, index+offset);
             index++;
         }
     }

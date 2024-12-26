@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using System.Xml.Serialization;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -32,27 +33,39 @@ public class HelloSourceGenerator : ISourceGenerator
         {
             return;
         }
-        
-    
+
         var messagesToUnity = receiver.MessagesToUnity
             .Select(typeDeclaration =>
             {
                 return GetTypeAndNamespace(typeDeclaration);
             }).ToList();
-        
+
+        var messagesToUnityWithResponse = receiver.MessagesToUnityWithResponse
+            .Select( o =>
+            {
+                var requestType = GetTypeAndNamespace(o.request);
+                var responseType = GetTypeAndNamespace(o.response,context.Compilation);
+
+                return (request: requestType, response: responseType);
+
+            }).ToList();
+
         var messagesToBlazor = receiver.MessagesToBlazor
             .Select(typeDeclaration =>
             {
                 return GetTypeAndNamespace(typeDeclaration);
             }).ToList();
 
-        var namespacesToInclude = messagesToUnity.Concat(messagesToBlazor).Select(o => o.@namespace).ToList();
+        var namespacesToInclude = messagesToUnity.Select(o => o.@namespace)
+            .Concat(messagesToUnityWithResponse.SelectMany(o => new string[] { o.request.@namespace, o.response.@namespace }))
+            .Concat(messagesToBlazor.Select(o => o.@namespace))
+            .ToList();
         
         foreach (var typeDeclaration in receiver.Blazor3DAppTypes)
         {
-            var (typeName,namespaceName,_) = GetTypeAndNamespace(typeDeclaration.type);
+            var (typeName,namespaceName,_) = GetTypeAndNamespace(typeDeclaration);
 
-            var appInfo= new AppInfo(typeName, namespaceName, typeDeclaration.generateObjectApi,  messagesToUnity, messagesToBlazor, namespacesToInclude);
+            var appInfo= new AppInfo(typeName, namespaceName, messagesToUnity, messagesToUnityWithResponse, messagesToBlazor, new List<(TypeInfo, TypeInfo)>(), namespacesToInclude);
             
             var text = GenerateClass(appInfo);
             context.AddSource($"{typeName}.g.cs", text);
@@ -60,9 +73,9 @@ public class HelloSourceGenerator : ISourceGenerator
 
         foreach (var typeDeclaration in receiver.Unity3DAppTypes)
         {
-            var (typeName,namespaceName,_) = GetTypeAndNamespace(typeDeclaration.type);
+            var (typeName,namespaceName,_) = GetTypeAndNamespace(typeDeclaration);
 
-            var appInfo= new AppInfo(typeName, namespaceName,typeDeclaration.generateObjectApi,  messagesToBlazor, messagesToUnity, namespacesToInclude);
+            var appInfo= new AppInfo(typeName, namespaceName,messagesToBlazor, new List<(TypeInfo, TypeInfo)>(), messagesToUnity, messagesToUnityWithResponse, namespacesToInclude);
 
             var text = GenerateClass(appInfo);
 
@@ -72,21 +85,35 @@ public class HelloSourceGenerator : ISourceGenerator
         }
     }
 
-    private static (string type, string @namespace, bool isPublic) GetTypeAndNamespace(TypeDeclarationSyntax typeDeclaration)
+    private static TypeInfo GetTypeAndNamespace(TypeDeclarationSyntax typeDeclaration)
     {
         var typeName = typeDeclaration.Identifier.ToString();
         var namespaceName = (typeDeclaration.Parent as NamespaceDeclarationSyntax).Name.ToString();
-        var isPublic = typeDeclaration.Modifiers.Any(o=>o.ToString()== "public");
-        return (typeName,namespaceName,isPublic);
+        var isPublic = typeDeclaration.Modifiers.Any(o => o.ToString() == "public");
+        return new TypeInfo(typeName, namespaceName, isPublic);
+    }
+
+    private static TypeInfo GetTypeAndNamespace(TypeSyntax typeSyntax, Compilation compilation)
+    {
+        var semanticModel = compilation.GetSemanticModel(typeSyntax.SyntaxTree);
+
+        var typeInfo = semanticModel.GetTypeInfo(typeSyntax).Type;
+
+        return new TypeInfo(typeInfo.Name, typeInfo.ContainingNamespace.ToDisplayString(), typeInfo.DeclaredAccessibility == Accessibility.Public);
     }
 
     private record AppInfo(
         string typeName,
         string @namespace,
-        bool generateObjectApi,
-        IReadOnlyList<(string typeName, string @namespace, bool isPublic)> methods,
-        IReadOnlyList<(string typeName, string @namespace, bool isPublic)> events,
+        IReadOnlyList<TypeInfo> methods,
+        IReadOnlyList<(TypeInfo request, TypeInfo response)> methodsWithResponse,
+        IReadOnlyList<TypeInfo> events,
+        IReadOnlyList<(TypeInfo request, TypeInfo response)> eventsWithResponse,
         IReadOnlyList<string> namespacesToInclude)
+    {
+    }
+
+    private record TypeInfo(string typeName, string @namespace, bool isPublic)
     {
     }
 
@@ -106,81 +133,19 @@ public class HelloSourceGenerator : ISourceGenerator
         sb.AppendLine($"namespace {info.@namespace}");
         using (sb.IndentWithCurlyBrackets())
         {
-            
-
-            sb.AppendLine($"public partial interface I{info.typeName}:I{info.typeName}_MethodInvoker");
-            using (sb.IndentWithCurlyBrackets())
-            {
-                sb.AppendLine($"event Action<byte[], Exception> OnMessageError;");
-
-                foreach (var e in info.events)
-                {
-                    sb.AppendLine($"event Action<{e.typeName}> On{e.typeName};");
-                }
-                sb.AppendLine();
-                
-                sb.AppendLine();
-                sb.AppendLine($"void SetUpUsingEventHandler(I{info.typeName}_EventHandler eventHandler)");
-                using (sb.IndentWithCurlyBrackets())
-                {
-                    foreach (var e in info.events)
-                    {
-                        sb.AppendLine($"On{e.typeName} += eventHandler.On{e.typeName};");
-                    }
-                }
-                
-                sb.AppendLine();
-                sb.AppendLine($"IDisposable SetUpUsingActions({string.Join(", ",info.events.Select(e=>$"Action<{e.typeName}> handle{e.typeName}"))})");
-                using (sb.IndentWithCurlyBrackets())
-                {
-                    foreach (var e in info.events)
-                    {
-                        sb.AppendLine($"On{e.typeName} += handle{e.typeName};");
-                    }
-
-                    sb.AppendLine($"return new ActionsDisposable(()=>");
-                    using (sb.IndentWithCurlyBrackets())
-                    {
-                        foreach (var e in info.events)
-                        {
-                            sb.AppendLine($"On{e.typeName} -= handle{e.typeName};");
-                        }
-                    }
-                    sb.AppendLine(");");
-                }
-                
-                sb.AppendLine($"private record ActionDisposable(Action action) : IDisposable");
-                using (sb.IndentWithCurlyBrackets())
-                {
-                    sb.AppendLine($"public void Dispose()=> action();");
-                } 
-                
-                sb.AppendLine();
-                sb.AppendLine($"void RemoveEventHandler(I{info.typeName}_EventHandler eventHandler)");
-                using (sb.IndentWithCurlyBrackets())
-                {
-                    foreach (var e in info.events)
-                    {
-                        sb.AppendLine($"On{e.typeName} -= eventHandler.On{e.typeName};");
-                    }
-                }
-
-                sb.AppendLine();
-                foreach (var m in info.methods)
-                {
-                    sb.AppendLine($"ValueTask Invoke{m.typeName}({m.typeName} msg);");
-                }
-            }
-            
             sb.AppendLine($"public partial interface I{info.typeName}_EventHandler");
             using (sb.IndentWithCurlyBrackets())
             {
                 foreach (var e in info.events)
                 {
-                    sb.AppendLine($"void On{e.typeName}({e.typeName} msg);");
+                    sb.AppendLine($"ValueTask On{e.typeName}({e.typeName} msg);");
+                }
+                foreach (var e in info.eventsWithResponse)
+                {
+                    sb.AppendLine($"ValueTask<{e.response.typeName}> On{e.request.typeName}({e.request.typeName} msg);");
                 }
             }
-            
+
             sb.AppendLine($"public partial interface I{info.typeName}_MethodInvoker");
             using (sb.IndentWithCurlyBrackets())
             {
@@ -188,10 +153,21 @@ public class HelloSourceGenerator : ISourceGenerator
                 {
                     sb.AppendLine($"ValueTask Invoke{m.typeName}({m.typeName} msg);");
                 }
+                foreach (var m in info.methodsWithResponse)
+                {
+                    sb.AppendLine($"ValueTask<{m.response.typeName}> Invoke{m.request.typeName}({m.request.typeName} msg);");
+                }
+            }
+
+            sb.AppendLine($"public partial interface I{info.typeName} : I{info.typeName}_MethodInvoker");
+            using (sb.IndentWithCurlyBrackets())
+            {
+                sb.AppendLine($"event Action<byte[], Exception> OnMessageError;");
+                sb.AppendLine($"void SetEventHandler(I{info.typeName}_EventHandler? eventHandler);");
             }
             
             sb.AppendLine();
-            sb.AppendLine($"public partial  class {info.typeName}: I{info.typeName}{(info.generateObjectApi?", I3DAppObjectApi":"")}, IDisposable");
+            sb.AppendLine($"public partial  class {info.typeName}: I{info.typeName}, IDisposable");
             using (sb.IndentWithCurlyBrackets())
             {
                 sb.AppendLine($"protected partial void SerializeObject<T>(T obj, IBufferWriter<byte> writer);");
@@ -199,7 +175,16 @@ public class HelloSourceGenerator : ISourceGenerator
 
                 sb.AppendLine();
                 sb.AppendLine($"private readonly IBinaryApi _binaryApi;");
+                sb.AppendLine($"private I{info.typeName}_EventHandler? _eventHandler;");
                 sb.AppendLine($"private readonly ArrayBufferWriter<byte> _writer = new ArrayBufferWriter<byte>(100);");
+                
+                sb.AppendLine($"private byte _requestResponseIdCounter=0;");
+                
+                foreach(var (m,i)in info.methodsWithResponse.EnumerateWithIndex(info.methods.Count))
+                {
+                    sb.AppendLine($"private Dictionary<byte,TaskCompletionSource<{m.response.typeName}>> _response{m.request.typeName}Tcs = new();");
+                }
+                
                 sb.AppendLine();
                 sb.AppendLine($"public {info.typeName}(IBinaryApi binaryApi)");
                 using (sb.IndentWithCurlyBrackets())
@@ -208,36 +193,21 @@ public class HelloSourceGenerator : ISourceGenerator
                 }
                 sb.AppendLine($"public bool IsProcessingMessages => _binaryApi.MainMessageHandler == ProcessMessages;");
                 
-                sb.AppendLine($"public void StartProcessingMessages()");
+                sb.AppendLine($"public void SetEventHandler(I{info.typeName}_EventHandler? eventHandler)");
                 using (sb.IndentWithCurlyBrackets())
                 {
-                    sb.AppendLine("_binaryApi.MainMessageHandler = ProcessMessages;");
-                }
-                
-                sb.AppendLine($"public void StopProcessingMessages()");
-                using (sb.IndentWithCurlyBrackets())
-                {
-                    sb.AppendLine("if(_binaryApi.MainMessageHandler != ProcessMessages)");
+                    sb.AppendLine(
+                        "if(_binaryApi.MainMessageHandler != null && _binaryApi.MainMessageHandler != ProcessMessages)");
                     using (sb.IndentWithCurlyBrackets())
                     {
-                        sb.AppendLine("return;");
+                        sb.AppendLine("throw new InvalidOperationException(\"Somebody else is handling messages!\");");
                     }
-                    sb.AppendLine("_binaryApi.MainMessageHandler = null;");
-                }
 
-                sb.AppendLine();
+                    sb.AppendLine("_eventHandler=eventHandler;");
+                    sb.AppendLine("_binaryApi.MainMessageHandler = eventHandler==null?null: ProcessMessages;");
+                }
 
                 sb.AppendLine($"public event Action<byte[], Exception> OnMessageError;");
-                if (info.generateObjectApi)
-                {
-                    sb.AppendLine($"public event Action<(object msg, Type msgType)>? OnMessageObject;");
-                }
-
-                sb.AppendLine();
-                foreach (var e in info.events)
-                {
-                    sb.AppendLine($"public event Action<{e.typeName}> On{e.typeName};");
-                }
 
                 sb.AppendLine();
                 foreach(var (m,i)in info.methods.EnumerateWithIndex())
@@ -250,62 +220,37 @@ public class HelloSourceGenerator : ISourceGenerator
                     }
                 }
                 sb.AppendLine();
-
-                if (info.generateObjectApi)
+                foreach(var (m,i)in info.methodsWithResponse.EnumerateWithIndex(info.methods.Count))
                 {
-                    sb.AppendLine($"public ValueTask InvokeMessageObject(object msg, Type messageTypeOverride = null)");
+                    sb.AppendLine($"public async ValueTask<{m.response.typeName}> Invoke{m.request.typeName}({m.request.typeName} msg)");
+
                     using (sb.IndentWithCurlyBrackets())
                     {
-                        sb.AppendLine($"if(msg==null) throw new ArgumentNullException(nameof(msg));");
-                        sb.AppendLine($"var msgType=messageTypeOverride ?? msg.GetType();");
-                        foreach(var (m,i)in info.methods.EnumerateWithIndex())
-                        {
-                            sb.AppendLine($"if (msgType == typeof({m.typeName}))");
-                            using (sb.IndentWithCurlyBrackets())
-                            {
-                                sb.AppendLine($"return SendMessage<{m.typeName}>({i}, ({m.typeName})msg);");
-                            }
-                        }
-
-                        sb.AppendLine($"throw new InvalidOperationException($\"Unknown message type {{msgType.Name}}\");");
-                    }
-
-                    sb.AppendLine();
-                    sb.AppendLine($"public IEnumerable<Type> SupportedOnMessageTypes ");
-                    using (sb.IndentWithCurlyBrackets())
-                    {
-                        sb.AppendLine($"get");
+                        sb.AppendLine($"byte requestId;");
+                        sb.AppendLine($"unchecked");
                         using (sb.IndentWithCurlyBrackets())
                         {
-                            foreach(var (m,i)in info.events.EnumerateWithIndex())
-                            {
-                                sb.AppendLine($"yield return typeof({m.typeName});");
-                            }
+                            sb.AppendLine($"requestId = _requestResponseIdCounter++;");
                         }
-                    }
 
-                    sb.AppendLine();
-                    sb.AppendLine($"public IEnumerable<Type> SupportedInvokeMessageTypes ");
-                    using (sb.IndentWithCurlyBrackets())
-                    {
-                        sb.AppendLine($"get");
-                        using (sb.IndentWithCurlyBrackets())
-                        {
-                            foreach(var (m,i)in info.methods.EnumerateWithIndex())
-                            {
-                                sb.AppendLine($"yield return typeof({m.typeName});");
-                            }
-                        }
+                        sb.AppendLine($"var tcs= new TaskCompletionSource<{m.response.typeName}>();");
+                        sb.AppendLine($"_response{m.request.typeName}Tcs[requestId]=tcs;");
+                        
+                        sb.AppendLine($"await SendMessageWithResponse({i},requestId, msg);");
+                        
+                        
+                        sb.AppendLine($"var response=await tcs.Task;");
+                        sb.AppendLine($"_response{m.request.typeName}Tcs.Remove(requestId);");
+                        sb.AppendLine($"return response;");
                     }
-
-                    sb.AppendLine();
                 }
+                sb.AppendLine();
                 
                 sb.AppendLine();
                 sb.AppendLine($"public void Dispose()");
                 using (sb.IndentWithCurlyBrackets())
                 {
-                    sb.AppendLine("StopProcessingMessages();");
+                    sb.AppendLine("SetEventHandler(null);");
                 }
                 
                 sb.AppendLine($"protected ValueTask SendMessage<TMessage>(byte messageId, TMessage message)");
@@ -331,16 +276,46 @@ public class HelloSourceGenerator : ISourceGenerator
                 }
                 
                 sb.AppendLine();
-
                 
-                sb.AppendLine($"protected void ProcessMessages(byte[] message)");
+                sb.AppendLine($"protected ValueTask SendMessageWithResponse<TMessage>(byte messageId, byte requestId, TMessage message)");
                 using (sb.IndentWithCurlyBrackets())
                 {
                     sb.AppendLine("try");
                     using (sb.IndentWithCurlyBrackets())
                     {
-                        sb.AppendLine("var span = new ReadOnlySpan<byte>(message, 1, message.Length - 1);");
-                        
+                        sb.AppendLine("_writer.Clear();");
+                        sb.AppendLine("Span<byte> messageIdSpan = stackalloc byte[2];");
+                        sb.AppendLine("messageIdSpan[0] = messageId;");
+                        sb.AppendLine("messageIdSpan[1] = requestId;");
+                        sb.AppendLine("_writer.Write(messageIdSpan);");
+                        sb.AppendLine("SerializeObject(message, _writer);");
+                        sb.AppendLine("var encodedMessage = _writer.WrittenSpan.ToArray();");
+                        sb.AppendLine($"return _binaryApi.SendMessage(encodedMessage);");
+                    }
+                    sb.AppendLine("catch (Exception ex)");
+
+                    using (sb.IndentWithCurlyBrackets())
+                    {
+                        sb.AppendLine("throw;");
+                    }
+                }
+                
+                sb.AppendLine();
+
+                
+                sb.AppendLine($"protected T DeserializeObjectWithoutHeader<T>(byte[] message, int headerLength=1)");
+                using (sb.IndentWithCurlyBrackets())
+                {
+                    sb.AppendLine("var span = new ReadOnlySpan<byte>(message, headerLength, message.Length - headerLength);");
+                    sb.AppendLine($"return DeserializeObject<T>(span);");
+                }
+
+                sb.AppendLine($"protected async ValueTask ProcessMessages(byte[] message)");
+                using (sb.IndentWithCurlyBrackets())
+                {
+                    sb.AppendLine("try");
+                    using (sb.IndentWithCurlyBrackets())
+                    {
                         sb.AppendLine("switch(message[0])");
                         using (sb.IndentWithCurlyBrackets())
                         {
@@ -349,14 +324,32 @@ public class HelloSourceGenerator : ISourceGenerator
                                 sb.AppendLine($"case {i}:");
                                 using (sb.IndentWithCurlyBrackets())
                                 {
-                                    sb.AppendLine($"var obj = DeserializeObject<{e.typeName}>(span);");
-                                    sb.AppendLine($"On{e.typeName}?.Invoke(obj);");
-
-                                    if (info.generateObjectApi)
-                                    {
-                                        sb.AppendLine($"OnMessageObject?.Invoke((obj, typeof({e.typeName})));");
-                                    }
-
+                                    sb.AppendLine($"var obj = DeserializeObjectWithoutHeader<{e.typeName}>(message);");
+                                    sb.AppendLine($"await _eventHandler.On{e.typeName}(obj);");
+                                    sb.AppendLine($"break;");
+                                }
+                            }
+                            foreach(var (e,i)in info.eventsWithResponse.EnumerateWithIndex( ))
+                            {
+                                sb.AppendLine($"case {i+info.events.Count}:");
+                                using (sb.IndentWithCurlyBrackets())
+                                {
+                                    sb.AppendLine($"var requestId = message[1];");
+                                    sb.AppendLine($"var obj = DeserializeObjectWithoutHeader<{e.request.typeName}>(message,2);");
+                                    sb.AppendLine($"var response = await _eventHandler.On{e.request.typeName}(obj);");
+                                    sb.AppendLine($"await SendMessageWithResponse({i+info.methods.Count}, requestId, response);");
+                                    
+                                    sb.AppendLine($"break;");
+                                }
+                            }
+                            foreach(var (m,i)in info.methodsWithResponse.EnumerateWithIndex( info.events.Count+info.eventsWithResponse.Count))
+                            {
+                                sb.AppendLine($"case {i}:");
+                                using (sb.IndentWithCurlyBrackets())
+                                {
+                                    sb.AppendLine($"var requestId = message[1];");
+                                    sb.AppendLine($"var obj = DeserializeObjectWithoutHeader<{m.response.typeName}>(message,2);");
+                                    sb.AppendLine($"_response{m.request.typeName}Tcs[requestId].SetResult(obj);");
                                     sb.AppendLine($"break;");
                                 }
                             }
@@ -448,7 +441,14 @@ public class HelloSourceGenerator : ISourceGenerator
 
         sb.AppendLine($"import {{IBinaryApi}} from \"../IBinaryApi\";");
         sb.AppendLine($"import {{MemoryPackWriter}} from \"./MemoryPackWriter\";");
-        foreach (var type in info.methods.Concat(info.events).Select(o => o.typeName).Distinct())
+
+        var typesToImport = info.methods.Select(o => o.typeName)
+            .Concat(info.events.Select(o => o.typeName))
+            .Concat(info.eventsWithResponse.SelectMany(o => new[] { o.request.typeName, o.response.typeName }))
+            .Concat(info.methodsWithResponse.SelectMany(o => new[] { o.request.typeName, o.response.typeName }))
+            .Distinct();
+            
+        foreach (var type in typesToImport)
         {
             sb.AppendLine($"import {{{type}}} from \"./{type}\";");
         }
@@ -459,16 +459,24 @@ public class HelloSourceGenerator : ISourceGenerator
         {
             foreach (var @event in info.events)
             {
-                sb.AppendLine($"On{@event.typeName}(msg: {@event.typeName}): void;");
+                sb.AppendLine($"On{@event.typeName}(msg: {@event.typeName}): Promise<any>;");
+            }
+            foreach (var @event in info.eventsWithResponse)
+            {
+                sb.AppendLine($"On{@event.request.typeName}(msg: {@event.request.typeName}): Promise<{@event.response.typeName}>;");
             }
         }
         
         sb.AppendLine($"export interface I{info.typeName}_MethodInvoker");
         using (sb.IndentWithCurlyBrackets())
         {
-            foreach (var (@event, i) in info.methods.EnumerateWithIndex())
+            foreach (var m in info.methods)
             {
-                sb.AppendLine($"Invoke{@event.typeName}(msg: {@event.typeName}): Promise<void>");
+                sb.AppendLine($"Invoke{m.typeName}(msg: {m.typeName}): Promise<void>");
+            }
+            foreach (var m in info.methodsWithResponse)
+            {
+                sb.AppendLine($"Invoke{m.request.typeName}(msg: {m.request.typeName}): Promise<{m.response.typeName}>;");
             }
         }
         
@@ -483,35 +491,40 @@ public class HelloSourceGenerator : ISourceGenerator
                 sb.AppendLine($"this._dotnetObject = dotnetObject;");
             }
             
-            foreach (var (@event, i) in info.methods.EnumerateWithIndex())
+            foreach (var m in info.methods)
             {
-                sb.AppendLine($"public Invoke{@event.typeName}(msg: {@event.typeName}): Promise<void>");
+                sb.AppendLine($"public Invoke{m.typeName}(msg: {m.typeName}): Promise<void>");
                 using (sb.IndentWithCurlyBrackets())
                 {
-                    sb.AppendLine($"return this._dotnetObject.invokeMethodAsync(\"On{@event.typeName}\", msg);");
+                    sb.AppendLine($"return this._dotnetObject.invokeMethodAsync(\"On{m.typeName}\", msg);");
+                }
+            }
+            
+            foreach (var m in info.methodsWithResponse)
+            {
+                sb.AppendLine($"public Invoke{m.request.typeName}(msg: {m.request.typeName}): Promise<{m.response.typeName}>");
+                using (sb.IndentWithCurlyBrackets())
+                {
+                    sb.AppendLine($"return this._dotnetObject.invokeMethodAsync(\"On{m.request.typeName}\", msg);");
                 }
             }
         }
         
-        sb.AppendLine($"export interface I{info.typeName}");
+        sb.AppendLine($"export interface I{info.typeName} extends I{info.typeName}_MethodInvoker");
         using (sb.IndentWithCurlyBrackets())
         {
-            foreach (var @event in info.events)
-            {
-                sb.AppendLine($"On{@event.typeName}?: (msg: {@event.typeName}) => void;");
-            }
-
-            foreach (var (@event, i) in info.methods.EnumerateWithIndex())
-            {
-                sb.AppendLine($"Invoke{@event.typeName}(msg: {@event.typeName}): Promise<void>");
-            }
+            //sb.AppendLine($"OnMessageError: (bytes: Uint8Array, error: Error) => void;");
+            sb.AppendLine($"SetEventHandler(eventHandler: I{info.typeName}_EventHandler);");
         }
 
-        sb.AppendLine($"export class {info.typeName} implements  I{info.typeName}, I{info.typeName}_MethodInvoker");
+        sb.AppendLine($"export class {info.typeName} implements I{info.typeName}");
         using (sb.IndentWithCurlyBrackets())
         {
             sb.AppendLine($"private _binaryApi: IBinaryApi;");
+            sb.AppendLine($"private _requestResponseIdCounter: number= 0;");
+            sb.AppendLine($"private _eventHandler: I{info.typeName}_EventHandler;");
             sb.AppendLine($"private _messageHandler:(bytes: Uint8Array) => void;");
+            sb.AppendLine($"private _responseTcs:{{ [id: number] : any }} = {{}};");
 
             sb.AppendLine($"constructor( binaryApi: IBinaryApi)");
             using (sb.IndentWithCurlyBrackets())
@@ -521,53 +534,66 @@ public class HelloSourceGenerator : ISourceGenerator
             }
 
             sb.AppendLines(
-                @"public get IsProcessingMessages():boolean 
-{
+                $@"public get IsProcessingMessages():boolean 
+{{
     return this._binaryApi.mainMessageHandler == this._messageHandler;
-}
-public StartProcessingMessages():void
-{
-    this._binaryApi.mainMessageHandler = this._messageHandler;
-}
-public StopProcessingMessages():void
-{
-    if(this._binaryApi.mainMessageHandler != this._messageHandler)
-    {
+}}
+public SetEventHandler(eventHandler: I{info.typeName}_EventHandler):void
+{{
+    if(this._binaryApi.mainMessageHandler != null && this._binaryApi.mainMessageHandler != this._messageHandler)
+    {{
         return;
-    }
-    this._binaryApi.mainMessageHandler = null;
-}".Split(new[] { "\r\n", "\n" }, StringSplitOptions.None));
+    }}
+    this._eventHandler=eventHandler;
+    this._binaryApi.mainMessageHandler = eventHandler==null?null:this._messageHandler;
+}}".Split(new[] { "\r\n", "\n" }, StringSplitOptions.None));
 
             
-            sb.AppendLine($"public SetUpUsingEventHandler(handler: I{info.typeName}_EventHandler)");
-            using (sb.IndentWithCurlyBrackets())
+            foreach (var (method, i) in info.methods.EnumerateWithIndex())
             {
-                foreach (var @event in info.events)
+                sb.AppendLine($"public Invoke{method.typeName}(msg: {method.typeName}): Promise<void>");
+                using (sb.IndentWithCurlyBrackets())
                 {
-                    sb.AppendLine($"this.On{@event.typeName} = msg => handler.On{@event.typeName}(msg);");
+                    sb.AppendLine($"return this.sendMessage({i}, null, w => {method.typeName}.serializeCore(w, msg));");
                 }
             }
             
-            foreach (var @event in info.events)
+            foreach (var (method, i) in info.methodsWithResponse.EnumerateWithIndex())
             {
-                sb.AppendLine($"public On{@event.typeName}?: (msg: {@event.typeName}) => void;");
-            }
-
-            foreach (var (@event, i) in info.methods.EnumerateWithIndex())
-            {
-                sb.AppendLine($"public Invoke{@event.typeName}(msg: {@event.typeName}): Promise<void>");
+                sb.AppendLine($"public async Invoke{method.request.typeName}(msg: {method.request.typeName}): Promise<{method.response.typeName}>");
                 using (sb.IndentWithCurlyBrackets())
                 {
-                    sb.AppendLine($"return this.sendMessage({i},  w => {@event.typeName}.serializeCore(w, msg));");
+                    sb.AppendLine($"let requestId = _requestResponseIdCounter++;");
+                    sb.AppendLine($"_requestResponseIdCounter=_requestResponseIdCounter>255?0:_requestResponseIdCounter;");
+
+                    
+                    sb.AppendLines($@"
+    var deferred = {{}};
+    deferred.promise = new Promise(resolve => {{
+        deferred.resolve = resolve;
+    }});
+    this._responseTcs[requestId]= deferred;".Split(new[] { "\r\n", "\n" }, StringSplitOptions.None));
+                    
+                    sb.AppendLine($"await this.sendMessage({i}, requestId, w => {method.request.typeName}.serializeCore(w, msg));");
+                    
+                    sb.AppendLine($"let response = await deferred.promise;");
+                    sb.AppendLine($"delete   this._responseTcs[requestId];");
+                    
+                    sb.AppendLine($"return response;");
+                    
+                    
                 }
             }
 
             sb.AppendLines(
-                @"private async sendMessage(messageId: number, messageSerializeCore: (writer: MemoryPackWriter) => any): Promise<void> 
+                @"private async sendMessage(messageId: number, requestId: number|null, messageSerializeCore: (writer: MemoryPackWriter) => any): Promise<void> 
 {
     try {
         const writer = MemoryPackWriter.getSharedInstance();
         writer.writeInt8(messageId);
+        if(requestId!=null){
+            writer.writeInt8(requestId);
+        }
         messageSerializeCore(writer);
         const encodedMessage = writer.toArray();
 
@@ -580,18 +606,13 @@ public StopProcessingMessages():void
             
             
 
-            sb.AppendLine($"private ProcessMessages(msg: Uint8Array): void");
+            sb.AppendLine($"private async ProcessMessages(msg: Uint8Array): Promise<void>");
             using (sb.IndentWithCurlyBrackets())
             {
-            
-                sb.AppendLine($"let msgId = msg[0];");
-                sb.AppendLine($"let buffer = msg.slice(1);");
-                sb.AppendLine($"var dst = new ArrayBuffer(buffer.byteLength);");
-                sb.AppendLine($"new Uint8Array(dst).set(buffer);");
                 sb.AppendLine($"try");
                 using (sb.IndentWithCurlyBrackets())
                 {
-                    sb.AppendLine("switch (msgId)");
+                    sb.AppendLine("switch (msg[0])");
                     using (sb.IndentWithCurlyBrackets())
                     {
                         foreach (var (e,i) in info.events.EnumerateWithIndex())
@@ -599,8 +620,40 @@ public StopProcessingMessages():void
                             sb.AppendLine($"case {i}:");
                             using (sb.IndentWithCurlyBrackets())
                             {
+                                sb.AppendLine($"let buffer = msg.slice(1);");
+                                sb.AppendLine($"var dst = new ArrayBuffer(buffer.byteLength);");
+                                sb.AppendLine($"new Uint8Array(dst).set(buffer);");
                                 sb.AppendLine($"const obj: {e.typeName} = {e.typeName}.deserialize(dst);");
-                                sb.AppendLine($"this.On{e.typeName}?.(obj);");
+                                sb.AppendLine($"await this._eventHandler.On{e.typeName}?.(obj);");
+                                sb.AppendLine($"break;");
+                            }
+                        }
+                        foreach (var (e,i) in info.eventsWithResponse.EnumerateWithIndex())
+                        {
+                            sb.AppendLine($"case {i+info.events.Count}:");
+                            using (sb.IndentWithCurlyBrackets())
+                            {
+                                sb.AppendLine($"let requestId = msg[1];");
+                                sb.AppendLine($"let buffer = msg.slice(2);");
+                                sb.AppendLine($"var dst = new ArrayBuffer(buffer.byteLength);");
+                                sb.AppendLine($"new Uint8Array(dst).set(buffer);");
+                                sb.AppendLine($"const obj: {e.request.typeName} = {e.request.typeName}.deserialize(dst);");
+                                sb.AppendLine($"let response= await this._eventHandler.On{e.request.typeName}(obj);");
+                                sb.AppendLine($"await this.sendMessage({i+info.methods.Count}, requestId, w => {e.response.typeName}.serializeCore(w, response));");
+                                sb.AppendLine($"break;");
+                            }
+                        }
+                        foreach (var (e,i) in info.eventsWithResponse.EnumerateWithIndex( info.events.Count+info.eventsWithResponse.Count))
+                        {
+                            sb.AppendLine($"case {i}:");
+                            using (sb.IndentWithCurlyBrackets())
+                            {
+                                sb.AppendLine($"let requestId = msg[1];");
+                                sb.AppendLine($"let buffer = msg.slice(2);");
+                                sb.AppendLine($"var dst = new ArrayBuffer(buffer.byteLength);");
+                                sb.AppendLine($"new Uint8Array(dst).set(buffer);");
+                                sb.AppendLine($"const obj: {e.request.typeName} = {e.request.typeName}.deserialize(dst);");
+                                sb.AppendLine($"this._responseTcs[requestId].resolve(obj);");
                                 sb.AppendLine($"break;");
                             }
                         }
@@ -645,11 +698,13 @@ public StopProcessingMessages():void
     {
         public bool ShouldGenerate => Blazor3DAppTypes.Count > 0 || Unity3DAppTypes.Count>0;
 
-        public List<(TypeDeclarationSyntax type, bool generateObjectApi) > Blazor3DAppTypes { get; } = new();
+        public List<TypeDeclarationSyntax> Blazor3DAppTypes { get; } = new();
 
-        public List<(TypeDeclarationSyntax type, bool generateObjectApi) > Unity3DAppTypes { get; } = new();
+        public List<TypeDeclarationSyntax > Unity3DAppTypes { get; } = new();
 
         public List<TypeDeclarationSyntax > MessagesToUnity { get; } = new();
+        
+        public List<(TypeDeclarationSyntax request, TypeSyntax response) > MessagesToUnityWithResponse { get; } = new();
 
         public List<TypeDeclarationSyntax > MessagesToBlazor { get; } = new();
 
@@ -665,21 +720,33 @@ public StopProcessingMessages():void
                 if (typeDeclarationSyntax.AttributeLists.SelectMany(e => e.Attributes)
                     .TryGet(e => e.Name.NormalizeWhitespace().ToFullString() == "Blazor3DApp", out var blazor3DAppAttr))
                 {
-                    var aaa = bool.TryParse(blazor3DAppAttr.ArgumentList?.Arguments.Select(o => o.ToString()).FirstOrDefault(), out var value) ? value : false;
-                    Blazor3DAppTypes.Add((typeDeclarationSyntax, aaa));
+                    Blazor3DAppTypes.Add(typeDeclarationSyntax);
                 }
 
                 if (typeDeclarationSyntax.AttributeLists.SelectMany(e => e.Attributes)
                     .TryGet(e => e.Name.NormalizeWhitespace().ToFullString() == "Unity3DApp", out var unity3DAppAttr))
                 {
-                    var aaa = bool.TryParse(unity3DAppAttr.ArgumentList?.Arguments.Select(o => o.ToString()).FirstOrDefault(), out var value) ? value : false;
-                    Unity3DAppTypes.Add((typeDeclarationSyntax, aaa));
+                    Unity3DAppTypes.Add(typeDeclarationSyntax);
                 }
            
                 if (typeDeclarationSyntax.AttributeLists.SelectMany(e => e.Attributes).Any(e =>
                         e.Name.NormalizeWhitespace().ToFullString() == "MemoryPackable") && (typeDeclarationSyntax.BaseList?.Types.Any(o=>o.Type.ToString() == "IMessageToUnity") ?? false))
                 {
                     MessagesToUnity.Add(typeDeclarationSyntax);
+                }
+           
+                if (typeDeclarationSyntax.AttributeLists.SelectMany(e => e.Attributes).Any(e =>
+                        e.Name.NormalizeWhitespace().ToFullString() == "MemoryPackable") && (typeDeclarationSyntax.BaseList?.Types.Select(o=>o.Type).OfType<GenericNameSyntax>().TryGet(o=>o.Identifier.ToString() == "IMessageToUnity", out var messageToUnityAttr) ?? false))
+                {
+                    if (messageToUnityAttr.TypeArgumentList.Arguments.Count == 0)
+                    {
+                        throw new InvalidOperationException();
+                    }
+                    else
+                    {
+
+                        MessagesToUnityWithResponse.Add((typeDeclarationSyntax, messageToUnityAttr.TypeArgumentList.Arguments[0]));
+                    }
                 }
 
                 if (typeDeclarationSyntax.AttributeLists.SelectMany(e => e.Attributes).Any(e =>

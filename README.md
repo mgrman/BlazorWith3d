@@ -75,12 +75,9 @@ benchmarks
 
 ### Prio 0 (what to do next)
 
-- Consider again the messages with responses to be added via the generated code, as a lot of messages are responses
+- Add binaryApi with response to optimize interop usecases (as only unity debug socket cannot do this)
 
 - generate blazor interop code, preferably in  another project referencing the types in shared
-
-- make the generated binary API only use eventhandler interface, and then have implementations using actions, events, or you can implement the interface yourself
-
 
 - try again to get matrix for screen to world as that would reduce the need for extra interop call
 

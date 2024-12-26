@@ -32,7 +32,6 @@ public class BlocksOnGridThreeJSRenderer: BaseJsBinaryApiRenderer, IDisposable
         };
         
         ParentApp.InitializeRenderer(unityAppApi);
-        unityAppApi.StartProcessingMessages();
         
         await base.OnAfterRenderAsync(firstRender);
     }

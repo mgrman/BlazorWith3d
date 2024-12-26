@@ -26,34 +26,53 @@ import {RemoveBlockInstance} from "com.blazorwith3d.exampleapp.client.shared/mem
 import {RemoveBlockTemplate} from "com.blazorwith3d.exampleapp.client.shared/memorypack/RemoveBlockTemplate";
 import { UnityAppInitialized } from "com.blazorwith3d.exampleapp.client.shared/memorypack/UnityAppInitialized";
 import { UpdateBlockInstance } from "com.blazorwith3d.exampleapp.client.shared/memorypack/UpdateBlockInstance";
-import { BlocksOnGridUnityApi } from "com.blazorwith3d.exampleapp.client.shared/memorypack/BlocksOnGridUnityApi";
+import {
+    BlocksOnGridUnityApi,
+    BlocksOnGridUnityApi_MethodInvoker_DirectInterop,
+    IBlocksOnGridUnityApi_EventHandler,
+    IBlocksOnGridUnityApi_MethodInvoker
+} from "com.blazorwith3d.exampleapp.client.shared/memorypack/BlocksOnGridUnityApi";
 import {BlazorBinaryApi} from "com.blazorwith3d.exampleapp.client.shared/BlazorBinaryApi";
 import { RequestRaycast } from "com.blazorwith3d.exampleapp.client.shared/memorypack/RequestRaycast";
 import { RequestScreenToWorldRay } from "com.blazorwith3d.exampleapp.client.shared/memorypack/RequestScreenToWorldRay";
 import { ScreenToWorldRayResponse } from "com.blazorwith3d.exampleapp.client.shared/memorypack/ScreenToWorldRayResponse";
 import { RaycastResponse } from "com.blazorwith3d.exampleapp.client.shared/memorypack/RaycastResponse";
 
-export function InitializeApp(canvas: HTMLCanvasElement, dotnetObject: any, onMessageReceivedMethodName: string) {
+export function InitializeApp_BinaryApi(canvas: HTMLCanvasElement, dotnetObject: any, onMessageReceivedMethodName: string) {
+    let sendMessageCallback: (msgBytes: Uint8Array) => Promise<any> = msgBytes => dotnetObject.invokeMethodAsync(onMessageReceivedMethodName, msgBytes);
 
-    var sendMessageCallback: (msgBytes: Uint8Array) => Promise<any> = msgBytes => dotnetObject.invokeMethodAsync(onMessageReceivedMethodName, msgBytes);
 
-    return new DebugApp(canvas, sendMessageCallback);
+    let binaryApi= new BlazorBinaryApi(sendMessageCallback);
+    let blazorApp=new BlocksOnGridUnityApi(binaryApi);
+
+    let app= new DebugApp(canvas, blazorApp);
+
+    blazorApp.SetEventHandler(app);
+
+    let appAsAny :any =app ;
+    appAsAny.ProcessMessage= msg=> {
+        binaryApi.onMessageReceived(msg);
+    }
+    return appAsAny;
 }
 
+export function InitializeApp_DirectInterop(canvas: HTMLCanvasElement, dotnetObject: any) {
+    return new DebugApp(canvas, new BlocksOnGridUnityApi_MethodInvoker_DirectInterop(dotnetObject));
+}
 
-export class DebugApp {
-    private _sendMessage: (msgBytes: Uint8Array) => Promise<any>;
-    private scene: Scene;
+export class DebugApp implements IBlocksOnGridUnityApi_EventHandler{
     private templates: Array<AddBlockTemplate> = new Array<AddBlockTemplate>();
     private instances: Array<[instance: AddBlockInstance, mesh: Mesh]> = new Array<[instance: AddBlockInstance, mesh: Mesh]>();
 
-    private changingRequestId: number = 0;
+    private canvas: HTMLCanvasElement;
+    private scene: Scene;
     private plane: Mesh;
-    private _blazorApp: BlocksOnGridUnityApi;
-    private _binaryApi: BlazorBinaryApi;
+    private _methodInvoker: IBlocksOnGridUnityApi_MethodInvoker;
 
-    constructor(canvas: HTMLCanvasElement, sendMessage: (msgBytes: Uint8Array) => Promise<any>) {
+    constructor(canvas: HTMLCanvasElement, methodInvoker: IBlocksOnGridUnityApi_MethodInvoker) {
 
+        this.canvas=canvas;
+        this._methodInvoker = methodInvoker;
         canvas.style.width = "100%";
         canvas.style.height = "100%";
         canvas.width = canvas.offsetWidth;
@@ -66,8 +85,6 @@ export class DebugApp {
         this.scene.preventDefaultOnPointerDown = false;
         this.scene.preventDefaultOnPointerUp = false;
 
-       this._binaryApi= new BlazorBinaryApi(sendMessage);
-        this._blazorApp=new BlocksOnGridUnityApi(this._binaryApi);
 
         this.plane = new Mesh("plane", this.scene);
         // plane handled the conversion to Blazor coordinate system
@@ -105,33 +122,16 @@ export class DebugApp {
         engine.runRenderLoop(() => {
             this.scene.render();
         });
-        
-        this._blazorApp.OnBlazorControllerInitialized=msg=>this.OnBlazorControllerInitialized(msg);
-        this._blazorApp.OnPerfCheck=msg=>this.OnPerfCheck(msg);
-        this._blazorApp.OnAddBlockTemplate=msg=>this.OnAddBlockTemplate(msg);
-        this._blazorApp.OnAddBlockInstance=msg=>this.OnAddBlockInstance(msg);
-        this._blazorApp.OnRemoveBlockInstance=msg=>this.OnRemoveBlockInstance(msg);
-        this._blazorApp.OnRemoveBlockTemplate = msg => this.OnRemoveBlockTemplate(msg);
-        this._blazorApp.OnUpdateBlockInstance = msg => this.OnUpdateBlockInstance(msg);
-        this._blazorApp.OnRequestRaycast = msg => this.OnRequestRaycast(msg);
-        this._blazorApp.OnRequestScreenToWorldRay = msg => this.OnRequestScreenToWorldRay(msg);
 
-
-        this._blazorApp.StartProcessingMessages();
-
-        this._blazorApp.InvokeUnityAppInitialized(new UnityAppInitialized()).then(_ => console.log("UnityAppInitialized invoked"));
-    }
-
-    public ProcessMessage(msg: Uint8Array): void {
-        this._binaryApi.onMessageReceived(msg);
+        this._methodInvoker.InvokeUnityAppInitialized(new UnityAppInitialized()).then(_ => console.log("UnityAppInitialized invoked"));
     }
 
     public Quit(): void {
         console.log("Quit called");
     }
 
-    protected OnUpdateBlockInstance(obj: UpdateBlockInstance) {
-        console.log("BlockPoseChangeValidated", obj);
+    public async OnUpdateBlockInstance(obj: UpdateBlockInstance) : Promise<any> {
+        console.log("OnUpdateBlockInstance", obj);
 
 
         const [instance, mesh] = this.instances.find(o => o[0].blockId === obj.blockId);
@@ -142,14 +142,13 @@ export class DebugApp {
     }
 
 
-    protected OnRemoveBlockTemplate(obj: RemoveBlockTemplate) {
+    public async OnRemoveBlockTemplate(obj: RemoveBlockTemplate): Promise<any>  {
         console.log("RemoveBlockTemplate", obj);
         this.templates = this.templates.filter(o => o.templateId !== obj.templateId);
     }
 
-    protected OnRemoveBlockInstance(obj: RemoveBlockInstance) {
+    public async OnRemoveBlockInstance(obj: RemoveBlockInstance): Promise<any>  {
         console.log("RemoveBlockInstance", obj);
-
 
         const [instance, mesh] = this.instances.find(o => o[0].blockId === obj.blockId);
         this.instances = this.instances.filter(o => o[0].blockId !== obj.blockId);
@@ -157,7 +156,7 @@ export class DebugApp {
         this.scene.removeMesh(mesh);
     }
 
-    protected OnAddBlockInstance(obj: AddBlockInstance) {
+    public async OnAddBlockInstance(obj: AddBlockInstance): Promise<any>  {
         console.log("AddBlockInstance", obj);
 
         var template = this.templates.find(o => o.templateId === obj.templateId);
@@ -180,9 +179,9 @@ export class DebugApp {
         mesh.rotation = new Vector3(0, 0, obj.rotationZ);
     }
 
-    protected OnRequestScreenToWorldRay(msg: RequestScreenToWorldRay): void {
 
-        
+    public async OnRequestScreenToWorldRay(msg: RequestScreenToWorldRay): Promise<ScreenToWorldRayResponse> {
+
 
         var ray = this.scene.createPickingRay(msg.screen.x, msg.screen.y, Matrix.Identity(), this.scene.activeCamera);	
 
@@ -193,16 +192,15 @@ export class DebugApp {
 
 
 
-        this._blazorApp.InvokeScreenToWorldRayResponse({
-            requestId:msg.requestId,
+        return {
             ray: {
                 origin: { x: ray.origin.x, y: ray.origin.y, z: ray.origin.z },
                 direction: { x: ray.direction.x, y: ray.direction.y, z: ray.direction.z }
             }
-        })
+        };
     }
 
-    protected OnRequestRaycast(msg: RequestRaycast): void {
+    public async OnRequestRaycast(msg: RequestRaycast): Promise<RaycastResponse> {
 
         var start = new Vector3(msg.ray.origin.x, msg.ray.origin.y, msg.ray.origin.z);
         var dir = new Vector3(msg.ray.direction.x, msg.ray.direction.y, msg.ray.direction.z);
@@ -215,7 +213,6 @@ export class DebugApp {
         var pickingInfo = this.scene.pickWithRay(ray);
 
         var response = new RaycastResponse();
-        response.requestId = msg.requestId;
         response.hitWorld = start;
 
         if (pickingInfo.hit ) {
@@ -225,27 +222,20 @@ export class DebugApp {
             response.hitBlockId = instance.blockId;
             response.hitWorld = Vector3.TransformCoordinates(pickingInfo.pickedPoint, worldToBlazor) ;
         }
-         this._blazorApp.InvokeRaycastResponse(response);
+         return response;
     }
 
-
-    protected OnAddBlockTemplate(obj: AddBlockTemplate) {
-        console.log("AddBlockTemplate", obj);
-        this.templates.push(obj);
+    public async OnAddBlockTemplate(template: AddBlockTemplate):Promise<any>  {
+        console.log("AddBlockTemplate", template);
+        this.templates.push(template);
     }
 
-    protected OnPerfCheck(obj: PerfCheck) {
-        this._blazorApp.InvokePerfCheck(
-            {
-                aaa: obj.aaa,
-                bbb: obj.bbb,
-                ccc: obj.ccc,
-                ddd: obj.ddd,
-                id: obj.id
-            }).then();
+    public async OnPerfCheck(obj: PerfCheck) :Promise<PerfCheck>
+    {
+        return  obj;
     }
 
-    protected OnBlazorControllerInitialized(obj: BlazorControllerInitialized) {
+    public async OnBlazorControllerInitialized(obj: BlazorControllerInitialized) :Promise<void> {
 
         console.log("OnBlazorControllerInitialized", obj);
 

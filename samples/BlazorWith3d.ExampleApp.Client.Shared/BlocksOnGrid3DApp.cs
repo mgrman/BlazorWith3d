@@ -116,7 +116,6 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
     [GenerateTypeScript]
     public partial class RequestRaycast : IMessageToUnity<RaycastResponse>
     {
-        public int RequestId{ get; set; }
         public PackableRay Ray{ get; set; }
     }
 
@@ -124,7 +123,6 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
     [GenerateTypeScript]
     public partial class RaycastResponse 
     {
-        public int RequestId{ get; set; }
         public PackableVector3 HitWorld{ get; set; }
         public int? HitBlockId{ get; set; }
     }

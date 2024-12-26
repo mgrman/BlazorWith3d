@@ -1,9 +1,7 @@
 ﻿@page "/app"
-@using BlazorWith3d.ExampleApp.Client.ThreeJS
 @using BlazorWith3d.ExampleApp.Client.Components
 @using BlazorWith3d.ExampleApp.Client.Unity.Components
 @using BlazorWith3d.ExampleApp.Client.HTML
-@using BlazorWith3d.ExampleApp.Client.Babylon
 
 
 <PageTitle>WebGL instance</PageTitle>
@@ -27,13 +25,13 @@
             <BlocksOnGridHTMLComponent></BlocksOnGridHTMLComponent>
             break;
         case "Babylon":
-            <BlocksOnGridBabylonRenderer></BlocksOnGridBabylonRenderer>
+            <BlazorWith3d.ExampleApp.Client.Babylon.BlocksOnGridBabylonRenderer></BlazorWith3d.ExampleApp.Client.Babylon.BlocksOnGridBabylonRenderer>
             break;
         case "ThreeJS":
-            <BlocksOnGridThreeJSRenderer></BlocksOnGridThreeJSRenderer>
+            <BlazorWith3d.ExampleApp.Client.ThreeJS.BlocksOnGridThreeJSRenderer></BlazorWith3d.ExampleApp.Client.ThreeJS.BlocksOnGridThreeJSRenderer>
             break;
         case "ThreeJS.Interop":
-            <BlocksOnGridThreeJSDirectRenderer></BlocksOnGridThreeJSDirectRenderer>
+            <BlazorWith3d.ExampleApp.Client.ThreeJS.BlocksOnGridThreeJSDirectRenderer></BlazorWith3d.ExampleApp.Client.ThreeJS.BlocksOnGridThreeJSDirectRenderer>
             break;
             default:
             <text> Unsupported renderer type @_renderer</text>

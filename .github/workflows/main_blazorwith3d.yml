@@ -189,3 +189,4 @@ jobs:
           app-name: 'BlazorWith3d'
           slot-name: 'Production'
           package: .
+          removeAdditionalFilesFlag: true

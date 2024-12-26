@@ -9,7 +9,7 @@ namespace BlazorWith3d.Shared
     public interface IBinaryApi
     {
         // if null, messages are buffered
-        Action<byte[]>? MainMessageHandler { get; set; }
+        Func<byte[],ValueTask>? MainMessageHandler { get; set; }
         ValueTask SendMessage(byte[] bytes);
     }
 
@@ -17,9 +17,9 @@ namespace BlazorWith3d.Shared
     public class BackgroundMessageBuffer
     {
         protected readonly List<byte[]> _unhandledMessages= new();
-        protected Action<byte[]>? _mainMessageHandler;
+        protected Func<byte[],ValueTask>? _mainMessageHandler;
 
-        public Action<byte[]>? MainMessageHandler
+        public Func<byte[],ValueTask>? MainMessageHandler
         {
             get => _mainMessageHandler;
             set
@@ -33,7 +33,7 @@ namespace BlazorWith3d.Shared
             }
         }
         
-        protected  void InvokeMessages(Action<byte[]> handler)
+        protected  void InvokeMessages(Func<byte[],ValueTask> handler)
         {
             var unhandledMessagesCopy = _unhandledMessages.ToList();
             _unhandledMessages.Clear();
@@ -44,44 +44,25 @@ namespace BlazorWith3d.Shared
                 {
                     if (HandleThread == null)
                     {
-                        handler?.Invoke(unhandledMessage);
+                       await handler.Invoke(unhandledMessage);
                     }
                     else
                     {
-                        await HandleThread(() => handler?.Invoke(unhandledMessage));
+                        await HandleThread(async () => await handler.Invoke(unhandledMessage));
                     }
                 }
             });
         }
 
-        public async Task InvokeMessageAsync(byte[] message)
-        {
-            if (MainMessageHandler != null)
-            {
-                if (HandleThread == null)
-                {
-                    _mainMessageHandler?.Invoke(message);
-                }
-                else
-                {
-                    await HandleThread(() => _mainMessageHandler?.Invoke(message));
-                }
-            }
-            else
-            {
-                _unhandledMessages.Add(message);
-            }
-        }
-
-        public Func<Action,Task> HandleThread { get; set; }
+        public Func<Func<ValueTask>,Task> HandleThread { get; set; }
     }
 
     public class ReceiveMessageBuffer
     {
         protected readonly List<byte[]> _unhandledMessages= new();
-        protected Action<byte[]>? _mainMessageHandler;
+        protected Func<byte[], ValueTask>? _mainMessageHandler;
 
-        public Action<byte[]>? MainMessageHandler
+        public Func<byte[], ValueTask>? MainMessageHandler
         {
             get => _mainMessageHandler;
             set
@@ -90,11 +71,14 @@ namespace BlazorWith3d.Shared
 
                 if (value != null && _unhandledMessages.Any())
                 {
-                    foreach (var item in _unhandledMessages)
+                    Task.Run(async () =>
                     {
-                        value.Invoke(item);
-                    }
-                    _unhandledMessages.Clear();
+                        foreach (var item in _unhandledMessages)
+                        {
+                            await value.Invoke(item);
+                        }
+                        _unhandledMessages.Clear();
+                    });
                 }
             }
         }

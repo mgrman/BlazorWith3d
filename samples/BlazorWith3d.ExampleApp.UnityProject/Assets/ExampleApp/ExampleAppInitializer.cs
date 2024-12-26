@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+
 using BlazorWith3d.ExampleApp.Client.Shared;
 using BlazorWith3d.Unity;
 using UnityEngine;
@@ -7,7 +9,7 @@ using UnityEngine;
 
 namespace ExampleApp
 {
-    public class ExampleAppInitializer : MonoBehaviour
+    public class ExampleAppInitializer : MonoBehaviour, IBlocksOnGridUnityApi_EventHandler
     {
         public static Uri HostUrl = null;
         
@@ -38,12 +40,8 @@ namespace ExampleApp
 
             if (string.IsNullOrEmpty(_backendWebsocketUrl))
             {
-                var simulatorProxy = new SimulatorProxy();
-                _appApi = new BlocksOnGridUnityApi(simulatorProxy.BlazorApi);
-                var blazorApp = new BlocksOnGrid3DApp(simulatorProxy.UnityApi);
-                var simulator = gameObject.AddComponent<BlazorSimulator>();
-                simulator.Initialize(blazorApp);
-                HostUrl = null;
+                throw new InvalidOperationException(
+                    "_backendWebsocketUrl is not set! It must be set to run in Editor!");
             }
             else
             {
@@ -66,27 +64,7 @@ namespace ExampleApp
             await _appApi.InvokeUnityAppInitialized(new UnityAppInitialized()
             {
             });
-            _appApi.OnBlazorControllerInitialized += OnControllerInitialized;
-            _appApi.OnAddBlockTemplate += OnAddBlockTemplateMessage;
-            _appApi.OnRemoveBlockTemplate += OnRemoveBlockTemplateMessage;
-            _appApi.OnAddBlockInstance += OnAddBlockInstanceMessage;
-            _appApi.OnRemoveBlockInstance += OnRemoveBlockMessage;
-            _appApi.OnUpdateBlockInstance += OnUpdateBlockInstance;
-            _appApi.OnRequestRaycast += OnRequestRaycast;
-            _appApi.OnRequestScreenToWorldRay += OnRequestScreenToWorldRay;
-
-            _appApi.OnPerfCheck += request =>
-            {
-                _appApi.InvokePerfCheck(new PerfCheck
-                {
-                    Id = request.Id,
-                    Aaa = request.Aaa,
-                    Bbb = request.Bbb,
-                    Ccc = request.Ccc,
-                    Ddd = request.Ddd
-                });
-            };
-            _appApi.StartProcessingMessages();
+            _appApi.SetEventHandler(this);
         }
 
         private async Awaitable OnDestroy()
@@ -102,7 +80,7 @@ namespace ExampleApp
             }
         }
 
-        private void OnControllerInitialized(BlazorControllerInitialized _)
+        public async ValueTask OnBlazorControllerInitialized(BlazorControllerInitialized _)
         {
             Debug.Log($"BlazorControllerInitialized: ");
             foreach (var block in _templates.Values)
@@ -121,7 +99,7 @@ namespace ExampleApp
         }
 
 
-        private void OnAddBlockTemplateMessage(AddBlockTemplate msg)
+        public async ValueTask OnAddBlockTemplate(AddBlockTemplate msg)
         {
             Debug.Log($"Adding block template: {JsonUtility.ToJson(msg)}");
 
@@ -135,7 +113,7 @@ namespace ExampleApp
             Debug.Log($"Added block template: {JsonUtility.ToJson(msg)}");
         }
 
-        private void OnRemoveBlockTemplateMessage(RemoveBlockTemplate msg)
+        public async ValueTask  OnRemoveBlockTemplate(RemoveBlockTemplate msg)
         {
             Debug.Log($"Removing block template: {JsonUtility.ToJson(msg)}");
             
@@ -145,7 +123,7 @@ namespace ExampleApp
             Debug.Log($"Removed block template: {JsonUtility.ToJson(msg)}");
         }
 
-        private void OnAddBlockInstanceMessage(AddBlockInstance msg)
+        public async ValueTask  OnAddBlockInstance(AddBlockInstance msg)
         {
             Debug.Log($"Adding block : {JsonUtility.ToJson(msg)}");
             var template = _templates[msg.TemplateId];
@@ -156,7 +134,7 @@ namespace ExampleApp
             Debug.Log($"Added block : {JsonUtility.ToJson(msg)}");
         }
 
-        private void OnRemoveBlockMessage(RemoveBlockInstance msg)
+        public async ValueTask  OnRemoveBlockInstance(RemoveBlockInstance msg)
         {
             Debug.Log($"Removing block: {JsonUtility.ToJson(msg)}");
             Destroy( _blocks[msg.BlockId].gameObject);
@@ -165,12 +143,17 @@ namespace ExampleApp
             Debug.Log($"Removed block: {JsonUtility.ToJson(msg)}");
         }
 
-        private void OnUpdateBlockInstance(UpdateBlockInstance obj)
+        public async ValueTask  OnUpdateBlockInstance(UpdateBlockInstance obj)
         {
             _blocks[obj.BlockId].UpdatePose(obj);
         }
 
-        private async void OnRequestScreenToWorldRay(RequestScreenToWorldRay obj)
+        public async ValueTask<PerfCheck> OnPerfCheck(PerfCheck msg)
+        {
+            return msg;
+        }
+
+        public async ValueTask<ScreenToWorldRayResponse>  OnRequestScreenToWorldRay(RequestScreenToWorldRay obj)
         {
             // convert to Unity screen coordinates
             var unityScreenPoint = new Vector3(obj.Screen.X, Screen.height - obj.Screen.Y, 0);
@@ -181,14 +164,13 @@ namespace ExampleApp
             ray = new UnityEngine.Ray(transform.worldToLocalMatrix.MultiplyPoint(ray.origin),
                 transform.worldToLocalMatrix.MultiplyVector(ray.direction));
 
-            await _appApi.InvokeScreenToWorldRayResponse(new ScreenToWorldRayResponse()
+            return new ScreenToWorldRayResponse()
             {
-                RequestId = obj.RequestId, Ray = ray.ToNumerics()
-            });
-            return;
+                Ray = ray.ToNumerics()
+            };
         }
 
-        private async void OnRequestRaycast(RequestRaycast obj)
+        public async ValueTask<RaycastResponse> OnRequestRaycast(RequestRaycast obj)
         {
             var ray = obj.Ray.ToUnity();
 
@@ -201,21 +183,18 @@ namespace ExampleApp
                 : null;
             if (hitController==null)
             {
-                await _appApi.InvokeRaycastResponse(new RaycastResponse()
+              return  new RaycastResponse()
                 {
-                    RequestId = obj.RequestId,
                     HitBlockId = null, HitWorld = obj.Ray.Origin
-                });
-                return;
+                };
             }
             
-            await _appApi.InvokeRaycastResponse(new RaycastResponse()
+            return new RaycastResponse()
             {
-                RequestId = obj.RequestId,
                 HitBlockId = hitController.BlockId, 
                 // convert result to blazor world coordinate system
                 HitWorld =  transform.worldToLocalMatrix.MultiplyPoint(hit.point).ToNumerics()
-            });
+            };
         }
     }
 }

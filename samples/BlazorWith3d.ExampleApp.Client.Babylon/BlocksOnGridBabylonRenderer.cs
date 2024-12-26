@@ -16,6 +16,7 @@ public class BlocksOnGridBabylonRenderer:BaseJsBinaryApiRenderer, IDisposable
 
     public override string JsAppPath => Assets["./_content/BlazorWith3d.ExampleApp.Client.Babylon/clientassets/blazorwith3d-exampleapp-client-babylon-bundle.js"];
 
+    protected override string InitializeMethodName => "InitializeApp_BinaryApi";
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender)
@@ -31,7 +32,6 @@ public class BlocksOnGridBabylonRenderer:BaseJsBinaryApiRenderer, IDisposable
         };
         
         ParentApp.InitializeRenderer(unityAppApi);
-        unityAppApi.StartProcessingMessages();
         
         await base.OnAfterRenderAsync(firstRender);
     }

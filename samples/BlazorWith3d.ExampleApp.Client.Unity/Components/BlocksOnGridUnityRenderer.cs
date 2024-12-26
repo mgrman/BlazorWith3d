@@ -32,7 +32,6 @@ public class BlocksOnGridUnityRenderer:BaseUnityRenderer, IDisposable
         };
         
         ParentApp.InitializeRenderer(unityAppApi);
-        unityAppApi.StartProcessingMessages();
         
         await base.OnAfterRenderAsync(firstRender);
     }
