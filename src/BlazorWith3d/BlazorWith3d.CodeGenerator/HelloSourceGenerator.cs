@@ -106,6 +106,8 @@ public class HelloSourceGenerator : ISourceGenerator
         sb.AppendLine($"namespace {info.@namespace}");
         using (sb.IndentWithCurlyBrackets())
         {
+            
+
             sb.AppendLine($"public partial interface I{info.typeName}:I{info.typeName}_MethodInvoker");
             using (sb.IndentWithCurlyBrackets())
             {
@@ -126,6 +128,32 @@ public class HelloSourceGenerator : ISourceGenerator
                         sb.AppendLine($"On{e.typeName} += eventHandler.On{e.typeName};");
                     }
                 }
+                
+                sb.AppendLine();
+                sb.AppendLine($"IDisposable SetUpUsingActions({string.Join(", ",info.events.Select(e=>$"Action<{e.typeName}> handle{e.typeName}"))})");
+                using (sb.IndentWithCurlyBrackets())
+                {
+                    foreach (var e in info.events)
+                    {
+                        sb.AppendLine($"On{e.typeName} += handle{e.typeName};");
+                    }
+
+                    sb.AppendLine($"return new ActionsDisposable(()=>");
+                    using (sb.IndentWithCurlyBrackets())
+                    {
+                        foreach (var e in info.events)
+                        {
+                            sb.AppendLine($"On{e.typeName} -= handle{e.typeName};");
+                        }
+                    }
+                    sb.AppendLine(");");
+                }
+                
+                sb.AppendLine($"private record ActionDisposable(Action action) : IDisposable");
+                using (sb.IndentWithCurlyBrackets())
+                {
+                    sb.AppendLine($"public void Dispose()=> action();");
+                } 
                 
                 sb.AppendLine();
                 sb.AppendLine($"void RemoveEventHandler(I{info.typeName}_EventHandler eventHandler)");

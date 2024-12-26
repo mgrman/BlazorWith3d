@@ -79,6 +79,9 @@ benchmarks
 
 - generate blazor interop code, preferably in  another project referencing the types in shared
 
+- make the generated binary API only use eventhandler interface, and then have implementations using actions, events, or you can implement the interface yourself
+
+
 - try again to get matrix for screen to world as that would reduce the need for extra interop call
 
 - Unify visuals of all renderers

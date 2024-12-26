@@ -11,7 +11,6 @@
 @inject ILogger<BlocksOnGrid3DComponent> Logger
 @inject IJSRuntime JsRuntime
 @implements I3DAppController
-@implements IBlocksOnGrid3DApp_EventHandler
 @implements IAsyncDisposable
 
 <text>@(RendererInfo.Name) @(RendererInfo.IsInteractive?"Interactive":"Static")</text>
@@ -201,15 +200,13 @@
     private IBlocksOnGrid3DApp? _rendererApi;
     private DotNetObjectReference<JsProxy>? _jsProxyReference;
 
-    private int _requestIdCounter = 0;
-    private Dictionary<int, TaskCompletionSource<RaycastResponse>> _activeRaycasts = new();
     private UnityAppInitialized _appState;
     private (AddBlockInstance instance, float offsetX,float offsetY)? _dragging;
     private IJSObjectReference module;
     private IJSObjectReference? _mouseEventsDispose;
 
     private ElementReference _rendererContainerReference;
-    private Dictionary<int, TaskCompletionSource<ScreenToWorldRayResponse>>  _activeScreenToRay=new();
+    private IDisposable? _rendererApiEventsDisposable;
 
     private static (string name, string url )[] GltfAssets = [ ("BoomBox", "./_content/BlazorWith3d.ExampleApp.Client/gltf/BoomBox.glb")];
     
@@ -252,40 +249,26 @@
 
     public void InitializeRenderer(IBlocksOnGrid3DApp? rendererApi)
     {
-        if (_rendererApi != null)
+        if (_rendererApiEventsDisposable != null)
         {
-            _rendererApi.RemoveEventHandler(this);
+            _rendererApiEventsDisposable?.Dispose();
+            _rendererApiEventsDisposable = null;
         }
         
         _rendererApi = rendererApi;
         if (_rendererApi != null)
         {
-            _rendererApi.SetUpUsingEventHandler(this);
+            _rendererApiEventsDisposable = _rendererApi.SetUpUsingActions(OnUnityAppInitialized);
 
             _rendererApi.InvokeBlazorControllerInitialized(new BlazorControllerInitialized());
         }
-        
-         ReplayState();
+
+        ReplayState();
     }
 
-    void IBlocksOnGrid3DApp_EventHandler.OnPerfCheck(PerfCheck msg)
-    {
-        // global OnPerfCheck handler is ignored, the event is handled at invocation as it is technical response
-    }
-
-     void IBlocksOnGrid3DApp_EventHandler.OnUnityAppInitialized(UnityAppInitialized msg)
+    private void OnUnityAppInitialized(UnityAppInitialized msg)
     {
         _appState = msg;
-    }
-
-     void IBlocksOnGrid3DApp_EventHandler.OnScreenToWorldRayResponse(ScreenToWorldRayResponse obj)
-    {
-        _activeScreenToRay[obj.RequestId].SetResult(obj);
-    }
-
-     void IBlocksOnGrid3DApp_EventHandler.OnRaycastResponse(RaycastResponse obj)
-    {
-        _activeRaycasts[obj.RequestId].SetResult(obj);
     }
 
     private async ValueTask ReplayState()
@@ -369,18 +352,12 @@
         } 
         var testCount = _perfTestCount;
 
-        var responses = new bool[testCount];
-        var responsesRemaining = testCount;
-
-        var tcs = new TaskCompletionSource();
         var avgStopwatch = new Stopwatch();
-
-        _rendererApi.OnPerfCheck += Process;
 
         avgStopwatch.Start();
         for (var i = 0; i < testCount; i++)
         {
-            await _rendererApi.InvokePerfCheck(new PerfCheck
+           var response= await _rendererApi.InvokePerfCheck(new PerfCheck
             {
                 Id = i,
                 Aaa = 12,
@@ -389,23 +366,10 @@
                 Ddd = "https://aaaa.cc/erekwn/sdas?adsasd=asda"
             });
         }
-
-        await tcs.Task;
-
-        _rendererApi.OnPerfCheck -= Process;
+        avgStopwatch.Stop();
 
         _perfResponse = $"{testCount} messages there and back, took {avgStopwatch.ElapsedMilliseconds:F2} ms (avg {(decimal)avgStopwatch.ElapsedMilliseconds / testCount:F2} ms)";
 
-        void Process(PerfCheck response)
-        {
-            responses[response.Id] = true;
-            responsesRemaining--;
-            if (responsesRemaining == 0)
-            {
-                avgStopwatch.Stop();
-                tcs.SetResult();
-            }
-        }
     }
 
     private class JSVector2
@@ -418,32 +382,17 @@
     private async Task OnMouseDown( MouseEventArgs e)
     {
        var offset= await module.InvokeAsync<JSVector2>("ConvertPageToOffset", _rendererContainerReference, e.PageX, e.PageY);
-        var rayOrigin = new Vector3((float)offset.X,(float) offset.Y, 0);
-
         
-        var screenToRayId = _requestIdCounter++;
-        var tcs1=new TaskCompletionSource<ScreenToWorldRayResponse>();
-        _activeScreenToRay[screenToRayId] = tcs1;
-
-        await _rendererApi.InvokeRequestScreenToWorldRay(new RequestScreenToWorldRay()
+        var screenToRayResponse=await _rendererApi.InvokeRequestScreenToWorldRay(new RequestScreenToWorldRay()
         {
-            RequestId = screenToRayId,
             Screen = new Vector2(offset.X,offset.Y)
         });
-        var screenToRayResponse=await tcs1.Task;
         
         
-        var raycastId = _requestIdCounter++;
-
-        var tcs=new TaskCompletionSource<RaycastResponse>();
-        _activeRaycasts[raycastId] = tcs;
-
-        await _rendererApi.InvokeRequestRaycast(new RequestRaycast()
+        var raycastResponse=await _rendererApi.InvokeRequestRaycast(new RequestRaycast()
         {
-            RequestId = raycastId,
             Ray = screenToRayResponse.Ray
         });
-        var raycastResponse=await tcs.Task;
 
         //#error raycast is somehow not hitting anything in unity!!!
         
@@ -470,17 +419,10 @@
         
         var dragging = _dragging.Value;
         
-        
-        var screenToRayId = _requestIdCounter++;
-        var tcs1=new TaskCompletionSource<ScreenToWorldRayResponse>();
-        _activeScreenToRay[screenToRayId] = tcs1;
-
-        await _rendererApi.InvokeRequestScreenToWorldRay(new RequestScreenToWorldRay()
+        var screenToRayResponse=await _rendererApi.InvokeRequestScreenToWorldRay(new RequestScreenToWorldRay()
         {
-            RequestId = screenToRayId,
             Screen = new Vector2(offsetX,offsetY)
         });
-        var screenToRayResponse=await tcs1.Task;
 
 
         

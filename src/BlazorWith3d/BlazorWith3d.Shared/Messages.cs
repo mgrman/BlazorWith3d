@@ -28,6 +28,10 @@ namespace BlazorWith3d.Shared
     public interface IMessageToUnity
     {
     }
+
+    public interface IMessageToUnity<TResponse>
+    {
+    }
     
 #if COMMON_DOTNET
 #endif

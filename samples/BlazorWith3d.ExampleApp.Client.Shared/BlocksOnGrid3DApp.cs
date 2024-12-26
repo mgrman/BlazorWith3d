@@ -54,7 +54,7 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
 
     [MemoryPackable]
     [GenerateTypeScript]
-    public partial class PerfCheck : IMessageToUnity, IMessageToBlazor
+    public partial class PerfCheck : IMessageToUnity<PerfCheck>
     {
         public float Aaa { get; set; }
         public double Bbb{ get; set; }
@@ -68,6 +68,81 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
     public partial class UnityAppInitialized : IMessageToBlazor
     {
     }
+
+    [MemoryPackable]
+    [GenerateTypeScript]
+    public partial class AddBlockTemplate : IMessageToUnity
+    {
+        public PackableVector3 Size{ get; set; }
+        public int TemplateId{ get; set; }
+        public string? VisualsUri{ get; set; }
+    }
+
+
+    [MemoryPackable]
+    [GenerateTypeScript]
+    public partial class AddBlockInstance : IMessageToUnity
+    {
+        public int BlockId{ get; set; }
+        public PackableVector2 Position{ get; set; }
+        public float RotationZ{ get; set; }
+        public int TemplateId{ get; set; }
+    }
+
+    [MemoryPackable]
+    [GenerateTypeScript]
+    public partial class RemoveBlockInstance : IMessageToUnity
+    {
+        public int BlockId{ get; set; }
+    }
+
+    [MemoryPackable]
+    [GenerateTypeScript]
+    public partial class RemoveBlockTemplate : IMessageToUnity
+    {
+        public int TemplateId{ get; set; }
+    }
+
+    [MemoryPackable]
+    [GenerateTypeScript]
+    public partial class UpdateBlockInstance : IMessageToUnity
+    {
+        public int BlockId{ get; set; }
+        public PackableVector2 Position{ get; set; }
+        public float RotationZ{ get; set; }
+    }
+
+    [MemoryPackable]
+    [GenerateTypeScript]
+    public partial class RequestRaycast : IMessageToUnity<RaycastResponse>
+    {
+        public int RequestId{ get; set; }
+        public PackableRay Ray{ get; set; }
+    }
+
+    [MemoryPackable]
+    [GenerateTypeScript]
+    public partial class RaycastResponse 
+    {
+        public int RequestId{ get; set; }
+        public PackableVector3 HitWorld{ get; set; }
+        public int? HitBlockId{ get; set; }
+    }
+
+    [MemoryPackable]
+    [GenerateTypeScript]
+    public partial class RequestScreenToWorldRay : IMessageToUnity<ScreenToWorldRayResponse>
+    {
+        public PackableVector2 Screen{ get; set; }
+    }
+
+    [MemoryPackable]
+    [GenerateTypeScript]
+    public partial class ScreenToWorldRayResponse 
+    {
+        public PackableRay Ray{ get; set; }
+    }
+
 
     [MemoryPackable]
     [GenerateTypeScript]
@@ -212,83 +287,6 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
             );
         }
     }
-
-    [MemoryPackable]
-    [GenerateTypeScript]
-    public partial class AddBlockTemplate : IMessageToUnity
-    {
-        public PackableVector3 Size{ get; set; }
-        public int TemplateId{ get; set; }
-        public string? VisualsUri{ get; set; }
-    }
-
-
-    [MemoryPackable]
-    [GenerateTypeScript]
-    public partial class AddBlockInstance : IMessageToUnity
-    {
-        public int BlockId{ get; set; }
-        public PackableVector2 Position{ get; set; }
-        public float RotationZ{ get; set; }
-        public int TemplateId{ get; set; }
-    }
-
-    [MemoryPackable]
-    [GenerateTypeScript]
-    public partial class RemoveBlockInstance : IMessageToUnity
-    {
-        public int BlockId{ get; set; }
-    }
-
-    [MemoryPackable]
-    [GenerateTypeScript]
-    public partial class RemoveBlockTemplate : IMessageToUnity
-    {
-        public int TemplateId{ get; set; }
-    }
-
-    [MemoryPackable]
-    [GenerateTypeScript]
-    public partial class UpdateBlockInstance : IMessageToUnity
-    {
-        public int BlockId{ get; set; }
-        public PackableVector2 Position{ get; set; }
-        public float RotationZ{ get; set; }
-    }
-
-    [MemoryPackable]
-    [GenerateTypeScript]
-    public partial class RequestRaycast : IMessageToUnity
-    {
-        public int RequestId{ get; set; }
-        public PackableRay Ray{ get; set; }
-    }
-
-    [MemoryPackable]
-    [GenerateTypeScript]
-    public partial class RaycastResponse : IMessageToBlazor
-    {
-        public int RequestId{ get; set; }
-        public PackableVector3 HitWorld{ get; set; }
-        public int? HitBlockId{ get; set; }
-    }
-
-    [MemoryPackable]
-    [GenerateTypeScript]
-    public partial class RequestScreenToWorldRay : IMessageToUnity
-    {
-        public int RequestId{ get; set; }
-        public PackableVector2 Screen{ get; set; }
-    }
-
-    [MemoryPackable]
-    [GenerateTypeScript]
-    public partial class ScreenToWorldRayResponse : IMessageToBlazor
-    {
-        public int RequestId{ get; set; }
-        public PackableRay Ray{ get; set; }
-    }
-
 }
 
 
