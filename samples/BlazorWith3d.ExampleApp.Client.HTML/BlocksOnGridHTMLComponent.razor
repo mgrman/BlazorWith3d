@@ -136,7 +136,7 @@
 
     public async ValueTask<RaycastResponse> InvokeRequestRaycast(RequestRaycast msg)
     {
-        if (  msg.Ray.Origin.Z!=0)
+        if (  msg.Ray.Origin.Z!=10)
         {
             throw new InvalidOperationException("Unsupported ray origin Z coordinate");
         }
@@ -177,7 +177,7 @@
         
         var screenToWorld = Matrix4x4.Invert(worldToScreen, out var temp1) ? temp1 : throw new InvalidOperationException("Non invertable matrix");
         
-        var rayOrigin = new Vector3(msg.Screen.X,msg.Screen.Y, 0);
+        var rayOrigin = new Vector3(msg.Screen.X,msg.Screen.Y, 10);
         var rayDirection = new Vector3(0,0, -1);
         
         rayOrigin=Vector3.Transform(rayOrigin,screenToWorld);
