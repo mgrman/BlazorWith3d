@@ -75,6 +75,22 @@ benchmarks
 
 ### Prio 0 (what to do next)
 
+
+- the main app triggering source generation should be interface
+  - to have different implmenetations, the serialize methods can be default interface implementation
+      - so the binary app version can be generated
+      - the binary api with response version 
+      - ...
+
+- double check if message buffering is needed, as it prevents kinda binary api with responses
+  - messages from renderer to blazor
+    - blazor has to be listening to messages even before the JS init method is called
+  - messages to renderer from blazor
+    - for TS code you can expect that it is ready to receive after the JS init method finishes
+    - but for Unity, that one has internal shit going on, ?? maybe expose a unity specific interop method so the js init code can await until unity inside is ready to receive
+
+- Add binaryApi with response to optimize interop usecases (as only unity debug socket cannot do this)
+
 - generate blazor interop code, preferably in  another project referencing the types in shared
 
 - try again to get matrix for screen to world as that would reduce the need for extra interop call
@@ -95,8 +111,6 @@ benchmarks
 
 
 ### Prio 1 (stretch goals)
-
-- Add binaryApi with response to optimize interop usecases (as only unity debug socket cannot do this)
   
 - render screen in unity and stream to blazor for debug mode
 
@@ -151,6 +165,12 @@ benchmarks
 ### Prio 3 (maybe but not really target of the project)
 
 
+- but even the serialize methods might be worth to be chosen by the generator based on target so potentially messages can be generated from method arguments
+    - e.g. use memoryPack if type annotated, otherwise use json serialization
+    - hmm, this might be too confusing, but could allow creating own serializer of multiple method arguments into one message
+        - ie first byte is which method, then each arg has header specifing length of data and serialized data.
+    - types which are not memorypack annotated get serialized as JSON (although )
+  
 - add support for negotiation of serialization modes
     - so unity can do DEBUG build with JSON only serializaion
     - 

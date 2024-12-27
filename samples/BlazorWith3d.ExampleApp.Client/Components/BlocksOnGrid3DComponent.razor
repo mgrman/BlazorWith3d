@@ -202,7 +202,7 @@
     private DotNetObjectReference<JsProxy>? _jsProxyReference;
 
     private UnityAppInitialized _appState;
-    private (AddBlockInstance instance, float offsetX,float offsetY)? _dragging;
+    private (AddBlockInstance instance, float offsetX,float offsetY, float dragPlaneZ)? _dragging;
     private IJSObjectReference module;
     private IJSObjectReference? _mouseEventsDispose;
 
@@ -403,7 +403,7 @@
         
         var offsetX =raycastResponse.HitWorld.X - instance.Position.X;
         var offsetY =  raycastResponse.HitWorld.Y - instance.Position.Y;
-         _dragging = (instance,offsetX,offsetY);
+         _dragging = (instance,offsetX,offsetY, raycastResponse.HitWorld.Z);
          
          _mouseEventsDispose = await module.InvokeAsync<IJSObjectReference>("InitializeGlobalMouseEvents", _rendererContainerReference, _jsProxyReference, nameof(JsProxy.OnMouseMove), nameof(JsProxy.OnMouseUp));
     }
@@ -434,7 +434,7 @@
         rayDirection=Vector3.TransformNormal(rayDirection,worldToPlane);
         
         
-        var plane = new Plane(new Vector3(0, 0, 1), 0);
+        var plane = new Plane(new Vector3(0, 0, 1), dragging.dragPlaneZ);
         var potentialHit= plane.Raycast(new Ray(rayOrigin, rayDirection));
         if (potentialHit == null)
         {

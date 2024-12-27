@@ -12,7 +12,7 @@ namespace BlazorWith3d.Shared
         Func<byte[],ValueTask>? MainMessageHandler { get; set; }
         ValueTask SendMessage(byte[] bytes);
     }
-
+    
     public class BackgroundMessageBuffer
     {
         protected readonly List<byte[]> _unhandledMessages= new();
@@ -60,6 +60,7 @@ namespace BlazorWith3d.Shared
     {
         protected readonly List<byte[]> _unhandledMessages= new();
         protected Func<byte[], ValueTask>? _mainMessageHandler;
+        private ValueTask? _oldMessageInvocation;
 
         public Func<byte[], ValueTask>? MainMessageHandler
         {
@@ -70,28 +71,35 @@ namespace BlazorWith3d.Shared
 
                 if (value != null && _unhandledMessages.Any())
                 {
-                    Task.Run(async () =>
-                    {
-                        foreach (var item in _unhandledMessages)
-                        {
-                            await value.Invoke(item);
-                        }
-                        _unhandledMessages.Clear();
-                    });
+                   _oldMessageInvocation = InvokeOldMessages();
                 }
             }
         }
 
-        public void InvokeMessage(byte[] message)
+        public async ValueTask InvokeMessage(byte[] message)
         {
             if (_mainMessageHandler != null)
             {
-                _mainMessageHandler.Invoke(message);
+                if (_oldMessageInvocation != null)
+                {
+                    await _oldMessageInvocation.Value;
+                }
+
+                await _mainMessageHandler.Invoke(message);
             }
             else
             {
                 _unhandledMessages.Add(message);
             }
+        }
+
+        private async ValueTask InvokeOldMessages()
+        {
+            foreach (var item in _unhandledMessages)
+            {
+                 _mainMessageHandler.Invoke(item);
+            }
+            _unhandledMessages.Clear();
         }
     }
 }

@@ -31,17 +31,15 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3? Raycast(this Plane plane, Ray ray)
         {
-            float directionDot = Vector3.Dot(ray.Direction, plane.Normal);
-            float normalDot = -Vector3.Dot(ray.Origin, plane.Normal) - plane.D;
-
-            if (Math.Abs(directionDot) < 0.000001f)
+            // based on https://stackoverflow.com/a/23976134
+            float denom = Vector3.Dot(plane.Normal, ray.Direction);
+            if (Math.Abs(denom) > 0.0001f) // your favorite epsilon
             {
-                return null;
+                float t = Vector3.Dot((plane.Normal * plane.D) - ray.Origin, plane.Normal) / denom;
+                if (t >= 0) return ray.Origin + ray.Direction * t; // you might want to allow an epsilon here too
             }
 
-            var enter = normalDot / directionDot;
-
-            return ray.Origin + ray.Direction * enter;
+            return null;
         }
     }
 }
