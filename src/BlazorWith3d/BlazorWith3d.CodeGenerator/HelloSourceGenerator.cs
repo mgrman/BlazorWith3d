@@ -63,23 +63,25 @@ public class HelloSourceGenerator : ISourceGenerator
         
         foreach (var typeDeclaration in receiver.Blazor3DAppTypes)
         {
-            var (typeName,namespaceName,_) = GetTypeAndNamespace(typeDeclaration);
+            var appType= GetTypeAndNamespace(typeDeclaration.appType);
+            var serializerType= GetTypeAndNamespace(typeDeclaration.serializerType, context.Compilation);
 
-            var appInfo= new AppInfo(typeName, namespaceName, messagesToUnity, messagesToUnityWithResponse, messagesToBlazor, new List<(TypeInfo, TypeInfo)>(), namespacesToInclude);
+            var appInfo= new AppInfo(appType, serializerType, messagesToUnity, messagesToUnityWithResponse, messagesToBlazor, new List<(TypeInfo, TypeInfo)>(), namespacesToInclude);
             
             var text = GenerateClass(appInfo);
-            context.AddSource($"{typeName}.g.cs", text);
+            context.AddSource($"{appType.typeName}.g.cs", text);
         }
 
         foreach (var typeDeclaration in receiver.Unity3DAppTypes)
         {
-            var (typeName,namespaceName,_) = GetTypeAndNamespace(typeDeclaration);
+            var appType= GetTypeAndNamespace(typeDeclaration.appType);
+            var serializerType= GetTypeAndNamespace(typeDeclaration.serializerType, context.Compilation);
 
-            var appInfo= new AppInfo(typeName, namespaceName,messagesToBlazor, new List<(TypeInfo, TypeInfo)>(), messagesToUnity, messagesToUnityWithResponse, namespacesToInclude);
+            var appInfo= new AppInfo(appType, serializerType,messagesToBlazor, new List<(TypeInfo, TypeInfo)>(), messagesToUnity, messagesToUnityWithResponse, namespacesToInclude);
 
             var text = GenerateClass(appInfo);
 
-            context.AddSource($"{typeName}.g.cs", text);
+            context.AddSource($"{appType.typeName}.g.cs", text);
 
             GenerateTypeScriptClass(context, appInfo);
         }
@@ -90,7 +92,7 @@ public class HelloSourceGenerator : ISourceGenerator
         var typeName = typeDeclaration.Identifier.ToString();
         var namespaceName = (typeDeclaration.Parent as NamespaceDeclarationSyntax).Name.ToString();
         var isPublic = typeDeclaration.Modifiers.Any(o => o.ToString() == "public");
-        return new TypeInfo(typeName, namespaceName, isPublic);
+        return new TypeInfo(typeName, namespaceName);
     }
 
     private static TypeInfo GetTypeAndNamespace(TypeSyntax typeSyntax, Compilation compilation)
@@ -99,12 +101,12 @@ public class HelloSourceGenerator : ISourceGenerator
 
         var typeInfo = semanticModel.GetTypeInfo(typeSyntax).Type;
 
-        return new TypeInfo(typeInfo.Name, typeInfo.ContainingNamespace.ToDisplayString(), typeInfo.DeclaredAccessibility == Accessibility.Public);
+        return new TypeInfo(typeInfo.Name, typeInfo.ContainingNamespace.ToDisplayString());
     }
 
     private record AppInfo(
-        string typeName,
-        string @namespace,
+        TypeInfo app,
+        TypeInfo serializer,
         IReadOnlyList<TypeInfo> methods,
         IReadOnlyList<(TypeInfo request, TypeInfo response)> methodsWithResponse,
         IReadOnlyList<TypeInfo> events,
@@ -113,8 +115,9 @@ public class HelloSourceGenerator : ISourceGenerator
     {
     }
 
-    private record TypeInfo(string typeName, string @namespace, bool isPublic)
+    private record TypeInfo(string typeName, string @namespace)
     {
+        public string TypeNameWithoutIPrefix=> typeName.StartsWith("I")? typeName.Substring(1) : typeName;
     }
 
     private static string GenerateClass( AppInfo info)
@@ -130,10 +133,10 @@ public class HelloSourceGenerator : ISourceGenerator
         sb.AppendLine("using BlazorWith3d.Shared;");
         sb.AppendLine("using MemoryPack;");
         sb.AppendLine("using MemoryPack.Formatters;");
-        sb.AppendLine($"namespace {info.@namespace}");
+        sb.AppendLine($"namespace {info.app.@namespace}");
         using (sb.IndentWithCurlyBrackets())
         {
-            sb.AppendLine($"public partial interface I{info.typeName}_EventHandler");
+            sb.AppendLine($"public partial interface {info.app.typeName}_EventHandler");
             using (sb.IndentWithCurlyBrackets())
             {
                 foreach (var e in info.events)
@@ -146,7 +149,7 @@ public class HelloSourceGenerator : ISourceGenerator
                 }
             }
 
-            sb.AppendLine($"public partial interface I{info.typeName}_MethodInvoker");
+            sb.AppendLine($"public partial interface {info.app.typeName}_MethodInvoker");
             using (sb.IndentWithCurlyBrackets())
             {
                 foreach (var m in info.methods)
@@ -159,23 +162,21 @@ public class HelloSourceGenerator : ISourceGenerator
                 }
             }
 
-            sb.AppendLine($"public partial interface I{info.typeName} : I{info.typeName}_MethodInvoker");
+            sb.AppendLine($"public partial interface {info.app.typeName} : {info.app.typeName}_MethodInvoker");
             using (sb.IndentWithCurlyBrackets())
             {
                 sb.AppendLine($"event Action<byte[], Exception> OnMessageError;");
-                sb.AppendLine($"void SetEventHandler(I{info.typeName}_EventHandler? eventHandler);");
+                sb.AppendLine($"void SetEventHandler({info.app.typeName}_EventHandler? eventHandler);");
             }
             
             sb.AppendLine();
-            sb.AppendLine($"public partial  class {info.typeName}: I{info.typeName}, IDisposable");
+            sb.AppendLine($"public partial class {info.app.TypeNameWithoutIPrefix}_BinaryApi: {info.app.typeName}, IDisposable");
             using (sb.IndentWithCurlyBrackets())
             {
-                sb.AppendLine($"protected partial void SerializeObject<T>(T obj, IBufferWriter<byte> writer);");
-                sb.AppendLine($"protected partial T? DeserializeObject<T>(ReadOnlySpan<byte> bytes);");
-
                 sb.AppendLine();
+                sb.AppendLine($"private readonly IBinaryApiSerializer _serializer;");
                 sb.AppendLine($"private readonly IBinaryApi _binaryApi;");
-                sb.AppendLine($"private I{info.typeName}_EventHandler? _eventHandler;");
+                sb.AppendLine($"private {info.app.typeName}_EventHandler? _eventHandler;");
                 sb.AppendLine($"private readonly ArrayBufferWriter<byte> _writer = new ArrayBufferWriter<byte>(100);");
                 
                 sb.AppendLine($"private byte _requestResponseIdCounter=0;");
@@ -186,14 +187,16 @@ public class HelloSourceGenerator : ISourceGenerator
                 }
                 
                 sb.AppendLine();
-                sb.AppendLine($"public {info.typeName}(IBinaryApi binaryApi)");
+                sb.AppendLine($"public {info.app.TypeNameWithoutIPrefix}_BinaryApi(IBinaryApi binaryApi)");
                 using (sb.IndentWithCurlyBrackets())
                 {
+                    sb.AppendLine($"_serializer = new {info.serializer.typeName}();");
+                    
                     sb.AppendLine("_binaryApi = binaryApi;");
                 }
                 sb.AppendLine($"public bool IsProcessingMessages => _binaryApi.MainMessageHandler == ProcessMessages;");
                 
-                sb.AppendLine($"public void SetEventHandler(I{info.typeName}_EventHandler? eventHandler)");
+                sb.AppendLine($"public void SetEventHandler({info.app.typeName}_EventHandler? eventHandler)");
                 using (sb.IndentWithCurlyBrackets())
                 {
                     sb.AppendLine(
@@ -263,7 +266,7 @@ public class HelloSourceGenerator : ISourceGenerator
                         sb.AppendLine("Span<byte> messageIdSpan = stackalloc byte[1];");
                         sb.AppendLine("messageIdSpan[0] = messageId;");
                         sb.AppendLine("_writer.Write(messageIdSpan);");
-                        sb.AppendLine("SerializeObject(message, _writer);");
+                        sb.AppendLine("_serializer.SerializeObject(message, _writer);");
                         sb.AppendLine("var encodedMessage = _writer.WrittenSpan.ToArray();");
                         sb.AppendLine($"return _binaryApi.SendMessage(encodedMessage);");
                     }
@@ -288,7 +291,7 @@ public class HelloSourceGenerator : ISourceGenerator
                         sb.AppendLine("messageIdSpan[0] = messageId;");
                         sb.AppendLine("messageIdSpan[1] = requestId;");
                         sb.AppendLine("_writer.Write(messageIdSpan);");
-                        sb.AppendLine("SerializeObject(message, _writer);");
+                        sb.AppendLine("_serializer.SerializeObject(message, _writer);");
                         sb.AppendLine("var encodedMessage = _writer.WrittenSpan.ToArray();");
                         sb.AppendLine($"return _binaryApi.SendMessage(encodedMessage);");
                     }
@@ -307,7 +310,7 @@ public class HelloSourceGenerator : ISourceGenerator
                 using (sb.IndentWithCurlyBrackets())
                 {
                     sb.AppendLine("var span = new ReadOnlySpan<byte>(message, headerLength, message.Length - headerLength);");
-                    sb.AppendLine($"return DeserializeObject<T>(span);");
+                    sb.AppendLine($"return _serializer.DeserializeObject<T>(span);");
                 }
 
                 sb.AppendLine($"protected async ValueTask ProcessMessages(byte[] message)");
@@ -454,7 +457,7 @@ public class HelloSourceGenerator : ISourceGenerator
         }
         
         
-        sb.AppendLine($"export interface I{info.typeName}_EventHandler");
+        sb.AppendLine($"export interface {info.app.typeName}_EventHandler");
         using (sb.IndentWithCurlyBrackets())
         {
             foreach (var @event in info.events)
@@ -467,7 +470,7 @@ public class HelloSourceGenerator : ISourceGenerator
             }
         }
         
-        sb.AppendLine($"export interface I{info.typeName}_MethodInvoker");
+        sb.AppendLine($"export interface {info.app.typeName}_MethodInvoker");
         using (sb.IndentWithCurlyBrackets())
         {
             foreach (var m in info.methods)
@@ -480,7 +483,7 @@ public class HelloSourceGenerator : ISourceGenerator
             }
         }
         
-        sb.AppendLine($"export class {info.typeName}_MethodInvoker_DirectInterop implements I{info.typeName}_MethodInvoker");
+        sb.AppendLine($"export class {info.app.TypeNameWithoutIPrefix}_MethodInvoker_DirectInterop implements {info.app.typeName}_MethodInvoker");
         using (sb.IndentWithCurlyBrackets())
         {
             sb.AppendLine($"private _dotnetObject: any;");
@@ -510,19 +513,19 @@ public class HelloSourceGenerator : ISourceGenerator
             }
         }
         
-        sb.AppendLine($"export interface I{info.typeName} extends I{info.typeName}_MethodInvoker");
+        sb.AppendLine($"export interface {info.app.typeName} extends {info.app.typeName}_MethodInvoker");
         using (sb.IndentWithCurlyBrackets())
         {
             //sb.AppendLine($"OnMessageError: (bytes: Uint8Array, error: Error) => void;");
-            sb.AppendLine($"SetEventHandler(eventHandler: I{info.typeName}_EventHandler);");
+            sb.AppendLine($"SetEventHandler(eventHandler: {info.app.typeName}_EventHandler);");
         }
 
-        sb.AppendLine($"export class {info.typeName} implements I{info.typeName}");
+        sb.AppendLine($"export class {info.app.TypeNameWithoutIPrefix}_BinaryApi implements {info.app.typeName}");
         using (sb.IndentWithCurlyBrackets())
         {
             sb.AppendLine($"private _binaryApi: IBinaryApi;");
             sb.AppendLine($"private _requestResponseIdCounter: number= 0;");
-            sb.AppendLine($"private _eventHandler: I{info.typeName}_EventHandler;");
+            sb.AppendLine($"private _eventHandler: {info.app.typeName}_EventHandler;");
             sb.AppendLine($"private _messageHandler:(bytes: Uint8Array) => void;");
             sb.AppendLine($"private _responseTcs:{{ [id: number] : any }} = {{}};");
 
@@ -538,7 +541,7 @@ public class HelloSourceGenerator : ISourceGenerator
 {{
     return this._binaryApi.mainMessageHandler == this._messageHandler;
 }}
-public SetEventHandler(eventHandler: I{info.typeName}_EventHandler):void
+public SetEventHandler(eventHandler: {info.app.typeName}_EventHandler):void
 {{
     if(this._binaryApi.mainMessageHandler != null && this._binaryApi.mainMessageHandler != this._messageHandler)
     {{
@@ -680,7 +683,7 @@ public SetEventHandler(eventHandler: I{info.typeName}_EventHandler):void
                 Directory.CreateDirectory(typeScriptGenerateOptions.OutputDirectory);
             }
 
-            File.WriteAllText(Path.Combine(typeScriptGenerateOptions.OutputDirectory, $"{info.typeName}.ts"),
+            File.WriteAllText(Path.Combine(typeScriptGenerateOptions.OutputDirectory, $"{info.app.typeName}.ts"),
                 sb.ToString(), new UTF8Encoding(false));
         }
         catch (Exception ex)
@@ -698,9 +701,9 @@ public SetEventHandler(eventHandler: I{info.typeName}_EventHandler):void
     {
         public bool ShouldGenerate => Blazor3DAppTypes.Count > 0 || Unity3DAppTypes.Count>0;
 
-        public List<TypeDeclarationSyntax> Blazor3DAppTypes { get; } = new();
+        public List<(InterfaceDeclarationSyntax appType,TypeSyntax serializerType)> Blazor3DAppTypes { get; } = new();
 
-        public List<TypeDeclarationSyntax > Unity3DAppTypes { get; } = new();
+        public List<(InterfaceDeclarationSyntax appType,TypeSyntax serializerType) > Unity3DAppTypes { get; } = new();
 
         public List<TypeDeclarationSyntax > MessagesToUnity { get; } = new();
         
@@ -715,28 +718,38 @@ public SetEventHandler(eventHandler: I{info.typeName}_EventHandler):void
         public void OnVisitSyntaxNode(GeneratorSyntaxContext context)
         {
             // any field with at least one attribute is a candidate for property generation
-            if (context.Node is TypeDeclarationSyntax typeDeclarationSyntax)
+            if (context.Node is InterfaceDeclarationSyntax interfaceDeclarationSyntax)
             {
-                if (typeDeclarationSyntax.AttributeLists.SelectMany(e => e.Attributes)
+                if (interfaceDeclarationSyntax.AttributeLists.SelectMany(e => e.Attributes)
                     .TryGet(e => e.Name.NormalizeWhitespace().ToFullString() == "Blazor3DApp", out var blazor3DAppAttr))
                 {
-                    Blazor3DAppTypes.Add(typeDeclarationSyntax);
+                    var arg = (blazor3DAppAttr.ArgumentList.Arguments[0].Expression as TypeOfExpressionSyntax).Type;
+                    Blazor3DAppTypes.Add((interfaceDeclarationSyntax, arg));
                 }
 
-                if (typeDeclarationSyntax.AttributeLists.SelectMany(e => e.Attributes)
+                if (interfaceDeclarationSyntax.AttributeLists.SelectMany(e => e.Attributes)
                     .TryGet(e => e.Name.NormalizeWhitespace().ToFullString() == "Unity3DApp", out var unity3DAppAttr))
                 {
-                    Unity3DAppTypes.Add(typeDeclarationSyntax);
+                    var arg = (unity3DAppAttr.ArgumentList.Arguments[0].Expression as TypeOfExpressionSyntax).Type;
+                    Unity3DAppTypes.Add((interfaceDeclarationSyntax, arg));
                 }
-           
+            }
+
+            // any field with at least one attribute is a candidate for property generation
+            if (context.Node is TypeDeclarationSyntax typeDeclarationSyntax)
+            {
                 if (typeDeclarationSyntax.AttributeLists.SelectMany(e => e.Attributes).Any(e =>
-                        e.Name.NormalizeWhitespace().ToFullString() == "MemoryPackable") && (typeDeclarationSyntax.BaseList?.Types.Any(o=>o.Type.ToString() == "IMessageToUnity") ?? false))
+                        e.Name.NormalizeWhitespace().ToFullString() == "MemoryPackable") &&
+                    (typeDeclarationSyntax.BaseList?.Types.Any(o => o.Type.ToString() == "IMessageToUnity") ?? false))
                 {
                     MessagesToUnity.Add(typeDeclarationSyntax);
                 }
-           
+
                 if (typeDeclarationSyntax.AttributeLists.SelectMany(e => e.Attributes).Any(e =>
-                        e.Name.NormalizeWhitespace().ToFullString() == "MemoryPackable") && (typeDeclarationSyntax.BaseList?.Types.Select(o=>o.Type).OfType<GenericNameSyntax>().TryGet(o=>o.Identifier.ToString() == "IMessageToUnity", out var messageToUnityAttr) ?? false))
+                        e.Name.NormalizeWhitespace().ToFullString() == "MemoryPackable") && (typeDeclarationSyntax
+                            .BaseList?.Types.Select(o => o.Type).OfType<GenericNameSyntax>()
+                            .TryGet(o => o.Identifier.ToString() == "IMessageToUnity", out var messageToUnityAttr) ??
+                        false))
                 {
                     if (messageToUnityAttr.TypeArgumentList.Arguments.Count == 0)
                     {
@@ -745,12 +758,14 @@ public SetEventHandler(eventHandler: I{info.typeName}_EventHandler):void
                     else
                     {
 
-                        MessagesToUnityWithResponse.Add((typeDeclarationSyntax, messageToUnityAttr.TypeArgumentList.Arguments[0]));
+                        MessagesToUnityWithResponse.Add((typeDeclarationSyntax,
+                            messageToUnityAttr.TypeArgumentList.Arguments[0]));
                     }
                 }
 
                 if (typeDeclarationSyntax.AttributeLists.SelectMany(e => e.Attributes).Any(e =>
-                        e.Name.NormalizeWhitespace().ToFullString() == "MemoryPackable") && (typeDeclarationSyntax.BaseList?.Types.Any(o=>o.Type.ToString() == "IMessageToBlazor") ?? false))
+                        e.Name.NormalizeWhitespace().ToFullString() == "MemoryPackable") &&
+                    (typeDeclarationSyntax.BaseList?.Types.Any(o => o.Type.ToString() == "IMessageToBlazor") ?? false))
                 {
                     MessagesToBlazor.Add(typeDeclarationSyntax);
                 }

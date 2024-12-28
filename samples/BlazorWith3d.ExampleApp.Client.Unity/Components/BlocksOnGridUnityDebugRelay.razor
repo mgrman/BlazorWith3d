@@ -6,7 +6,7 @@
 @implements IDisposable
 
 @code {
-    private BlocksOnGrid3DApp? unityAppApi;
+    private BlocksOnGrid3DApp_BinaryApi? unityAppApi;
 
     [CascadingParameter] 
     public required I3DAppController ParentApp { get; set; }
@@ -24,7 +24,7 @@
         }
 
         
-        unityAppApi = new BlocksOnGrid3DApp(DebugApi);
+        unityAppApi = new BlocksOnGrid3DApp_BinaryApi(DebugApi);
         ParentApp.InitializeRenderer(unityAppApi);
     }
 

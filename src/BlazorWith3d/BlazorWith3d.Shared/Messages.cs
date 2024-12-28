@@ -2,20 +2,20 @@
 
 namespace BlazorWith3d.Shared
 {
-    [AttributeUsage(AttributeTargets.Class, Inherited = false)]
+    [AttributeUsage(AttributeTargets.Interface, Inherited = false)]
     public sealed class Blazor3DAppAttribute : Attribute
     {
-        public Blazor3DAppAttribute(bool generateObjectApi = false)
+        public Blazor3DAppAttribute(Type serializerType)
         {
             
         }
     }
     
     
-    [AttributeUsage(AttributeTargets.Class, Inherited = false)]
+    [AttributeUsage(AttributeTargets.Interface, Inherited = false)]
     public sealed class Unity3DAppAttribute : Attribute
     {
-        public Unity3DAppAttribute(bool generateObjectApi = false)
+        public Unity3DAppAttribute(Type serializerType)
         {
             
         }

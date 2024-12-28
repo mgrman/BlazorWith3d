@@ -9,40 +9,30 @@ using MemoryPack;
 
 namespace BlazorWith3d.ExampleApp.Client.Shared
 {
-#if COMMON_DOTNET || UNITY_EDITOR
-    [Blazor3DApp(
-#if UNITY_EDITOR
-            true
-#endif
-    )]
-    public partial class BlocksOnGrid3DApp
+    internal class MemoryPackBinaryApiSerializer:IBinaryApiSerializer
     {
-        protected partial void SerializeObject<T>(T obj, IBufferWriter<byte> writer)
+        public void SerializeObject<T>(T obj, IBufferWriter<byte> writer)
         {
             MemoryPackSerializer.Serialize<T, IBufferWriter<byte>>(writer, obj);
         }
 
-        protected partial T? DeserializeObject<T>(ReadOnlySpan<byte> bytes)
+        public T? DeserializeObject<T>(ReadOnlySpan<byte> bytes)
         {
             return MemoryPackSerializer.Deserialize<T>(bytes);
         }
     }
-#endif
-
-
-//#if COMMON_UNITY
-    [Unity3DApp]
-    public partial class BlocksOnGridUnityApi
+    
+#if COMMON_DOTNET || UNITY_EDITOR
+    [Blazor3DApp(typeof(MemoryPackBinaryApiSerializer))]
+    public partial interface IBlocksOnGrid3DApp
     {
-        protected partial void SerializeObject<T>(T obj, IBufferWriter<byte> writer)
-        {
-            MemoryPackSerializer.Serialize<T, IBufferWriter<byte>>(writer, obj);
-        }
-
-        protected partial T? DeserializeObject<T>(ReadOnlySpan<byte> bytes)
-        {
-            return MemoryPackSerializer.Deserialize<T>(bytes);
-        }
+    }
+#endif
+    
+//#if COMMON_UNITY
+    [Unity3DApp(typeof(MemoryPackBinaryApiSerializer))]
+    public partial interface IBlocksOnGridUnityApi
+    {
     }
 //#endif
 

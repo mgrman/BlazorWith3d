@@ -27,11 +27,11 @@ import {RemoveBlockTemplate} from "com.blazorwith3d.exampleapp.client.shared/mem
 import { UnityAppInitialized } from "com.blazorwith3d.exampleapp.client.shared/memorypack/UnityAppInitialized";
 import { UpdateBlockInstance } from "com.blazorwith3d.exampleapp.client.shared/memorypack/UpdateBlockInstance";
 import {
-    BlocksOnGridUnityApi,
+    BlocksOnGridUnityApi_BinaryApi,
     BlocksOnGridUnityApi_MethodInvoker_DirectInterop,
     IBlocksOnGridUnityApi_EventHandler,
     IBlocksOnGridUnityApi_MethodInvoker
-} from "com.blazorwith3d.exampleapp.client.shared/memorypack/BlocksOnGridUnityApi";
+} from "com.blazorwith3d.exampleapp.client.shared/memorypack/IBlocksOnGridUnityApi";
 import {BlazorBinaryApi} from "com.blazorwith3d.exampleapp.client.shared/BlazorBinaryApi";
 import { RequestRaycast } from "com.blazorwith3d.exampleapp.client.shared/memorypack/RequestRaycast";
 import { RequestScreenToWorldRay } from "com.blazorwith3d.exampleapp.client.shared/memorypack/RequestScreenToWorldRay";
@@ -43,7 +43,7 @@ export function InitializeApp_BinaryApi(canvas: HTMLCanvasElement, dotnetObject:
 
 
     let binaryApi= new BlazorBinaryApi(sendMessageCallback);
-    let blazorApp=new BlocksOnGridUnityApi(binaryApi);
+    let blazorApp=new BlocksOnGridUnityApi_BinaryApi(binaryApi);
 
     let app= new DebugApp(canvas, blazorApp);
 

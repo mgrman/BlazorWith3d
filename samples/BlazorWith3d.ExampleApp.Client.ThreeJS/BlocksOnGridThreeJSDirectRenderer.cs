@@ -10,7 +10,6 @@ namespace BlazorWith3d.ExampleApp.Client.ThreeJS;
 
 public class BlocksOnGridThreeJSDirectRenderer : BaseJsRenderer, IDisposable, IBlocksOnGrid3DApp
 {
-    private BlocksOnGrid3DApp? unityAppApi;
     private IBlocksOnGrid3DApp_EventHandler? _eventHandler;
 
     [CascadingParameter] 
@@ -57,11 +56,7 @@ public class BlocksOnGridThreeJSDirectRenderer : BaseJsRenderer, IDisposable, IB
 
     public void Dispose()
     {
-        if (unityAppApi != null)
-        {
-            ParentApp.InitializeRenderer(null);
-            unityAppApi.Dispose();
-        }
+        ParentApp.InitializeRenderer(null);
     }
 
     //TODO

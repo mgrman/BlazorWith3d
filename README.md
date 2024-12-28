@@ -76,12 +76,6 @@ benchmarks
 ### Prio 0 (what to do next)
 
 
-- the main app triggering source generation should be interface
-  - to have different implmenetations, the serialize methods can be default interface implementation
-      - so the binary app version can be generated
-      - the binary api with response version 
-      - ...
-
 - double check if message buffering is needed, as it prevents kinda binary api with responses
   - messages from renderer to blazor
     - blazor has to be listening to messages even before the JS init method is called
