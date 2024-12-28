@@ -7,10 +7,10 @@
 
 @code {
     private BlocksOnGrid3DApp_BinaryApi? unityAppApi;
+    private IDisposable? _rendererAssignment;
 
     [CascadingParameter] 
     public required I3DAppController ParentApp { get; set; }
-    
     
     [Parameter] 
     public IBinaryApi DebugApi { get; set; }
@@ -25,16 +25,13 @@
 
         
         unityAppApi = new BlocksOnGrid3DApp_BinaryApi(DebugApi);
-        ParentApp.InitializeRenderer(unityAppApi);
+        _rendererAssignment=await ParentApp.InitializeRenderer(unityAppApi,null);
     }
 
     public void Dispose()
     {
-        if (unityAppApi != null)
-        {
-            ParentApp.InitializeRenderer(null);
-            unityAppApi.Dispose();
-        }
+        unityAppApi?.Dispose();
+        _rendererAssignment?.Dispose();
     }
 
 }

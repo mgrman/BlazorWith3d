@@ -23,6 +23,8 @@ public class BaseJsBinaryApiRenderer:BaseJsRenderer, IBinaryApi
     private readonly List<byte[]> _unsentMessages = new();
 
     protected virtual string InitializeMethodName => "InitializeApp";
+    
+    private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
 
     protected override JsMessageReceiverProxy CreateReceiverProxy()
     {
@@ -70,11 +72,16 @@ public class BaseJsBinaryApiRenderer:BaseJsRenderer, IBinaryApi
 
         try
         {
+            await _semaphore.WaitAsync();
             await _typescriptApp.InvokeVoidAsync("ProcessMessage", messageBytes);
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error sending message");
+        }
+        finally
+        {
+            _semaphore.Release();
         }
     }
     

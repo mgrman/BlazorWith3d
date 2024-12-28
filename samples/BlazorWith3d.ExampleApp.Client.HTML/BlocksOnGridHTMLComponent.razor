@@ -5,6 +5,7 @@
 @using Microsoft.Extensions.Logging
 @using Microsoft.JSInterop
 @implements IBlocksOnGrid3DApp
+@implements IDisposable
 @inject ILogger<BlocksOnGridHTMLComponent> Logger
 @inject IJSRuntime JsRuntime
 
@@ -47,6 +48,7 @@
 
     private IJSObjectReference jsInteropModule;
     private IBlocksOnGrid3DApp_EventHandler? _eventHandler;
+    private IDisposable? _rendererAssignment;
 
     [CascadingParameter] 
     public required I3DAppController ParentApp { get; set; }
@@ -61,7 +63,7 @@
 
         jsInteropModule = await new Lazy<Task<IJSObjectReference>>(() => JsRuntime.InvokeAsync<IJSObjectReference>("import", "./_content/BlazorWith3d.ExampleApp.Client.HTML/jsInterop.js").AsTask()).Value;
 
-        ParentApp.InitializeRenderer(this);
+        _rendererAssignment= await ParentApp.InitializeRenderer(this,null);
 
         var bounds = await GetBoundingClientRect(_rendererContainerReference);
 
@@ -79,6 +81,11 @@
 
         await base.OnAfterRenderAsync(firstRender);
     }
+
+public void Dispose()
+{
+    _rendererAssignment?.Dispose();
+}
 
     private async ValueTask<RectangleF> GetBoundingClientRect(ElementReference elementReference)
     {

@@ -45,14 +45,8 @@
     }
 
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    protected async Task InitializeTypeScriptApp()
     {
-        if (!firstRender)
-        {
-            await base.OnAfterRenderAsync(firstRender);
-            return;
-        }
-
         if (string.IsNullOrEmpty(JsAppPath))
         {
             throw new InvalidOperationException($"{nameof(JsAppPath)} is not overriden!");
@@ -65,17 +59,13 @@
 
 
         var moduleTask = new Lazy<Task<IJSObjectReference>>(() => JsRuntime.InvokeAsync
-        <IJSObjectReference>
+            <IJSObjectReference>
             ("import", JsAppPath).AsTask());
         
         module = await moduleTask.Value;
         
         
         _typescriptApp = await InitializeJsApp(module, _messageReceiverProxyReference);
-
-
-
-        await base.OnAfterRenderAsync(firstRender);
     }
 
     protected virtual async Task<IJSObjectReference?> InitializeJsApp(IJSObjectReference module, DotNetObjectReference<JsMessageReceiverProxy> messageReceiverProxyReference)

@@ -8,6 +8,7 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Components;
 public class BlocksOnGridUnityRenderer:BaseUnityRenderer, IDisposable
 {
     private BlocksOnGrid3DApp_BinaryApi? unityAppApi;
+    private IDisposable? _rendererAssignment;
 
     [CascadingParameter] 
     public required I3DAppController ParentApp { get; set; }
@@ -30,18 +31,18 @@ public class BlocksOnGridUnityRenderer:BaseUnityRenderer, IDisposable
         {
             Logger.LogError($"Error deserializing message {bytes}", exception);
         };
-        
-        ParentApp.InitializeRenderer(unityAppApi);
-        
+
+        _rendererAssignment = await ParentApp.InitializeRenderer(unityAppApi, async () =>
+        {
+            await InitializeUnityApp();
+        });
+
         await base.OnAfterRenderAsync(firstRender);
     }
 
     public void Dispose()
     {
-        if (unityAppApi != null)
-        {
-            ParentApp.InitializeRenderer(null);
-            unityAppApi.Dispose();
-        }
+        unityAppApi?.Dispose();
+        _rendererAssignment?.Dispose();
     }
 }

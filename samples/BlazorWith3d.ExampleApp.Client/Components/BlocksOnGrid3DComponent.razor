@@ -209,6 +209,8 @@
     private ElementReference _rendererContainerReference;
 
     private static (string name, string url )[] GltfAssets = [ ("BoomBox", "./_content/BlazorWith3d.ExampleApp.Client/gltf/BoomBox.glb")];
+
+    private SemaphoreSlim _initializeRendererSemaphoreSlim = new SemaphoreSlim(1);
     
 
     protected override async Task OnInitializedAsync()
@@ -247,21 +249,37 @@
         await base.OnAfterRenderAsync(firstRender);
     }
 
-    public void InitializeRenderer(IBlocksOnGrid3DApp? rendererApi)
+    public async ValueTask<IDisposable> InitializeRenderer(IBlocksOnGrid3DApp rendererApi, Func<ValueTask>? afterEventHandlerIsSet)
     {
-        if (_rendererApi != null)
+        await _initializeRendererSemaphoreSlim.WaitAsync();
+        try
         {
-            _rendererApi.SetEventHandler(null);
+            // if (_rendererApi != null)
+            // {
+            //     _rendererApi.SetEventHandler(null);
+            // }
+            _rendererApi = rendererApi;
+            if (_rendererApi != null)
+            {
+                _rendererApi.SetEventHandler(this);
+
+                if (afterEventHandlerIsSet != null)
+                {
+                    await afterEventHandlerIsSet();
+                }
+
+                await _rendererApi.InvokeBlazorControllerInitialized(new BlazorControllerInitialized());
+            }
+
+            await ReplayState();
+
         }
-        _rendererApi = rendererApi;
-        if (_rendererApi != null)
+        finally
         {
-             _rendererApi.SetEventHandler(this);
-
-            _rendererApi.InvokeBlazorControllerInitialized(new BlazorControllerInitialized());
+            _initializeRendererSemaphoreSlim.Release();
         }
 
-        ReplayState();
+        return new DisposableAction(() => rendererApi.SetEventHandler(null));
     }
 
     public async ValueTask OnUnityAppInitialized(UnityAppInitialized msg)

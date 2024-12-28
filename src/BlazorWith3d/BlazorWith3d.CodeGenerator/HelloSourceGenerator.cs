@@ -181,7 +181,7 @@ public class HelloSourceGenerator : ISourceGenerator
                 
                 sb.AppendLine($"private byte _requestResponseIdCounter=0;");
                 
-                foreach(var (m,i)in info.methodsWithResponse.EnumerateWithIndex(info.methods.Count))
+                foreach(var (m,_)in info.methodsWithResponse.EnumerateWithIndex())
                 {
                     sb.AppendLine($"private Dictionary<byte,TaskCompletionSource<{m.response.typeName}>> _response{m.request.typeName}Tcs = new();");
                 }
@@ -223,7 +223,7 @@ public class HelloSourceGenerator : ISourceGenerator
                     }
                 }
                 sb.AppendLine();
-                foreach(var (m,i)in info.methodsWithResponse.EnumerateWithIndex(info.methods.Count))
+                foreach(var (m,i)in info.methodsWithResponse.EnumerateWithIndex())
                 {
                     sb.AppendLine($"public async ValueTask<{m.response.typeName}> Invoke{m.request.typeName}({m.request.typeName} msg)");
 
@@ -239,7 +239,7 @@ public class HelloSourceGenerator : ISourceGenerator
                         sb.AppendLine($"var tcs= new TaskCompletionSource<{m.response.typeName}>();");
                         sb.AppendLine($"_response{m.request.typeName}Tcs[requestId]=tcs;");
                         
-                        sb.AppendLine($"await SendMessageWithResponse({i},requestId, msg);");
+                        sb.AppendLine($"await SendMessageWithResponse({i+info.methods.Count},requestId, msg);");
                         
                         
                         sb.AppendLine($"var response=await tcs.Task;");
@@ -345,9 +345,9 @@ public class HelloSourceGenerator : ISourceGenerator
                                     sb.AppendLine($"break;");
                                 }
                             }
-                            foreach(var (m,i)in info.methodsWithResponse.EnumerateWithIndex( info.events.Count+info.eventsWithResponse.Count))
+                            foreach(var (m,i)in info.methodsWithResponse.EnumerateWithIndex())
                             {
-                                sb.AppendLine($"case {i}:");
+                                sb.AppendLine($"case {i+info.events.Count+info.eventsWithResponse.Count}:");
                                 using (sb.IndentWithCurlyBrackets())
                                 {
                                     sb.AppendLine($"var requestId = message[1];");
@@ -357,6 +357,209 @@ public class HelloSourceGenerator : ISourceGenerator
                                 }
                             }
                         }
+                    }
+                    sb.AppendLine("catch (Exception ex)");
+
+                    using (sb.IndentWithCurlyBrackets())
+                    {
+                        sb.AppendLine("OnMessageError?.Invoke(message, ex);");
+                        sb.AppendLine("throw;");
+                    }
+                }
+            }
+            
+            
+            sb.AppendLine();
+            sb.AppendLine($"public partial class {info.app.TypeNameWithoutIPrefix}_BinaryApiWithResponse: {info.app.typeName}, IDisposable");
+            using (sb.IndentWithCurlyBrackets())
+            {
+                sb.AppendLine();
+                sb.AppendLine($"private readonly IBinaryApiSerializer _serializer;");
+                sb.AppendLine($"private readonly IBinaryApiWithResponse _binaryApi;");
+                sb.AppendLine($"private {info.app.typeName}_EventHandler? _eventHandler;");
+                sb.AppendLine($"private readonly ArrayBufferWriter<byte> _writer = new ArrayBufferWriter<byte>(100);");
+                
+                sb.AppendLine();
+                sb.AppendLine($"public {info.app.TypeNameWithoutIPrefix}_BinaryApiWithResponse(IBinaryApiWithResponse binaryApi)");
+                using (sb.IndentWithCurlyBrackets())
+                {
+                    sb.AppendLine($"_serializer = new {info.serializer.typeName}();");
+                    
+                    sb.AppendLine("_binaryApi = binaryApi;");
+                }
+                sb.AppendLine($"public bool IsProcessingMessages => _binaryApi.MainMessageHandler == ProcessMessages;");
+                
+                sb.AppendLine($"public void SetEventHandler({info.app.typeName}_EventHandler? eventHandler)");
+                using (sb.IndentWithCurlyBrackets())
+                {
+                    sb.AppendLine(
+                        "if(_binaryApi.MainMessageHandler != null && _binaryApi.MainMessageHandler != ProcessMessages)");
+                    using (sb.IndentWithCurlyBrackets())
+                    {
+                        sb.AppendLine("throw new InvalidOperationException(\"Somebody else is handling messages!\");");
+                    }
+
+                    sb.AppendLine("_eventHandler=eventHandler;");
+                    sb.AppendLine("_binaryApi.MainMessageHandler = eventHandler==null?null: ProcessMessages;");
+                    sb.AppendLine("_binaryApi.MainMessageWithResponseHandler = eventHandler==null?null: ProcessMessagesWithResponse;");
+                }
+
+                sb.AppendLine($"public event Action<byte[], Exception> OnMessageError;");
+
+                sb.AppendLine();
+                foreach(var (m,i)in info.methods.EnumerateWithIndex())
+                {
+                    sb.AppendLine($"public ValueTask Invoke{m.typeName}({m.typeName} msg)");
+
+                    using (sb.IndentWithCurlyBrackets())
+                    {
+                        sb.AppendLine($"return SendMessage({i}, msg);");
+                    }
+                }
+                sb.AppendLine();
+                foreach(var (m,i)in info.methodsWithResponse.EnumerateWithIndex())
+                {
+                    sb.AppendLine($"public async ValueTask<{m.response.typeName}> Invoke{m.request.typeName}({m.request.typeName} msg)");
+
+                    using (sb.IndentWithCurlyBrackets())
+                    {
+                        sb.AppendLine($"var response=await SendMessageWithResponse<{m.request.typeName},{m.response.typeName}>({i}, msg);");
+                        sb.AppendLine($"return response;");
+                    }
+                }
+                sb.AppendLine();
+                
+                sb.AppendLine();
+                sb.AppendLine($"public void Dispose()");
+                using (sb.IndentWithCurlyBrackets())
+                {
+                    sb.AppendLine("SetEventHandler(null);");
+                }
+                
+                sb.AppendLine($"protected byte[] SerializeMessageWithHeader<TMessage>(byte messageId, TMessage message)");
+                using (sb.IndentWithCurlyBrackets())
+                {
+                    sb.AppendLine("_writer.Clear();");
+                    sb.AppendLine("Span<byte> messageIdSpan = stackalloc byte[1];");
+                    sb.AppendLine("messageIdSpan[0] = messageId;");
+                    sb.AppendLine("_writer.Write(messageIdSpan);");
+                    sb.AppendLine("_serializer.SerializeObject(message, _writer);");
+                    sb.AppendLine("return _writer.WrittenSpan.ToArray();");
+                }
+                
+                sb.AppendLine($"protected byte[] SerializeMessageWithoutHeader<TMessage>( TMessage message)");
+                using (sb.IndentWithCurlyBrackets())
+                {
+                    sb.AppendLine("_writer.Clear();");
+                    sb.AppendLine("_serializer.SerializeObject(message, _writer);");
+                    sb.AppendLine("return _writer.WrittenSpan.ToArray();");
+                }
+                
+                
+                sb.AppendLine($"protected ValueTask SendMessage<TMessage>(byte messageId, TMessage message)");
+                using (sb.IndentWithCurlyBrackets())
+                {
+                    sb.AppendLine("try");
+                    using (sb.IndentWithCurlyBrackets())
+                    {
+                        
+                        sb.AppendLine($"var encodedMessage= SerializeMessageWithHeader(messageId, message);");
+                        sb.AppendLine($"return _binaryApi.SendMessage(encodedMessage);");
+                    }
+                    sb.AppendLine("catch (Exception ex)");
+
+                    using (sb.IndentWithCurlyBrackets())
+                    {
+                        sb.AppendLine("throw;");
+                    }
+                }
+                
+                sb.AppendLine();
+                
+                sb.AppendLine($"protected async ValueTask<TResponse> SendMessageWithResponse<TMessage, TResponse>(byte messageId, TMessage message)");
+                using (sb.IndentWithCurlyBrackets())
+                {
+                    sb.AppendLine("try");
+                    using (sb.IndentWithCurlyBrackets())
+                    {
+                        sb.AppendLine($"var encodedMessage= SerializeMessageWithHeader(messageId, message);");
+                        sb.AppendLine($"var responseMessage=await _binaryApi.SendMessageWithResponse(encodedMessage);");
+                        sb.AppendLine($"var response=_serializer.DeserializeObject<TResponse>(responseMessage);");
+                        sb.AppendLine($"return response;");
+                    }
+                    sb.AppendLine("catch (Exception ex)");
+
+                    using (sb.IndentWithCurlyBrackets())
+                    {
+                        sb.AppendLine("throw;");
+                    }
+                }
+                
+                sb.AppendLine();
+
+                
+                sb.AppendLine($"protected T DeserializeObjectWithoutHeader<T>(byte[] message)");
+                using (sb.IndentWithCurlyBrackets())
+                {
+                    sb.AppendLine("var span = new ReadOnlySpan<byte>(message, 1, message.Length - 1);");
+                    sb.AppendLine($"return _serializer.DeserializeObject<T>(span);");
+                }
+
+                sb.AppendLine($"protected async ValueTask ProcessMessages(byte[] message)");
+                using (sb.IndentWithCurlyBrackets())
+                {
+                    sb.AppendLine("try");
+                    using (sb.IndentWithCurlyBrackets())
+                    {
+                        sb.AppendLine("switch(message[0])");
+                        using (sb.IndentWithCurlyBrackets())
+                        {
+                            foreach(var (e,i)in info.events.EnumerateWithIndex())
+                            {
+                                sb.AppendLine($"case {i}:");
+                                using (sb.IndentWithCurlyBrackets())
+                                {
+                                    sb.AppendLine($"var obj = DeserializeObjectWithoutHeader<{e.typeName}>(message);");
+                                    sb.AppendLine($"await _eventHandler.On{e.typeName}(obj);");
+                                    sb.AppendLine($"break;");
+                                }
+                            }
+                        }
+                    }
+                    sb.AppendLine("catch (Exception ex)");
+
+                    using (sb.IndentWithCurlyBrackets())
+                    {
+                        sb.AppendLine("OnMessageError?.Invoke(message, ex);");
+                        sb.AppendLine("throw;");
+                    }
+                }
+
+                sb.AppendLine($"protected async ValueTask<byte[]> ProcessMessagesWithResponse(byte[] message)");
+                using (sb.IndentWithCurlyBrackets())
+                {
+                    sb.AppendLine("try");
+                    using (sb.IndentWithCurlyBrackets())
+                    {
+                        sb.AppendLine("switch(message[0])");
+                        using (sb.IndentWithCurlyBrackets())
+                        {
+                            foreach(var (e,i)in info.eventsWithResponse.EnumerateWithIndex( ))
+                            {
+                                sb.AppendLine($"case {i}:");
+                                using (sb.IndentWithCurlyBrackets())
+                                {
+                                    sb.AppendLine($"var obj = DeserializeObjectWithoutHeader<{e.request.typeName}>(message);");
+                                    sb.AppendLine($"var response = await _eventHandler.On{e.request.typeName}(obj);");
+                                    sb.AppendLine("var responseMessage =SerializeMessageWithoutHeader(response);");
+                                    sb.AppendLine($"return responseMessage;");
+                                    
+                                    sb.AppendLine($"break;");
+                                }
+                            }
+                        }
+                        
+                        sb.AppendLine($"throw new InvalidOperationException(\"Missing hanlder for message {{message[0]}}\");");
                     }
                     sb.AppendLine("catch (Exception ex)");
 
@@ -443,6 +646,7 @@ public class HelloSourceGenerator : ISourceGenerator
 
 
         sb.AppendLine($"import {{IBinaryApi}} from \"../IBinaryApi\";");
+        sb.AppendLine($"import {{IBinaryApiWithResponse}} from \"../IBinaryApiWithResponse\";");
         sb.AppendLine($"import {{MemoryPackWriter}} from \"./MemoryPackWriter\";");
 
         var typesToImport = info.methods.Select(o => o.typeName)
@@ -462,7 +666,7 @@ public class HelloSourceGenerator : ISourceGenerator
         {
             foreach (var @event in info.events)
             {
-                sb.AppendLine($"On{@event.typeName}(msg: {@event.typeName}): Promise<any>;");
+                sb.AppendLine($"On{@event.typeName}(msg: {@event.typeName}): Promise<void>;");
             }
             foreach (var @event in info.eventsWithResponse)
             {
@@ -520,6 +724,173 @@ public class HelloSourceGenerator : ISourceGenerator
             sb.AppendLine($"SetEventHandler(eventHandler: {info.app.typeName}_EventHandler);");
         }
 
+        sb.AppendLine($"export class {info.app.TypeNameWithoutIPrefix}_BinaryApiWithResponse implements {info.app.typeName}");
+        using (sb.IndentWithCurlyBrackets())
+        {
+            sb.AppendLine($"private _binaryApi: IBinaryApiWithResponse;");
+            sb.AppendLine($"private _eventHandler: {info.app.typeName}_EventHandler;");
+            sb.AppendLine($"private _messageHandler:(bytes: Uint8Array) => Promise<void>;");
+            sb.AppendLine($"private _messageWithResponseHandler:(bytes: Uint8Array) => Promise<Uint8Array>;");
+
+            sb.AppendLine($"constructor( binaryApi: IBinaryApiWithResponse)");
+            using (sb.IndentWithCurlyBrackets())
+            {
+                sb.AppendLine($"this._binaryApi = binaryApi;");
+                sb.AppendLine($"this._messageHandler= (msg)=>this.ProcessMessages(msg);");
+                sb.AppendLine($"this._messageWithResponseHandler= (msg)=>this.ProcessMessagesWithResponse(msg);");
+            }
+
+            sb.AppendLines(
+                $@"public get IsProcessingMessages():boolean 
+{{
+    return this._binaryApi.mainMessageHandler == this._messageHandler;
+}}
+public SetEventHandler(eventHandler: {info.app.typeName}_EventHandler):void
+{{
+    if(this._binaryApi.mainMessageHandler != null && this._binaryApi.mainMessageHandler != this._messageHandler)
+    {{
+        return;
+    }}
+    this._eventHandler=eventHandler;
+    this._binaryApi.mainMessageHandler = eventHandler==null?null:this._messageHandler;
+    this._binaryApi.mainMessageWithResponseHandler = eventHandler==null?null:this._messageWithResponseHandler;
+}}".Split(new[] { "\r\n", "\n" }, StringSplitOptions.None));
+
+            
+            foreach (var (method, i) in info.methods.EnumerateWithIndex())
+            {
+                sb.AppendLine($"public Invoke{method.typeName}(msg: {method.typeName}): Promise<void>");
+                using (sb.IndentWithCurlyBrackets())
+                {
+                    sb.AppendLine($"return this.sendMessage({i}, w => {method.typeName}.serializeCore(w, msg));");
+                }
+            }
+            
+            foreach (var (method, i) in info.methodsWithResponse.EnumerateWithIndex())
+            {
+                sb.AppendLine($"public async Invoke{method.request.typeName}(msg: {method.request.typeName}): Promise<{method.response.typeName}>");
+                using (sb.IndentWithCurlyBrackets())
+                {
+                    sb.AppendLine($"var responseMessage=await this.sendMessageWithResponse({i}, requestId, w => {method.request.typeName}.serializeCore(w, msg));");
+                    
+                    sb.AppendLine($"let response= {method.response.typeName}.deserialize(responseMessage);");
+                    
+                    sb.AppendLine($"return response;");
+                    
+                    
+                }
+            }
+
+            sb.AppendLines(
+                @"private async sendMessage(messageId: number, messageSerializeCore: (writer: MemoryPackWriter) => any): Promise<void> 
+{
+    try {
+        const writer = MemoryPackWriter.getSharedInstance();
+        writer.writeInt8(messageId);
+        messageSerializeCore(writer);
+        const encodedMessage = writer.toArray();
+
+        return this._binaryApi.sendMessage(encodedMessage);
+    } catch (ex) 
+    {
+        throw ex;
+    }
+}
+
+private sendMessageWithResponse(messageId: number, messageSerializeCore: (writer: MemoryPackWriter) => any): Promise<any> 
+{
+    try {
+        const writer = MemoryPackWriter.getSharedInstance();
+        writer.writeInt8(messageId);
+        messageSerializeCore(writer);
+        const encodedMessage = writer.toArray();
+
+        return this._binaryApi.sendMessageWithResponse(encodedMessage);
+    } catch (ex) 
+    {
+        throw ex;
+    }
+}".Split(new[] { "\r\n", "\n" }, StringSplitOptions.None));
+            
+            
+
+            sb.AppendLine($"private async ProcessMessages(msg: Uint8Array): Promise<void>");
+            using (sb.IndentWithCurlyBrackets())
+            {
+                sb.AppendLine($"try");
+                using (sb.IndentWithCurlyBrackets())
+                {
+                    sb.AppendLine($"let buffer = msg.slice(1);");
+                    sb.AppendLine($"var dst = new ArrayBuffer(buffer.byteLength);");
+                    sb.AppendLine($"new Uint8Array(dst).set(buffer);");
+                    
+                    sb.AppendLine("switch (msg[0])");
+                    using (sb.IndentWithCurlyBrackets())
+                    {
+                        foreach (var (e,i) in info.events.EnumerateWithIndex())
+                        {
+                            sb.AppendLine($"case {i}:");
+                            using (sb.IndentWithCurlyBrackets())
+                            {
+                                sb.AppendLine($"const obj: {e.typeName} = {e.typeName}.deserialize(dst);");
+                                sb.AppendLine($"await this._eventHandler.On{e.typeName}?.(obj);");
+                                sb.AppendLine($"break;");
+                            }
+                        }
+                    }
+                }
+                sb.AppendLine("catch (e)");
+                using (sb.IndentWithCurlyBrackets())
+                {
+                    sb.AppendLine(" console.log(e);");
+                }
+            }
+            sb.AppendLine($"private async ProcessMessagesWithResponse(msg: Uint8Array): Promise<Uint8Array>");
+            using (sb.IndentWithCurlyBrackets())
+            {
+                sb.AppendLine($"try");
+                using (sb.IndentWithCurlyBrackets())
+                {
+                    sb.AppendLine($"let buffer = msg.slice(1);");
+                    sb.AppendLine($"var dst = new ArrayBuffer(buffer.byteLength);");
+                    sb.AppendLine($"new Uint8Array(dst).set(buffer);");
+                    
+                    sb.AppendLine("switch (msg[0])");
+                    using (sb.IndentWithCurlyBrackets())
+                    {
+                        foreach (var (e,i) in info.eventsWithResponse.EnumerateWithIndex())
+                        {
+                            sb.AppendLine($"case {i}:");
+                            using (sb.IndentWithCurlyBrackets())
+                            {
+                                sb.AppendLine($"const obj: {e.request.typeName} = {e.request.typeName}.deserialize(dst);");
+                                sb.AppendLine($"let response= await this._eventHandler.On{e.request.typeName}(obj);");
+                                
+                                sb.AppendLine($"return {e.response.typeName}.serialize(response);");
+                                sb.AppendLine($"break;");
+                            }
+                        }
+                    }
+                    
+                    sb.AppendLine("throw new Error('Missng handler');");
+                    
+                }
+                sb.AppendLine("catch (e)");
+                using (sb.IndentWithCurlyBrackets())
+                {
+                    sb.AppendLine(" console.log(e);");
+                    sb.AppendLine(" throw e;");
+                }
+        
+        
+
+        
+        
+            }
+        }
+    
+        
+        
         sb.AppendLine($"export class {info.app.TypeNameWithoutIPrefix}_BinaryApi implements {info.app.typeName}");
         using (sb.IndentWithCurlyBrackets())
         {
@@ -646,9 +1017,9 @@ public SetEventHandler(eventHandler: {info.app.typeName}_EventHandler):void
                                 sb.AppendLine($"break;");
                             }
                         }
-                        foreach (var (e,i) in info.eventsWithResponse.EnumerateWithIndex( info.events.Count+info.eventsWithResponse.Count))
+                        foreach (var (e,i) in info.eventsWithResponse.EnumerateWithIndex( ))
                         {
-                            sb.AppendLine($"case {i}:");
+                            sb.AppendLine($"case {i+info.events.Count+info.eventsWithResponse.Count}:");
                             using (sb.IndentWithCurlyBrackets())
                             {
                                 sb.AppendLine($"let requestId = msg[1];");
@@ -667,14 +1038,9 @@ public SetEventHandler(eventHandler: {info.app.typeName}_EventHandler):void
                 {
                     sb.AppendLine(" console.log(e);");
                 }
-        
-        
-
-        
-        
             }
         }
-    
+        
         // save to file
         try
         {

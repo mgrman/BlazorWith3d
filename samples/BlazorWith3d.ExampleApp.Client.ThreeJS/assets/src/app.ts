@@ -11,31 +11,35 @@ import {RemoveBlockTemplate} from "com.blazorwith3d.exampleapp.client.shared/mem
 import { UnityAppInitialized } from "com.blazorwith3d.exampleapp.client.shared/memorypack/UnityAppInitialized";
 import { UpdateBlockInstance } from "com.blazorwith3d.exampleapp.client.shared/memorypack/UpdateBlockInstance";
 import {
-    BlocksOnGridUnityApi_BinaryApi, BlocksOnGridUnityApi_MethodInvoker_DirectInterop,
+    BlocksOnGridUnityApi_BinaryApiWithResponse, BlocksOnGridUnityApi_MethodInvoker_DirectInterop,
     IBlocksOnGridUnityApi, IBlocksOnGridUnityApi_EventHandler,
     IBlocksOnGridUnityApi_MethodInvoker
 } from "com.blazorwith3d.exampleapp.client.shared/memorypack/IBlocksOnGridUnityApi";
-import {BlazorBinaryApi} from "com.blazorwith3d.exampleapp.client.shared/BlazorBinaryApi";
+import {BlazorBinaryApiWithResponse} from "com.blazorwith3d.exampleapp.client.shared/BlazorBinaryApiWithResponse";
 import { RequestRaycast } from "com.blazorwith3d.exampleapp.client.shared/memorypack/RequestRaycast";
 import { RequestScreenToWorldRay } from "com.blazorwith3d.exampleapp.client.shared/memorypack/RequestScreenToWorldRay";
 import { ScreenToWorldRayResponse } from "com.blazorwith3d.exampleapp.client.shared/memorypack/ScreenToWorldRayResponse";
 import { RaycastResponse } from "com.blazorwith3d.exampleapp.client.shared/memorypack/RaycastResponse";
 
 
-export function InitializeApp_BinaryApi(canvas: HTMLCanvasElement, dotnetObject: any, onMessageReceivedMethodName: string) {
+export function InitializeApp_BinaryApi(canvas: HTMLCanvasElement, dotnetObject: any, onMessageReceivedMethodName: string, onMessageReceivedWithResponseMethodName: string) {
     let sendMessageCallback: (msgBytes: Uint8Array) => Promise<any> = msgBytes => dotnetObject.invokeMethodAsync(onMessageReceivedMethodName, msgBytes);
+    let sendMessageWithResponseCallback: (msgBytes: Uint8Array) => Promise<Uint8Array> = msgBytes => dotnetObject.invokeMethodAsync(onMessageReceivedWithResponseMethodName, msgBytes);
 
 
-    let binaryApi= new BlazorBinaryApi(sendMessageCallback);
-    let blazorApp=new BlocksOnGridUnityApi_BinaryApi(binaryApi);
+    let binaryApi = new BlazorBinaryApiWithResponse(sendMessageCallback, sendMessageWithResponseCallback);
+    let blazorApp = new BlocksOnGridUnityApi_BinaryApiWithResponse(binaryApi);
 
-    let app= new DebugApp(canvas, blazorApp);
+    let app = new DebugApp(canvas, blazorApp);
 
     blazorApp.SetEventHandler(app);
 
-    let appAsAny :any =app ;
-    appAsAny.ProcessMessage= msg=> {
-        binaryApi.onMessageReceived(msg);
+    let appAsAny: any = app;
+    appAsAny.ProcessMessage = msg => {
+        return binaryApi.mainMessageHandler(msg);
+    }
+    appAsAny.ProcessMessageWithResponse = msg => {
+        return binaryApi.mainMessageWithResponseHandler(msg);
     }
     return appAsAny;
 }

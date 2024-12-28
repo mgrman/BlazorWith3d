@@ -11,6 +11,7 @@ namespace BlazorWith3d.ExampleApp.Client.ThreeJS;
 public class BlocksOnGridThreeJSDirectRenderer : BaseJsRenderer, IDisposable, IBlocksOnGrid3DApp
 {
     private IBlocksOnGrid3DApp_EventHandler? _eventHandler;
+    private IDisposable? _rendererAssignment;
 
     [CascadingParameter] 
     public required I3DAppController ParentApp { get; set; }
@@ -49,14 +50,18 @@ public class BlocksOnGridThreeJSDirectRenderer : BaseJsRenderer, IDisposable, IB
             await base.OnAfterRenderAsync(firstRender);
             return;
         }
+
         await base.OnAfterRenderAsync(firstRender);
-        
-        ParentApp.InitializeRenderer(this);
+
+        _rendererAssignment = await ParentApp.InitializeRenderer(this, async () =>
+        {
+            await InitializeTypeScriptApp();
+        });
     }
 
     public void Dispose()
     {
-        ParentApp.InitializeRenderer(null);
+        _rendererAssignment?.Dispose();
     }
 
     //TODO

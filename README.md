@@ -75,7 +75,7 @@ benchmarks
 
 ### Prio 0 (what to do next)
 
-- Add binaryApi with response to optimize interop usecases (as only unity debug socket cannot do this)
+- Add binaryApi with response for Unity WebGL build
 
 - generate blazor interop code, preferably in  another project referencing the types in shared
 
