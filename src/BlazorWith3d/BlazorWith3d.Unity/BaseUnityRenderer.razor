@@ -27,7 +27,6 @@
 
     public virtual string UnityBuildFilesRootPath => Assets[""];
     private readonly List<byte[]> _unsentMessages = new();
-    private readonly ReceiveMessageBuffer _receiveMessageBuffer = new();
 
     public async ValueTask DisposeAsync()
     {
@@ -72,15 +71,11 @@
         await base.OnAfterRenderAsync(firstRender);
     }
 
-    public Func<byte[], ValueTask>? MainMessageHandler
-    {
-        get => _receiveMessageBuffer.MainMessageHandler;
-        set => _receiveMessageBuffer.MainMessageHandler = value;
-    }
+    public Func<byte[], ValueTask>? MainMessageHandler { get; set; }
 
     private void OnMessageBytesReceived(byte[] messageBytes)
     {
-        _receiveMessageBuffer.InvokeMessage(messageBytes);
+        MainMessageHandler.Invoke(messageBytes);
     }
 
     public async ValueTask SendMessage(byte[] messageBytes)

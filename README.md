@@ -75,14 +75,6 @@ benchmarks
 
 ### Prio 0 (what to do next)
 
-
-- double check if message buffering is needed, as it prevents kinda binary api with responses
-  - messages from renderer to blazor
-    - blazor has to be listening to messages even before the JS init method is called
-  - messages to renderer from blazor
-    - for TS code you can expect that it is ready to receive after the JS init method finishes
-    - but for Unity, that one has internal shit going on, ?? maybe expose a unity specific interop method so the js init code can await until unity inside is ready to receive
-
 - Add binaryApi with response to optimize interop usecases (as only unity debug socket cannot do this)
 
 - generate blazor interop code, preferably in  another project referencing the types in shared

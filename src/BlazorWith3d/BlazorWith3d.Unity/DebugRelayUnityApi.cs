@@ -36,7 +36,7 @@ public class DebugRelayUnityApi
             {
                 var receiveResult = await webSocket.ReceiveAsync(buffer, CancellationToken.None);
                 var msg = buffer.Slice(0, receiveResult.Count).ToArray();
-                api._unhandledMessages.InvokeMessage(msg);
+                api.MainMessageHandler.Invoke(msg);
             }
             catch (WebSocketException ex)
             {
@@ -53,14 +53,13 @@ public class DebugRelayUnityApi
     public class BinaryApiForSocket : IBinaryApi
     {
         private readonly WebSocket _webSocket;
-        public readonly ReceiveMessageBuffer _unhandledMessages= new();
 
         public BinaryApiForSocket(WebSocket webSocket)
         {
             _webSocket = webSocket;
         }
 
-        public Func<byte[],ValueTask>? MainMessageHandler { get => _unhandledMessages.MainMessageHandler; set => _unhandledMessages.MainMessageHandler = value; }
+        public Func<byte[],ValueTask>? MainMessageHandler { get; set; }
 
         public async ValueTask SendMessage(byte[] bytes)
         {

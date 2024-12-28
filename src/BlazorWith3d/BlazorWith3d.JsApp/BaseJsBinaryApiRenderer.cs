@@ -21,7 +21,6 @@ public class BaseJsBinaryApiRenderer:BaseJsRenderer, IBinaryApi
     public override string JsAppPath => "";
     
     private readonly List<byte[]> _unsentMessages = new();
-    private readonly ReceiveMessageBuffer _receiveMessageBuffer = new();
 
     protected virtual string InitializeMethodName => "InitializeApp";
 
@@ -54,15 +53,11 @@ public class BaseJsBinaryApiRenderer:BaseJsRenderer, IBinaryApi
         return await module.InvokeAsync<IJSObjectReference>(InitializeMethodName, _containerElementReference,messageReceiverProxyReference,nameof(BinaryApiJsMessageReceiverProxy.OnMessageBytesReceived) );
     }
 
-    public Func<byte[], ValueTask>? MainMessageHandler
-    {
-        get => _receiveMessageBuffer.MainMessageHandler;
-        set => _receiveMessageBuffer.MainMessageHandler = value;
-    }
+    public Func<byte[], ValueTask>? MainMessageHandler { get; set; }
 
     private void OnMessageBytesReceived(byte[] messageBytes)
     {
-        _receiveMessageBuffer.InvokeMessage(messageBytes);
+        MainMessageHandler.Invoke(messageBytes);
     }
     
     public async ValueTask SendMessage(byte[] messageBytes)

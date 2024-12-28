@@ -19,19 +19,24 @@
         case "None":
             break;
         case "Unity WebGL":
-            <BlocksOnGridUnityRenderer></BlocksOnGridUnityRenderer>
+            <BlocksOnGridUnityRenderer></BlocksOnGridUnityRenderer> 
+            // use binary api with response
             break;
         case "Html":
             <BlocksOnGridHTMLComponent></BlocksOnGridHTMLComponent>
+            // implements the interface directly
             break;
         case "Babylon":
             <BlazorWith3d.ExampleApp.Client.Babylon.BlocksOnGridBabylonRenderer></BlazorWith3d.ExampleApp.Client.Babylon.BlocksOnGridBabylonRenderer>
+            // uses binary TS interface with response
             break;
         case "ThreeJS":
             <BlazorWith3d.ExampleApp.Client.ThreeJS.BlocksOnGridThreeJSRenderer></BlazorWith3d.ExampleApp.Client.ThreeJS.BlocksOnGridThreeJSRenderer>
+            // uses binary TS interface with response
             break;
         case "ThreeJS.Interop":
             <BlazorWith3d.ExampleApp.Client.ThreeJS.BlocksOnGridThreeJSDirectRenderer></BlazorWith3d.ExampleApp.Client.ThreeJS.BlocksOnGridThreeJSDirectRenderer>
+            // uses generated interop code 
             break;
             default:
             <text> Unsupported renderer type @_renderer</text>
