@@ -22,12 +22,10 @@ var BlazorApiUnity = {
     },
 
     _SendMessageFromUnity: function (array, size) {
-
-        // TODO check if this works, maybe a copy will have to be made
-
         //console.log("Array at "+array)
         //console.log("size at "+size)
 
+        // the emscripten heap is wrapped with array, so the memory is exposed but not copied 
         var buffer = new Uint8Array(HEAPU8.buffer, array, size);
         //console.log("buffer at "+buffer.length);
 
@@ -36,6 +34,7 @@ var BlazorApiUnity = {
                 Module["BlazorApi_OnMessageFromUnityHandler_Buffer"] = []
             }
 
+            // to keep reference in buffer for later, the buffer is copied
             Module["BlazorApi_OnMessageFromUnityHandler_Buffer"].push(buffer.slice());
         } else {
             // void BlazorApi_OnMessageFromUnityHandler(byte[] message)

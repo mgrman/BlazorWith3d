@@ -48,6 +48,8 @@ namespace BlazorWith3d.Unity
             _InitializeApi(_InstantiateByteArray);
         }
 
+        // optimization, so the array is created on Unity side, and exposed to emscripten JS interop code to fill in.
+        // see https://stackoverflow.com/a/71472662
         [MonoPInvokeCallback(typeof(Action<int, int>))]
         private static void _InstantiateByteArray(int size, int id)
         {

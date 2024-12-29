@@ -75,6 +75,8 @@ benchmarks
 
 ### Prio 0 (what to do next)
 
+- Make initialization order in Unity JS interop code more explicit, so the buffering can be removed (as that makes response messages harder)
+
 - Add binaryApi with response for Unity WebGL build
 
 - generate blazor interop code, preferably in  another project referencing the types in shared
