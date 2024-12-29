@@ -11,6 +11,11 @@ var BlazorApiUnity = {
             {{{ makeDynCall('vii', 'instantiateByteArrayCallback') }}}(bytes.length, id);
             (bytes.length, id);
         };
+
+
+        if(Module["BlazorApi_InitPromiseResolve"] != null){
+            Module["BlazorApi_InitPromiseResolve"]();
+        }
     },
     _ReadBytesBuffer: function (id, array) {
 

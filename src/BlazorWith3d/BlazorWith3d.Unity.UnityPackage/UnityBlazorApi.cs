@@ -11,7 +11,32 @@ namespace BlazorWith3d.Unity
 {
     public class UnityBlazorApi : IBinaryApi
     {
-        public Func<byte[], ValueTask>? MainMessageHandler { get; set; }
+        private static Func<byte[], ValueTask>? s_mainMessageHandler;
+
+        public static Func<byte[], ValueTask>? MainMessageHandler
+        {
+            get => s_mainMessageHandler;
+            set
+            {
+                if (s_mainMessageHandler != null)
+                {
+                    throw new InvalidOperationException("Cannot set MainMessageHandler on a Unity Blazor again after it was set!");
+                }
+                if (value == null)
+                {
+                    throw new InvalidOperationException("Cannot set MainMessageHandler to null!");
+                }
+                s_mainMessageHandler = value;
+                
+                Debug.Log("On before BlazorApiUnity.InitializeApi");
+                _InitializeApi(_InstantiateByteArray);
+            }
+        }
+
+        Func<byte[], ValueTask>? IBinaryApi.MainMessageHandler { 
+            get => MainMessageHandler;
+            set => MainMessageHandler = value;
+        }
 
 
         private UnityBlazorApi()
@@ -43,9 +68,6 @@ namespace BlazorWith3d.Unity
             }
 #endif
             WebGLInput.captureAllKeyboardInput = false;
-
-            Debug.Log("On before BlazorApiUnity.InitializeApi");
-            _InitializeApi(_InstantiateByteArray);
         }
 
         // optimization, so the array is created on Unity side, and exposed to emscripten JS interop code to fill in.
@@ -57,7 +79,12 @@ namespace BlazorWith3d.Unity
 
             _ReadBytesBuffer(id, bytes);
 
-            Singleton.MainMessageHandler?.Invoke(bytes);
+            if (MainMessageHandler == null)
+            {
+                Debug.LogError("Singleton.MainMessageHandler is not set!");
+                throw new InvalidOperationException();
+            }
+            MainMessageHandler?.Invoke(bytes);
         }
 
         [DllImport("__Internal")]

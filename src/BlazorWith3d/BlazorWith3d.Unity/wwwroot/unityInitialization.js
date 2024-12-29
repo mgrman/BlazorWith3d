@@ -110,7 +110,13 @@ export function showUnity(buildUrl, container, dotnetObject, onMessageReceivedMe
                     await previousMessage;
                     previousMessage = dotnetObject.invokeMethodAsync(onMessageReceivedMethodName, msgBytes)
                 });
-                resolve(unityApi);
+
+                if(unityInstance.Module["BlazorApi_SendMessageToUnity"]==null) {
+                    unityInstance.Module["BlazorApi_InitPromiseResolve"] = ()=>resolve(unityApi);
+                }
+                else{
+                    resolve(unityApi);
+                }
 
                 // container.querySelector("#unity-fullscreen-button").onclick = () => {
                 //   unityInstance.SetFullscreen(1);
