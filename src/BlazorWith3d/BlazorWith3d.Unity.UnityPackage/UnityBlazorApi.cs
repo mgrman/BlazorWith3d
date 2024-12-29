@@ -11,26 +11,15 @@ namespace BlazorWith3d.Unity
 {
     public class UnityBlazorApi : IBinaryApi
     {
-        private static readonly ReceiveMessageBuffer _receiveMessageBuffer = new();
+        public Func<byte[], ValueTask>? MainMessageHandler { get; set; }
 
 
-
-        public Func<byte[], ValueTask>? MainMessageHandler
+        private UnityBlazorApi()
         {
-            get => _receiveMessageBuffer.MainMessageHandler;
-            set
-            {
-                
-#if !(UNITY_WEBGL && !UNITY_EDITOR)
-                if (Application.isEditor|| Application.platform != RuntimePlatform.WebGLPlayer)
-                {
-                    throw new NotImplementedException();
-                }
-#endif
-                _receiveMessageBuffer.MainMessageHandler = value;
-            }
+            
         }
-        
+
+        public static UnityBlazorApi Singleton { get; } = new UnityBlazorApi();
 
         public ValueTask SendMessage(byte[] bytes)
         {
@@ -66,7 +55,7 @@ namespace BlazorWith3d.Unity
 
             _ReadBytesBuffer(id, bytes);
 
-            _receiveMessageBuffer.InvokeMessage(bytes);
+            Singleton.MainMessageHandler?.Invoke(bytes);
         }
 
         [DllImport("__Internal")]

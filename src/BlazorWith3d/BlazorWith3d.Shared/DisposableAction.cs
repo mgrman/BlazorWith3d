@@ -1,11 +1,13 @@
 ﻿using System;
 
-namespace BlazorWith3d.Shared;
-
-public record DisposableAction(Action onDispose):IDisposable
+namespace BlazorWith3d.Shared
 {
-    public void Dispose()
+
+    public record DisposableAction(Action onDispose) : IDisposable
     {
-        onDispose();
+        public void Dispose()
+        {
+            onDispose();
+        }
     }
 }

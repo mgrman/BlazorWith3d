@@ -17,7 +17,7 @@ namespace ExampleApp
 
         private readonly Dictionary<int, BlockController> _blocks = new();
         private readonly Dictionary<int, BlockController> _templates = new();
-        private BlocksOnGridUnityApi _appApi;
+        private IBlocksOnGridUnityApi _appApi;
         private GameObject _templateRoot;
 
         private List<IDisposable> _disposables=new List<IDisposable>();
@@ -48,7 +48,7 @@ namespace ExampleApp
                 var relay = new BlazorWebSocketRelay(_backendWebsocketUrl);
                 _asyncDisposables.Add(relay);
                 var blazorApi = relay;
-                _appApi = new BlocksOnGridUnityApi(blazorApi);
+                _appApi = new BlocksOnGridUnityApi_BinaryApi(blazorApi);
                 
                 var uriBuilder = new UriBuilder(_backendWebsocketUrl);
                 uriBuilder.Scheme="http";
@@ -57,8 +57,8 @@ namespace ExampleApp
             }
 #else
             HostUrl = new Uri(Application.absoluteURL);
-            var blazorApi = new UnityBlazorApi();
-            _appApi = new BlocksOnGridUnityApi(blazorApi);
+            var blazorApi = UnityBlazorApi.Singleton;
+            _appApi = new BlocksOnGridUnityApi_BinaryApi(blazorApi);
 #endif
             Console.WriteLine($"{Screen.width},{Screen.height}");
             await _appApi.InvokeUnityAppInitialized(new UnityAppInitialized()

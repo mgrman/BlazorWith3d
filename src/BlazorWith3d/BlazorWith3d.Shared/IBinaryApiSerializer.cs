@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Buffers;
 
-namespace BlazorWith3d.Shared;
-
-
-public interface IBinaryApiSerializer
+namespace BlazorWith3d.Shared
 {
-    void SerializeObject<T>(T obj, IBufferWriter<byte> writer);
+    public interface IBinaryApiSerializer
+    {
+        void SerializeObject<T>(T obj, IBufferWriter<byte> writer);
 
-    T? DeserializeObject<T>(ReadOnlySpan<byte> bytes);
+        T? DeserializeObject<T>(ReadOnlySpan<byte> bytes);
+    }
 }

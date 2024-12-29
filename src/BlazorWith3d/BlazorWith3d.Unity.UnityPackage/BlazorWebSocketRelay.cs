@@ -19,17 +19,8 @@ namespace BlazorWith3d.Unity
         private readonly CancellationTokenSource _cts;
         private readonly List<byte[]> _unsentMessages= new ();
 
-        private static readonly ReceiveMessageBuffer _receiveMessageBuffer = new();
 
-
-        public Func<byte[], ValueTask>? MainMessageHandler
-        {
-            get => _receiveMessageBuffer.MainMessageHandler;
-            set
-            {
-                _receiveMessageBuffer.MainMessageHandler = value;
-            }
-        }
+        public Func<byte[], ValueTask>? MainMessageHandler { get; set; }
 
 
         public BlazorWebSocketRelay(string url)
@@ -145,7 +136,7 @@ namespace BlazorWith3d.Unity
         private async void ResponseReceived(byte[] data)
         {
             await Awaitable.MainThreadAsync();
-            _receiveMessageBuffer.InvokeMessage(data);
+            MainMessageHandler?.Invoke(data);
         }
 
         public async ValueTask DisposeAsync()
