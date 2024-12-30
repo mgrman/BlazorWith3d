@@ -75,21 +75,25 @@ benchmarks
 
 ### Prio 0 (what to do next)
 
-- typescript binary api is using _responseTcs without setting it? 
-
-- Add onMessageWithResponseReceivedCallback in Unity WebGL build
-
+- have a method to call from renderer to test this with
+  - Add onMessageWithResponseReceivedCallback in Unity WebGL build
+  - typescript binary api is using _responseTcs without setting it? 
 
 - generate blazor interop code, preferably in  another project referencing the types in shared
 
 - try again to get matrix for screen to world as that would reduce the need for extra interop call
 
+- Maui app with native Unity build
+  https://docs.unity3d.com/6000.1/Documentation/Manual/UnityasaLibrary-Windows.html
+
+
+### Prio 1 (stretch goals)
+
 - Unify visuals of all renderers
-  - add camera transform setting (and getting, as to have a request to set but I can get the real one)
-  - unify different coordinate systems
-  - add setting of background color
-  - even background plane should be just a mesh to load
-  
+    - add camera transform setting (and getting, as to have a request to set but I can get the real one)
+    - unify different coordinate systems
+    - add setting of background color
+    - even background plane should be just a mesh to load
 
 - do Isometric or fake-3d in CSS only for HTML version
     - https://developer.mozilla.org/en-US/docs/Web/CSS/transform-function/perspective
@@ -97,10 +101,6 @@ benchmarks
     - should use pre-rendered images
     - mainly as otherwise it is hard to render depth
 
-
-
-### Prio 1 (stretch goals)
-  
 - render screen in unity and stream to blazor for debug mode
 
 - Investigate and optimize render modes and stream rendering and better handling of Maui limitations for render mode
@@ -113,9 +113,6 @@ benchmarks
     - add debugging support to IDEs
     - switch to Vite as everybody's using it ( see https://doc.babylonjs.com/guidedLearning/usingVite/ )
  
-- Maui app with native Unity build
-    https://docs.unity3d.com/6000.1/Documentation/Manual/UnityasaLibrary-Windows.html
-
 
 ### Prio 2 (make it nicer)
 

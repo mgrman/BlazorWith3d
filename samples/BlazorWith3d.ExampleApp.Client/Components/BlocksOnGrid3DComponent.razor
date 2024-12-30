@@ -407,7 +407,7 @@
         _isHandlingMouse = true;
         try
         {
-            var offset = await module.InvokeAsync<JSVector2>("ConvertPageToOffset", _rendererContainerReference, e.PageX, e.PageY);
+            var offset = await module.InvokeAsync<JSVector2>("ConvertPageToOffset", _rendererContainerReference, e.ClientX, e.ClientY);
 
             var screenToRayResponse = await _rendererApi.InvokeRequestScreenToWorldRay(new RequestScreenToWorldRay()
             {
