@@ -51,7 +51,7 @@ export function InitializeApp_BinaryApi(canvas: HTMLCanvasElement, dotnetObject:
 
     let appAsAny :any =app ;
     appAsAny.ProcessMessage= msg=> {
-        binaryApi.onMessageReceived(msg);
+        return binaryApi.mainMessageHandler(msg);
     }
     return appAsAny;
 }

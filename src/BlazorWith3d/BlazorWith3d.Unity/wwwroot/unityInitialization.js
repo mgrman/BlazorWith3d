@@ -1,22 +1,37 @@
 // This is a JavaScript module that is loaded on demand. It can export any number of
 // functions, and may import other JavaScript modules if required.
-export function InitializeUnityApi(unityInstance, onMessageReceivedCallback) {
+export function InitializeUnityApi(unityInstance, onMessageReceivedCallback, onMessageWithResponseReceivedCallback) {
 
     let unityApi = {}
 
+
+    var previousMessage = Promise.resolve();
+
     // void BlazorApi_OnMessageFromUnityHandler(byte[] message)
-    unityInstance.Module["BlazorApi_OnMessageFromUnityHandler"] = function (msgBytes) {
+    unityInstance.Module["BlazorApi_OnMessageFromUnityHandler"] =async function (msgBytes) {
         try {
-            onMessageReceivedCallback(msgBytes);
+            await previousMessage;
+            var promise = onMessageReceivedCallback(msgBytes);
+            previousMessage=promise;
+            return promise;
         } catch (err) {
             console.error(err);
         }
     }
 
-    unityApi.SendMessage = function (msgBytes) {
+    unityApi.SendMessage = async function (msgBytes) {
         // void BlazorApi_SendMessageToUnity(byte[] message)
         try {
-            unityInstance.Module["BlazorApi_SendMessageToUnity"](msgBytes);
+            return unityInstance.Module["BlazorApi_SendMessageToUnity"](msgBytes);
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    unityApi.SendMessageWithResponse = async function (msgBytes) {
+        // void BlazorApi_SendMessageToUnity(byte[] message)
+        try {
+            return  unityInstance.Module["BlazorApi_SendMessageWithResponseToUnity"](msgBytes);
         } catch (err) {
             console.error(err);
         }
@@ -31,7 +46,7 @@ export function InitializeUnityApi(unityInstance, onMessageReceivedCallback) {
 }
 
 
-export function showUnity(buildUrl, container, dotnetObject, onMessageReceivedMethodName) {
+export function showUnity(buildUrl, container, dotnetObject, onMessageReceivedMethodName, onMessageWithResponseReceivedMethodName,withResponse) {
 
     var canvas = container.querySelector("#unity-canvas");
     canvas.style.width = "100%";
@@ -69,7 +84,7 @@ export function showUnity(buildUrl, container, dotnetObject, onMessageReceivedMe
     //var buildUrl = "./_content/BlazorWith3d.Unity";
     var loaderUrl = buildUrl + "/Build.loader.js";
     var config = {
-        arguments: [],
+        arguments: [(withResponse?"BinaryApiWithResponse":"BinaryApi")],
         dataUrl: buildUrl + "/Build.data",
         frameworkUrl: buildUrl + "/Build.framework.js",
         workerUrl: buildUrl + "/Build.worker.js",
@@ -104,13 +119,15 @@ export function showUnity(buildUrl, container, dotnetObject, onMessageReceivedMe
             }).then((unityInstance) => {
                 container.querySelector("#unity-loading-bar").style.display = "none";
 
-
-                var previousMessage = Promise.resolve();
-                var unityApi = InitializeUnityApi(unityInstance, async function (msgBytes) {
-                    await previousMessage;
-                    previousMessage = dotnetObject.invokeMethodAsync(onMessageReceivedMethodName, msgBytes)
+                var unityApi = InitializeUnityApi(unityInstance, function (msgBytes) {
+                    return dotnetObject.invokeMethodAsync(onMessageReceivedMethodName, msgBytes)
+                },  function (msgBytes) {
+                    return dotnetObject.invokeMethodAsync(onMessageWithResponseReceivedMethodName, msgBytes)
                 });
 
+                // the promise is resolved only when Unity BinaryApi is ready, \
+                // ie Unity is ready to listen to messages and will start sending messages only after the promise is resolved, 
+                // it is expected that blazor app is ready to receive
                 if(unityInstance.Module["BlazorApi_SendMessageToUnity"]==null) {
                     unityInstance.Module["BlazorApi_InitPromiseResolve"] = ()=>resolve(unityApi);
                 }

@@ -1,6 +1,6 @@
 ﻿@inject IJSRuntime JsRuntime
 @inject ILogger<BaseUnityRenderer> Logger
-@implements BlazorWith3d.Shared.IBinaryApi
+@implements BlazorWith3d.Shared.IBinaryApiWithResponse
 @using BlazorWith3d.Shared
 @using Microsoft.Extensions.Logging
 @implements IAsyncDisposable
@@ -27,6 +27,12 @@
 
     public virtual string UnityBuildFilesRootPath => Assets[""];
 
+    [Parameter]
+    public bool IsWithResponse { get; set; }
+
+    private SemaphoreSlim acesssSemaphore = new SemaphoreSlim(1, 1);
+    
+    
     public async ValueTask DisposeAsync()
     {
         
@@ -43,9 +49,10 @@
 
     protected override void OnInitialized()
     {
-        _messageReceiverProxyReference = DotNetObjectReference.Create(new JsMessageReceiverProxy(OnMessageBytesReceived));
+        _messageReceiverProxyReference = DotNetObjectReference.Create(new JsMessageReceiverProxy(OnMessageBytesReceived, OnMessageWithResponseBytesReceived));
         base.OnInitialized();
     }
+
 
 
     protected async Task InitializeUnityApp()
@@ -53,16 +60,21 @@
         var moduleTask = new Lazy<Task<IJSObjectReference>>(() => JsRuntime.InvokeAsync<IJSObjectReference>("import", "./_content/BlazorWith3d.Unity/unityInitialization.js").AsTask());
         var module = await moduleTask.Value;
 
-        _unityApi = await module.InvokeAsync<IJSObjectReference>("showUnity", UnityBuildFilesRootPath, _containerElementReference, _messageReceiverProxyReference, nameof(JsMessageReceiverProxy.OnMessageBytesReceived));
+        _unityApi = await module.InvokeAsync<IJSObjectReference>("showUnity", UnityBuildFilesRootPath, _containerElementReference, _messageReceiverProxyReference, nameof(JsMessageReceiverProxy.OnMessageBytesReceived),  nameof(JsMessageReceiverProxy.OnMessageBytesReceivedWithResponse),IsWithResponse);
 
     }
 
     public Func<byte[], ValueTask>? MainMessageHandler { get; set; }
 
-    private void OnMessageBytesReceived(byte[] messageBytes)
+    private ValueTask OnMessageBytesReceived(byte[] messageBytes)
     {
-        MainMessageHandler.Invoke(messageBytes);
+       return MainMessageHandler.Invoke(messageBytes);
     }
+
+private ValueTask<byte[]> OnMessageWithResponseBytesReceived(byte[] messageBytes)
+{
+return MainMessageWithResponseHandler.Invoke(messageBytes);
+}
 
     public async ValueTask SendMessage(byte[] messageBytes)
     {
@@ -73,20 +85,56 @@
 
         try
         {
+            await acesssSemaphore.WaitAsync();
             await _unityApi.InvokeVoidAsync("SendMessage", messageBytes);
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error sending message");
+            throw;
+        }
+        finally
+        {
+            acesssSemaphore.Release();
         }
     }
 
-    private class JsMessageReceiverProxy(Action<byte[]> onMessageBytesReceived)
+    private class JsMessageReceiverProxy(Func<byte[],ValueTask> onMessageBytesReceived,Func<byte[],ValueTask<byte[]>> onMessageWithResponseBytesReceived)
     {
         [JSInvokable]
-        public void OnMessageBytesReceived(byte[] msg)
+        public ValueTask OnMessageBytesReceived(byte[] msg)
         {
-            onMessageBytesReceived(msg);
+           return onMessageBytesReceived(msg);
+        }
+        
+        [JSInvokable]
+        public ValueTask<byte[]> OnMessageBytesReceivedWithResponse(byte[] msg)
+        {
+           return onMessageWithResponseBytesReceived(msg);
+        }
+    }
+
+    public Func<byte[], ValueTask<byte[]>>? MainMessageWithResponseHandler { get; set; }
+    public async ValueTask<byte[]> SendMessageWithResponse(byte[] bytes)
+    {
+        if (_unityApi == null)
+        {
+            throw new InvalidOperationException();
+        }
+
+        try
+        {
+            await acesssSemaphore.WaitAsync();
+            return await _unityApi.InvokeAsync<byte[]>("SendMessageWithResponse", bytes);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error sending message");
+            throw;
+        }
+        finally
+        {
+            acesssSemaphore.Release();
         }
     }
 }

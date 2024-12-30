@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace BlazorWith3d.Unity
 {
-    public class UnityBlazorApi : IBinaryApi
+    public class UnityBlazorApi : IBinaryApiWithResponse
     {
         private static Func<byte[], ValueTask>? s_mainMessageHandler;
 
@@ -27,10 +27,36 @@ namespace BlazorWith3d.Unity
                     throw new InvalidOperationException("Cannot set MainMessageHandler to null!");
                 }
                 s_mainMessageHandler = value;
-                
-                Debug.Log("On before BlazorApiUnity.InitializeApi");
-                _InitializeApi(_InstantiateByteArray);
             }
+        }
+        private static Func<byte[], ValueTask<byte[]>>? s_mainMessageWithResponseHandler;
+
+        public static Func<byte[], ValueTask<byte[]>>? MainMessageWithResponseHandler
+        {
+            get => s_mainMessageWithResponseHandler;
+            set
+            {
+                if (s_mainMessageWithResponseHandler != null)
+                {
+                    throw new InvalidOperationException("Cannot set MainMessageHandler on a Unity Blazor again after it was set!");
+                }
+                if (value == null)
+                {
+                    throw new InvalidOperationException("Cannot set MainMessageHandler to null!");
+                }
+                s_mainMessageWithResponseHandler = value;
+            }
+        }
+
+        public static void InitializeWebGLInterop()
+        {
+            if (MainMessageHandler == null)
+            {
+                throw new InvalidOperationException("MainMessageHandler must be set before InitializeWebGLInterop is called!");
+            }
+            
+            Debug.Log("On before BlazorApiUnity.InitializeApi");
+            _InitializeApi(_ReadMessage,MainMessageWithResponseHandler==null?null:_ReadMessageWithResponse);
         }
 
         Func<byte[], ValueTask>? IBinaryApi.MainMessageHandler { 
@@ -38,6 +64,10 @@ namespace BlazorWith3d.Unity
             set => MainMessageHandler = value;
         }
 
+        Func<byte[], ValueTask<byte[]>>? IBinaryApiWithResponse.MainMessageWithResponseHandler { 
+            get => MainMessageWithResponseHandler;
+            set => MainMessageWithResponseHandler = value;
+        }
 
         private UnityBlazorApi()
         {
@@ -67,13 +97,12 @@ namespace BlazorWith3d.Unity
                 return;
             }
 #endif
-            WebGLInput.captureAllKeyboardInput = false;
         }
 
         // optimization, so the array is created on Unity side, and exposed to emscripten JS interop code to fill in.
         // see https://stackoverflow.com/a/71472662
         [MonoPInvokeCallback(typeof(Action<int, int>))]
-        private static void _InstantiateByteArray(int size, int id)
+        private static void _ReadMessage(int size, int id)
         {
             var bytes = new byte[size];
 
@@ -84,16 +113,44 @@ namespace BlazorWith3d.Unity
                 Debug.LogError("Singleton.MainMessageHandler is not set!");
                 throw new InvalidOperationException();
             }
-            MainMessageHandler?.Invoke(bytes);
+            MainMessageHandler.Invoke(bytes);
+        }
+
+        // optimization, so the array is created on Unity side, and exposed to emscripten JS interop code to fill in.
+        // see https://stackoverflow.com/a/71472662
+        [MonoPInvokeCallback(typeof(Action<int, int>))]
+        private static async void _ReadMessageWithResponse(int size, int id)
+        {
+            var bytes = new byte[size];
+
+            _ReadBytesBuffer(id, bytes);
+
+            if (MainMessageWithResponseHandler == null)
+            {
+                Debug.LogError("Singleton.MainMessageHandler is not set!");
+                throw new InvalidOperationException();
+            }
+
+            var response = await MainMessageWithResponseHandler.Invoke(bytes);
+
+            _SendResponseFromUnity(id, response, response.Length);
         }
 
         [DllImport("__Internal")]
         private static extern void _SendMessageFromUnity(byte[] message, int size);
 
         [DllImport("__Internal")]
+        private static extern void _SendResponseFromUnity(int id,byte[] message, int size);
+
+        [DllImport("__Internal")]
         private static extern void _ReadBytesBuffer(int id, byte[] array);
 
         [DllImport("__Internal")]
-        private static extern string _InitializeApi(Action<int, int> instantiateByteArrayCallback);
+        private static extern string _InitializeApi(Action<int, int> readMessageCallback,Action<int, int> readMessageWithResponseCallback);
+        
+        public ValueTask<byte[]> SendMessageWithResponse(byte[] bytes)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

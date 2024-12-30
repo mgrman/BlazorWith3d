@@ -22,7 +22,6 @@
             await base.OnAfterRenderAsync(firstRender);
             return;
         }
-
         
         unityAppApi = new BlocksOnGrid3DApp_BinaryApi(DebugApi);
         _rendererAssignment=await ParentApp.InitializeRenderer(unityAppApi,null);

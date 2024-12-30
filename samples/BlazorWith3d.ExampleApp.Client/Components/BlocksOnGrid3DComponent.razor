@@ -211,7 +211,8 @@
     private static (string name, string url )[] GltfAssets = [ ("BoomBox", "./_content/BlazorWith3d.ExampleApp.Client/gltf/BoomBox.glb")];
 
     private SemaphoreSlim _initializeRendererSemaphoreSlim = new SemaphoreSlim(1);
-    
+    private bool _isHandlingMouse;
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -399,33 +400,45 @@
     
     private async Task OnMouseDown( MouseEventArgs e)
     {
-       var offset= await module.InvokeAsync<JSVector2>("ConvertPageToOffset", _rendererContainerReference, e.PageX, e.PageY);
-        
-        var screenToRayResponse=await _rendererApi.InvokeRequestScreenToWorldRay(new RequestScreenToWorldRay()
+       // if (_isHandlingMouse)
+        // {
+        //     return;
+        // }
+        _isHandlingMouse = true;
+        try
         {
-            Screen = new Vector2(offset.X,offset.Y)
-        });
-        
-        
-        var raycastResponse=await _rendererApi.InvokeRequestRaycast(new RequestRaycast()
-        {
-            Ray = screenToRayResponse.Ray
-        });
+            var offset = await module.InvokeAsync<JSVector2>("ConvertPageToOffset", _rendererContainerReference, e.PageX, e.PageY);
 
-        //#error raycast is somehow not hitting anything in unity!!!
-        
-        if (!raycastResponse.HitBlockId.HasValue)
-        {
-            return;
+            var screenToRayResponse = await _rendererApi.InvokeRequestScreenToWorldRay(new RequestScreenToWorldRay()
+            {
+                Screen = new Vector2(offset.X, offset.Y)
+            });
+
+
+            var raycastResponse = await _rendererApi.InvokeRequestRaycast(new RequestRaycast()
+            {
+                Ray = screenToRayResponse.Ray
+            });
+
+            //#error raycast is somehow not hitting anything in unity!!!
+
+            if (!raycastResponse.HitBlockId.HasValue)
+            {
+                return;
+            }
+
+            var instance = _instances.FirstOrDefault(o => o.BlockId == raycastResponse.HitBlockId);
+
+            var offsetX = raycastResponse.HitWorld.X - instance.Position.X;
+            var offsetY = raycastResponse.HitWorld.Y - instance.Position.Y;
+            _dragging = (instance, offsetX, offsetY, raycastResponse.HitWorld.Z);
+
+            _mouseEventsDispose = await module.InvokeAsync<IJSObjectReference>("InitializeGlobalMouseEvents", _rendererContainerReference, _jsProxyReference, nameof(JsProxy.OnMouseMove), nameof(JsProxy.OnMouseUp));
         }
-
-        var instance = _instances.FirstOrDefault(o => o.BlockId == raycastResponse.HitBlockId);
-        
-        var offsetX =raycastResponse.HitWorld.X - instance.Position.X;
-        var offsetY =  raycastResponse.HitWorld.Y - instance.Position.Y;
-         _dragging = (instance,offsetX,offsetY, raycastResponse.HitWorld.Z);
-         
-         _mouseEventsDispose = await module.InvokeAsync<IJSObjectReference>("InitializeGlobalMouseEvents", _rendererContainerReference, _jsProxyReference, nameof(JsProxy.OnMouseMove), nameof(JsProxy.OnMouseUp));
+        finally
+        {
+            _isHandlingMouse = false;
+        }
     }
     
     private async void OnMouseMove(float offsetX, float offsetY)
@@ -434,7 +447,12 @@
         {
             return;
         }
-        
+        // if (_isHandlingMouse)
+        // {
+        //     return;
+        // }
+        _isHandlingMouse = true;
+        try{
         var dragging = _dragging.Value;
         
         var screenToRayResponse=await _rendererApi.InvokeRequestScreenToWorldRay(new RequestScreenToWorldRay()
@@ -478,6 +496,12 @@
             Position= new Vector2(newPositionX,newPositionY),
             RotationZ= dragging.instance.RotationZ,
         });
+        
+        }
+        finally
+        {
+            _isHandlingMouse = false;
+        }
         StateHasChanged();
     }
     

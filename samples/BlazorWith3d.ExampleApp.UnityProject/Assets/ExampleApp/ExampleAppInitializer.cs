@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 using BlazorWith3d.ExampleApp.Client.Shared;
@@ -31,6 +32,11 @@ namespace ExampleApp
 
         public async void Start()
         {
+            WebGLInput.captureAllKeyboardInput = false;
+            
+            Debug.Log($"cmdArgs: {string.Join(" ",Environment.GetCommandLineArgs())}");
+            
+            
             _templateRoot = new GameObject("BlockTemplateRoot");
             _templateRoot.SetActive(false);
             _templateRoot.transform.parent = transform;
@@ -58,13 +64,24 @@ namespace ExampleApp
 #else
             HostUrl = new Uri(Application.absoluteURL);
             var blazorApi = UnityBlazorApi.Singleton;
-            _appApi = new BlocksOnGridUnityApi_BinaryApi(blazorApi);
+
+            if(Environment.GetCommandLineArgs().Contains("BinaryApiWithResponse", StringComparer.OrdinalIgnoreCase)){
+                _appApi = new BlocksOnGridUnityApi_BinaryApiWithResponse(blazorApi);
+            }
+            else{
+                _appApi = new BlocksOnGridUnityApi_BinaryApi(blazorApi);
+
+            }
 #endif
             Console.WriteLine($"{Screen.width},{Screen.height}");
-            await _appApi.InvokeUnityAppInitialized(new UnityAppInitialized()
-            {
-            });
             _appApi.SetEventHandler(this);
+            
+            
+                
+#if !UNITY_EDITOR
+            UnityBlazorApi.InitializeWebGLInterop();
+#endif
+            await _appApi.InvokeUnityAppInitialized(new UnityAppInitialized());
         }
 
         private async Awaitable OnDestroy()

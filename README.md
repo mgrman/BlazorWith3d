@@ -75,9 +75,10 @@ benchmarks
 
 ### Prio 0 (what to do next)
 
-- Make initialization order in Unity JS interop code more explicit, so the buffering can be removed (as that makes response messages harder)
+- typescript binary api is using _responseTcs without setting it? 
 
-- Add binaryApi with response for Unity WebGL build
+- Add onMessageWithResponseReceivedCallback in Unity WebGL build
+
 
 - generate blazor interop code, preferably in  another project referencing the types in shared
 
@@ -160,7 +161,7 @@ benchmarks
     - types which are not memorypack annotated get serialized as JSON (although )
   
 - add support for negotiation of serialization modes
-    - so unity can do DEBUG build with JSON only serializaion
+    - so unity can do DEBUG build with JSON only serializaion, e.g. for debug builds with embedded WebGL template as using memory pack is cumbersome there
     - 
 - consider some generic reactive dictionary or patch requests on object support
     - e.g. that both sides can instantiate kind of reactive dictionry and through generic messages they both can be kept automatically in sync, with changes always propagating to the other side
