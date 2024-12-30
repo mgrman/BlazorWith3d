@@ -77,7 +77,6 @@ benchmarks
 
 - have a method to call from renderer to test this with
   - Add onMessageWithResponseReceivedCallback in Unity WebGL build
-  - typescript binary api is using _responseTcs without setting it? 
 
 - generate blazor interop code, preferably in  another project referencing the types in shared
 

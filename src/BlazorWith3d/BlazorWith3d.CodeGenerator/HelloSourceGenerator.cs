@@ -1017,7 +1017,7 @@ public SetEventHandler(eventHandler: {info.app.typeName}_EventHandler):void
                                 sb.AppendLine($"break;");
                             }
                         }
-                        foreach (var (e,i) in info.eventsWithResponse.EnumerateWithIndex( ))
+                        foreach (var (m,i) in info.methodsWithResponse.EnumerateWithIndex( ))
                         {
                             sb.AppendLine($"case {i+info.events.Count+info.eventsWithResponse.Count}:");
                             using (sb.IndentWithCurlyBrackets())
@@ -1026,7 +1026,7 @@ public SetEventHandler(eventHandler: {info.app.typeName}_EventHandler):void
                                 sb.AppendLine($"let buffer = msg.slice(2);");
                                 sb.AppendLine($"var dst = new ArrayBuffer(buffer.byteLength);");
                                 sb.AppendLine($"new Uint8Array(dst).set(buffer);");
-                                sb.AppendLine($"const obj: {e.request.typeName} = {e.request.typeName}.deserialize(dst);");
+                                sb.AppendLine($"const obj: {m.response.typeName} = {m.response.typeName}.deserialize(dst);");
                                 sb.AppendLine($"this._responseTcs[requestId].resolve(obj);");
                                 sb.AppendLine($"break;");
                             }
