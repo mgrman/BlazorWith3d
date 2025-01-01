@@ -20,6 +20,8 @@ import { RequestRaycast } from "com.blazorwith3d.exampleapp.client.shared/memory
 import { RequestScreenToWorldRay } from "com.blazorwith3d.exampleapp.client.shared/memorypack/RequestScreenToWorldRay";
 import { ScreenToWorldRayResponse } from "com.blazorwith3d.exampleapp.client.shared/memorypack/ScreenToWorldRayResponse";
 import { RaycastResponse } from "com.blazorwith3d.exampleapp.client.shared/memorypack/RaycastResponse";
+import { TriggerTestToBlazor } from 'com.blazorwith3d.exampleapp.client.shared/memorypack/TriggerTestToBlazor';
+import { TestToBlazor } from 'com.blazorwith3d.exampleapp.client.shared/memorypack/TestToBlazor';
 
 
 export function InitializeApp_BinaryApi(canvas: HTMLCanvasElement, dotnetObject: any, onMessageReceivedMethodName: string, onMessageReceivedWithResponseMethodName: string) {
@@ -48,9 +50,9 @@ export function InitializeApp_DirectInterop(canvas: HTMLCanvasElement, dotnetObj
     return new DebugApp(canvas, new BlocksOnGridUnityApi_MethodInvoker_DirectInterop(dotnetObject));
 }
 
-export class DebugApp implements IBlocksOnGridUnityApi_EventHandler{
-    private templates:  { [id: number] : any } = {};
-    private instances:  { [id: number] : {instance: AddBlockInstance, mesh: THREE.Mesh, visuals: THREE.Group}} = {};
+export class DebugApp implements IBlocksOnGridUnityApi_EventHandler {
+    private templates: { [id: number]: any } = {};
+    private instances: { [id: number]: { instance: AddBlockInstance, mesh: THREE.Mesh, visuals: THREE.Group } } = {};
 
     private camera: THREE.PerspectiveCamera;
     private scene: THREE.Scene;
@@ -61,42 +63,56 @@ export class DebugApp implements IBlocksOnGridUnityApi_EventHandler{
 
     constructor(canvas: HTMLCanvasElement, methodInvoker: IBlocksOnGridUnityApi_MethodInvoker) {
 
-        this.canvas=canvas;
+        this.canvas = canvas;
         this._methodInvoker = methodInvoker;
         canvas.style.width = "100%";
         canvas.style.height = "100%";
         canvas.width = canvas.offsetWidth;
         canvas.height = canvas.offsetHeight;
 
-        this.camera = new THREE.PerspectiveCamera( 60, canvas.width / canvas.height, 0.1, 100 );
+        this.camera = new THREE.PerspectiveCamera(60, canvas.width / canvas.height, 0.1, 100);
         this.camera.position.z = 10;
         // the camera in ThreeJS is looking down negativeZ direciton, so no need to rotate
-        this.camera.setRotationFromEuler( new THREE.Euler(THREE.MathUtils.degToRad(0),0,0));
+        this.camera.setRotationFromEuler(new THREE.Euler(THREE.MathUtils.degToRad(0), 0, 0));
 
         this.scene = new THREE.Scene();
 
-        const directionalLight = new THREE.DirectionalLight( 0xffffff, 1 );
-        directionalLight.position.set(0,0,0);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+        directionalLight.position.set(0, 0, 0);
 
         directionalLight.target.position.copy(new THREE.Vector3(0, 0, -1).applyEuler(new THREE.Euler(THREE.MathUtils.degToRad(-30), THREE.MathUtils.degToRad(-50), THREE.MathUtils.degToRad(0))));
 
-        this.scene.add( directionalLight );
-        this.scene.add( directionalLight.target );
+        this.scene.add(directionalLight);
+        this.scene.add(directionalLight.target);
 
-        this.renderer = new THREE.WebGLRenderer( { antialias: true, canvas:canvas } );
-        this.renderer.setPixelRatio( window.devicePixelRatio );
-        this.renderer.setSize( canvas.width, canvas.height );
+        this.renderer = new THREE.WebGLRenderer({antialias: true, canvas: canvas});
+        this.renderer.setPixelRatio(window.devicePixelRatio);
+        this.renderer.setSize(canvas.width, canvas.height);
 
-        this.renderer.setAnimationLoop( ()=>{
+        this.renderer.setAnimationLoop(() => {
 
-            this.renderer.render( this.scene, this.camera );
+            this.renderer.render(this.scene, this.camera);
 
-        } );
+        });
 
 
         this.raycaster = new THREE.Raycaster();
 
         this._methodInvoker.InvokeUnityAppInitialized(new UnityAppInitialized()).then(_ => console.log("UnityAppInitialized invoked"));
+    }
+
+    async OnTriggerTestToBlazor(_: TriggerTestToBlazor): Promise<void> {
+        
+        setTimeout(async ()=> {
+            var response=await this._methodInvoker.InvokeTestToBlazor({ id : 13  })
+
+
+            if (response.id != 13)
+            {
+                console.log("TriggerTestToBlazor is failure");
+            }
+            console.log("TriggerTestToBlazor is done");
+        } ,1000)
     }
 
     public Quit(): void {

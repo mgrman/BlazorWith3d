@@ -63,9 +63,8 @@ https://learn.microsoft.com/en-us/aspnet/core/blazor/hybrid/tutorials/maui-blazo
 
 ## TODOs
 
-
 benchmarks
-
+// redo numbers as these are for old PerfCheck message (without huge string)
 - Server
   - Interop (avg 0,48 ms)
   - MemoryPack (avg 0,56 ms)
@@ -75,15 +74,15 @@ benchmarks
 
 ### Prio 0 (what to do next)
 
-- have a method to call from renderer to test this with
-  - Add onMessageWithResponseReceivedCallback in Unity WebGL build
-
 - generate blazor interop code, preferably in  another project referencing the types in shared
 
 - try again to get matrix for screen to world as that would reduce the need for extra interop call
 
 - Maui app with native Unity build
   https://docs.unity3d.com/6000.1/Documentation/Manual/UnityasaLibrary-Windows.html
+- https://github.com/matthewrdev/UnityUaal.Maui
+
+- three port to C# for maui https://github.com/hjoykim/THREE
 
 
 ### Prio 1 (stretch goals)
@@ -149,6 +148,10 @@ benchmarks
 
 ### Prio 3 (maybe but not really target of the project)
 
+
+- Urho https://github.com/Urho-Net/Urho.Net
+- Official Maui integration for Evergine https://evergine.com/download/
+- https://monogame.net/
 
 - but even the serialize methods might be worth to be chosen by the generator based on target so potentially messages can be generated from method arguments
     - e.g. use memoryPack if type annotated, otherwise use json serialization

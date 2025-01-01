@@ -131,6 +131,19 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
         public PackableRay Ray{ get; set; }
     }
 
+    [MemoryPackable]
+    [GenerateTypeScript]
+    public partial class TriggerTestToBlazor: IMessageToUnity
+    {
+    }
+
+    [MemoryPackable]
+    [GenerateTypeScript]
+    public partial class TestToBlazor: IMessageToBlazor<TestToBlazor> 
+    {
+        public int Id { get; set; }
+    }
+
 
     [MemoryPackable]
     [GenerateTypeScript]

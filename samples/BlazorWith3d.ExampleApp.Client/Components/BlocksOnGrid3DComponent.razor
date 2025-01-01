@@ -167,6 +167,7 @@
         @_perfResponse
     </div>
 }
+<button @onclick="TriggerTestToBlazor">TriggerTestToBlazor</button>
 
 <div @ref="_rendererContainerReference" @onmousedown="OnMouseDown"  style="width: 500px; height: 500px; position: relative; border: red 1px solid">
 
@@ -535,6 +536,16 @@
     {
         _jsProxyReference?.Dispose();
         return ValueTask.CompletedTask;
+    }
+
+    public async ValueTask<TestToBlazor> OnTestToBlazor(TestToBlazor msg)
+    {
+        return msg;
+    }
+
+    private async Task TriggerTestToBlazor()
+    {
+        await _rendererApi.InvokeTriggerTestToBlazor(new TriggerTestToBlazor());
     }
 
 }

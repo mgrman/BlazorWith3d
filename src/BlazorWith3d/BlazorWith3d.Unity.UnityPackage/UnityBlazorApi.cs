@@ -11,6 +11,9 @@ namespace BlazorWith3d.Unity
 {
     public class UnityBlazorApi : IBinaryApiWithResponse
     {
+        private static Dictionary<int, AwaitableCompletionSource<byte[]>> s_responses=new ();
+        
+        
         private static Func<byte[], ValueTask>? s_mainMessageHandler;
 
         public static Func<byte[], ValueTask>? MainMessageHandler
@@ -56,7 +59,7 @@ namespace BlazorWith3d.Unity
             }
             
             Debug.Log("On before BlazorApiUnity.InitializeApi");
-            _InitializeApi(_ReadMessage,MainMessageWithResponseHandler==null?null:_ReadMessageWithResponse);
+            _InitializeApi(_ReadMessage,MainMessageWithResponseHandler==null?null:_ReadMessageWithResponse,MainMessageWithResponseHandler==null?null: _ReadResponse);
         }
 
         Func<byte[], ValueTask>? IBinaryApi.MainMessageHandler { 
@@ -86,6 +89,20 @@ namespace BlazorWith3d.Unity
 #endif
             _SendMessageFromUnity(bytes, bytes.Length);
             return new ValueTask();
+        }
+        
+        public async ValueTask<byte[]> SendMessageWithResponse(byte[] bytes)
+        {
+            int id = _GetNextRequestId();
+
+            var tcs = new AwaitableCompletionSource<byte[]>();
+            s_responses[id] = tcs;
+            
+            _SendMessageWithResponseFromUnity(id, bytes, bytes.Length);
+            var result=await tcs.Awaitable;
+
+            s_responses.Remove(id);
+            return result;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSplashScreen)]
@@ -136,8 +153,26 @@ namespace BlazorWith3d.Unity
             _SendResponseFromUnity(id, response, response.Length);
         }
 
+        // optimization, so the array is created on Unity side, and exposed to emscripten JS interop code to fill in.
+        // see https://stackoverflow.com/a/71472662
+        [MonoPInvokeCallback(typeof(Action<int, int>))]
+        private static void _ReadResponse(int size, int id)
+        {
+            var bytes = new byte[size];
+
+            _ReadBytesBuffer(id, bytes);
+
+            s_responses[id].SetResult(bytes);
+        }
+
+        [DllImport("__Internal")]
+        private static extern int _GetNextRequestId();
+
         [DllImport("__Internal")]
         private static extern void _SendMessageFromUnity(byte[] message, int size);
+
+        [DllImport("__Internal")]
+        private static extern void _SendMessageWithResponseFromUnity(int id, byte[] message, int size);
 
         [DllImport("__Internal")]
         private static extern void _SendResponseFromUnity(int id,byte[] message, int size);
@@ -146,11 +181,6 @@ namespace BlazorWith3d.Unity
         private static extern void _ReadBytesBuffer(int id, byte[] array);
 
         [DllImport("__Internal")]
-        private static extern string _InitializeApi(Action<int, int> readMessageCallback,Action<int, int> readMessageWithResponseCallback);
-        
-        public ValueTask<byte[]> SendMessageWithResponse(byte[] bytes)
-        {
-            throw new NotImplementedException();
-        }
+        private static extern string _InitializeApi(Action<int, int> readMessageCallback,Action<int, int> readMessageWithResponseCallback,Action<int, int> readResponseCallback);
     }
 }

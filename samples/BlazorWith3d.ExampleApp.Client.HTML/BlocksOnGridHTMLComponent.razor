@@ -201,4 +201,18 @@ public void Dispose()
         _eventHandler = eventHandler;
         eventHandler?.OnUnityAppInitialized(new UnityAppInitialized());
     }
+
+    public async ValueTask InvokeTriggerTestToBlazor(TriggerTestToBlazor msg)
+    {
+        await Task.Delay(1000);
+
+        var id = Random.Shared.Next();
+        var response = await _eventHandler.OnTestToBlazor(new TestToBlazor(){Id = id});
+
+        if (response.Id != id)
+        {
+            throw new InvalidOperationException();
+        }
+        Logger.LogCritical("TriggerTestToBlazor is done");
+    }
 }

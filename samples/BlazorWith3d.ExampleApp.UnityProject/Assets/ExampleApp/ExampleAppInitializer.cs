@@ -7,6 +7,8 @@ using BlazorWith3d.ExampleApp.Client.Shared;
 using BlazorWith3d.Unity;
 using UnityEngine;
 
+using Random = UnityEngine.Random;
+
 
 namespace ExampleApp
 {
@@ -32,8 +34,9 @@ namespace ExampleApp
 
         public async void Start()
         {
+            #if UNITY_WEBGL && !UNITY_EDITOR
             WebGLInput.captureAllKeyboardInput = false;
-            
+            #endif
             Debug.Log($"cmdArgs: {string.Join(" ",Environment.GetCommandLineArgs())}");
             
             
@@ -163,6 +166,20 @@ namespace ExampleApp
         public async ValueTask  OnUpdateBlockInstance(UpdateBlockInstance obj)
         {
             _blocks[obj.BlockId].UpdatePose(obj);
+        }
+
+        public async ValueTask OnTriggerTestToBlazor(TriggerTestToBlazor msg)
+        {
+            await Awaitable.WaitForSecondsAsync(1);
+
+            var id = Random.Range(0, 1000);
+            var response = await _appApi.InvokeTestToBlazor(new TestToBlazor(){Id = id});
+
+            if (response.Id != id)
+            {
+                throw new InvalidOperationException();
+            }
+            Debug.Log("TriggerTestToBlazor is done");
         }
 
         public async ValueTask<PerfCheck> OnPerfCheck(PerfCheck msg)

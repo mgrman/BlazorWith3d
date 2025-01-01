@@ -37,6 +37,7 @@ import { RequestRaycast } from "com.blazorwith3d.exampleapp.client.shared/memory
 import { RequestScreenToWorldRay } from "com.blazorwith3d.exampleapp.client.shared/memorypack/RequestScreenToWorldRay";
 import { ScreenToWorldRayResponse } from "com.blazorwith3d.exampleapp.client.shared/memorypack/ScreenToWorldRayResponse";
 import { RaycastResponse } from "com.blazorwith3d.exampleapp.client.shared/memorypack/RaycastResponse";
+import { TriggerTestToBlazor } from "com.blazorwith3d.exampleapp.client.shared/memorypack/TriggerTestToBlazor";
 
 export function InitializeApp_BinaryApi(canvas: HTMLCanvasElement, dotnetObject: any, onMessageReceivedMethodName: string) {
     let sendMessageCallback: (msgBytes: Uint8Array) => Promise<any> = msgBytes => dotnetObject.invokeMethodAsync(onMessageReceivedMethodName, msgBytes);
@@ -128,6 +129,20 @@ export class DebugApp implements IBlocksOnGridUnityApi_EventHandler{
 
     public Quit(): void {
         console.log("Quit called");
+    }
+
+    async OnTriggerTestToBlazor(_: TriggerTestToBlazor): Promise<void> {
+
+        setTimeout(async ()=> {
+            var response=await this._methodInvoker.InvokeTestToBlazor({ id : 13  })
+
+
+            if (response.id != 13)
+            {
+                console.log("TriggerTestToBlazor is failure");
+            }
+            console.log("TriggerTestToBlazor is done");
+        } ,1000)
     }
 
     public async OnUpdateBlockInstance(obj: UpdateBlockInstance) : Promise<any> {

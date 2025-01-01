@@ -41,6 +41,12 @@ public class BlocksOnGridThreeJSDirectRenderer : BaseJsRenderer, IDisposable, IB
             app._eventHandler?.OnUnityAppInitialized(msg);
         }
 
+        [JSInvokable]
+        public ValueTask<TestToBlazor> OnTestToBlazor(TestToBlazor msg)
+        {
+
+            return app._eventHandler.OnTestToBlazor(msg);
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -75,6 +81,11 @@ public class BlocksOnGridThreeJSDirectRenderer : BaseJsRenderer, IDisposable, IB
     public async ValueTask InvokeBlazorControllerInitialized(BlazorControllerInitialized msg)
     {
       await  _typescriptApp.InvokeVoidAsync($"On{nameof(BlazorControllerInitialized)}", msg);
+    }
+
+    public async ValueTask InvokeTriggerTestToBlazor(TriggerTestToBlazor msg)
+    {
+         await  _typescriptApp.InvokeVoidAsync($"On{nameof(TriggerTestToBlazor)}", msg);
     }
 
     public async ValueTask<PerfCheck> InvokePerfCheck(PerfCheck msg)

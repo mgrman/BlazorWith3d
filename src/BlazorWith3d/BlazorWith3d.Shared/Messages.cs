@@ -25,6 +25,10 @@ namespace BlazorWith3d.Shared
     {
     }
 
+    public interface IMessageToBlazor<TResponse>
+    {
+    }
+
     public interface IMessageToUnity
     {
     }

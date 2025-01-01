@@ -19,6 +19,18 @@ export function InitializeUnityApi(unityInstance, onMessageReceivedCallback, onM
         }
     }
 
+    // byte[] BlazorApi_OnMessageWithResponseFromUnityHandler(byte[] message)
+    unityInstance.Module["BlazorApi_OnMessageWithResponseFromUnityHandler"] =async function (msgBytes) {
+        try {
+            await previousMessage;
+            var promise = onMessageWithResponseReceivedCallback(msgBytes);
+            previousMessage=promise;
+            return promise;
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
     unityApi.SendMessage = async function (msgBytes) {
         // void BlazorApi_SendMessageToUnity(byte[] message)
         try {

@@ -1,16 +1,16 @@
 var BlazorApiUnity = {
-    _InitializeApi: async function (readMessageCallback,readMessageWithResponseCallback) {
-        
-        
-        Module["BlazorApi_ReadMessageBuffer"] = {};
-        
-        var idCounter=0;
+    _InitializeApi: async function (readMessageCallback,readMessageWithResponseCallback,readResponseCallback) {
 
+
+        Module["BlazorApi_ReadMessageBuffer"] = {};
+        Module["BlazorApi_IdCounter"] = 0;
+        Module["BlazorApi_ReadResponseCallback"] = readResponseCallback;
+        
         // void BlazorApi_SendMessageToUnity(byte[] message)
         Module["BlazorApi_SendMessageToUnity"] = function (bytes) {
 
-            var id = idCounter++;
-            idCounter=idCounter>2147483646?0:idCounter;
+            var id = Module["BlazorApi_IdCounter"]++;
+            Module["BlazorApi_IdCounter"]=Module["BlazorApi_IdCounter"]>2147483646?0:Module["BlazorApi_IdCounter"];
 
             Module["BlazorApi_ReadMessageBuffer"][id] = bytes;
             {{{ makeDynCall('vii', 'readMessageCallback') }}}(bytes.length, id);
@@ -19,8 +19,8 @@ var BlazorApiUnity = {
         // void BlazorApi_SendMessageToUnity(byte[] message)
         Module["BlazorApi_SendMessageWithResponseToUnity"] = function  (bytes) {
 
-            var id = idCounter++;
-            idCounter=idCounter>2147483646?0:idCounter;
+            var id = Module["BlazorApi_IdCounter"]++;
+            Module["BlazorApi_IdCounter"]=Module["BlazorApi_IdCounter"]>2147483646?0:Module["BlazorApi_IdCounter"];
 
             Module["BlazorApi_ReadMessageBuffer"][id] = bytes;
             
@@ -36,10 +36,6 @@ var BlazorApiUnity = {
             Module["BlazorApi_SendMessageWithResponseToUnity_ResponsePromise"][id] = deferred;
             
             {{{ makeDynCall('vii', 'readMessageWithResponseCallback') }}}(bytes.length, id);
-            
-            
-            
-            
             return result;
         };
 
@@ -68,6 +64,31 @@ var BlazorApiUnity = {
 
         // void BlazorApi_OnMessageFromUnityHandler(byte[] message)
         Module["BlazorApi_OnMessageFromUnityHandler"](buffer)
+    },
+
+    _SendMessageWithResponseFromUnity: async function (id, array, size) {
+        //console.log("Array at "+array)
+        //console.log("size at "+size)
+
+        // the emscripten heap is wrapped with array, so the memory is exposed but not copied 
+        var buffer = new Uint8Array(HEAPU8.buffer, array, size);
+        //console.log("buffer at "+buffer.length);
+
+        // byte[] BlazorApi_OnMessageWithResponseFromUnityHandler(byte[] message)
+        var response=await Module["BlazorApi_OnMessageWithResponseFromUnityHandler"](buffer);
+
+        Module["BlazorApi_ReadMessageBuffer"][id] = response;
+
+        readResponseCallback=Module["BlazorApi_ReadResponseCallback"] ;
+        {{{ makeDynCall('vii', 'readResponseCallback') }}}(response.length, id);
+        
+    },
+
+    _GetNextRequestId:function (){
+
+        var id = Module["BlazorApi_IdCounter"]++;
+        Module["BlazorApi_IdCounter"]=Module["BlazorApi_IdCounter"]>2147483646?0:Module["BlazorApi_IdCounter"];
+        return id;
     },
 
     _SendResponseFromUnity: function (id, array, size) {

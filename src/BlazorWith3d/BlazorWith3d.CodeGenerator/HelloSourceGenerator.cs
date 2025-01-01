@@ -56,6 +56,17 @@ public class HelloSourceGenerator : ISourceGenerator
                 return GetTypeAndNamespace(typeDeclaration);
             }).ToList();
 
+
+        var messagesToBlazorWithResponses = receiver.MessagesToBlazorWithResponse
+            .Select( o =>
+            {
+                var requestType = GetTypeAndNamespace(o.request);
+                var responseType = GetTypeAndNamespace(o.response,context.Compilation);
+
+                return (request: requestType, response: responseType);
+
+            }).ToList();
+
         var namespacesToInclude = messagesToUnity.Select(o => o.@namespace)
             .Concat(messagesToUnityWithResponse.SelectMany(o => new string[] { o.request.@namespace, o.response.@namespace }))
             .Concat(messagesToBlazor.Select(o => o.@namespace))
@@ -66,7 +77,7 @@ public class HelloSourceGenerator : ISourceGenerator
             var appType= GetTypeAndNamespace(typeDeclaration.appType);
             var serializerType= GetTypeAndNamespace(typeDeclaration.serializerType, context.Compilation);
 
-            var appInfo= new AppInfo(appType, serializerType, messagesToUnity, messagesToUnityWithResponse, messagesToBlazor, new List<(TypeInfo, TypeInfo)>(), namespacesToInclude);
+            var appInfo= new AppInfo(appType, serializerType, messagesToUnity, messagesToUnityWithResponse, messagesToBlazor, messagesToBlazorWithResponses, namespacesToInclude);
             
             var text = GenerateClass(appInfo);
             context.AddSource($"{appType.typeName}.g.cs", text);
@@ -77,7 +88,7 @@ public class HelloSourceGenerator : ISourceGenerator
             var appType= GetTypeAndNamespace(typeDeclaration.appType);
             var serializerType= GetTypeAndNamespace(typeDeclaration.serializerType, context.Compilation);
 
-            var appInfo= new AppInfo(appType, serializerType,messagesToBlazor, new List<(TypeInfo, TypeInfo)>(), messagesToUnity, messagesToUnityWithResponse, namespacesToInclude);
+            var appInfo= new AppInfo(appType, serializerType,messagesToBlazor, messagesToBlazorWithResponses, messagesToUnity, messagesToUnityWithResponse, namespacesToInclude);
 
             var text = GenerateClass(appInfo);
 
@@ -340,7 +351,7 @@ public class HelloSourceGenerator : ISourceGenerator
                                     sb.AppendLine($"var requestId = message[1];");
                                     sb.AppendLine($"var obj = DeserializeObjectWithoutHeader<{e.request.typeName}>(message,2);");
                                     sb.AppendLine($"var response = await _eventHandler.On{e.request.typeName}(obj);");
-                                    sb.AppendLine($"await SendMessageWithResponse({i+info.methods.Count}, requestId, response);");
+                                    sb.AppendLine($"await SendMessageWithResponse({i+info.methods.Count+info.methodsWithResponse.Count}, requestId, response);");
                                     
                                     sb.AppendLine($"break;");
                                 }
@@ -771,9 +782,11 @@ public SetEventHandler(eventHandler: {info.app.typeName}_EventHandler):void
                 sb.AppendLine($"public async Invoke{method.request.typeName}(msg: {method.request.typeName}): Promise<{method.response.typeName}>");
                 using (sb.IndentWithCurlyBrackets())
                 {
-                    sb.AppendLine($"var responseMessage=await this.sendMessageWithResponse({i}, requestId, w => {method.request.typeName}.serializeCore(w, msg));");
+                    sb.AppendLine($"var responseMessage=await this.sendMessageWithResponse({i}, w => {method.request.typeName}.serializeCore(w, msg));");
                     
-                    sb.AppendLine($"let response= {method.response.typeName}.deserialize(responseMessage);");
+                    sb.AppendLine($"var dst = new ArrayBuffer(responseMessage.byteLength);");
+                    sb.AppendLine($"new Uint8Array(dst).set(responseMessage);");
+                    sb.AppendLine($"let response= {method.response.typeName}.deserialize(dst);");
                     
                     sb.AppendLine($"return response;");
                     
@@ -797,7 +810,7 @@ public SetEventHandler(eventHandler: {info.app.typeName}_EventHandler):void
     }
 }
 
-private sendMessageWithResponse(messageId: number, messageSerializeCore: (writer: MemoryPackWriter) => any): Promise<any> 
+private sendMessageWithResponse(messageId: number, messageSerializeCore: (writer: MemoryPackWriter) => any): Promise<Uint8Array> 
 {
     try {
         const writer = MemoryPackWriter.getSharedInstance();
@@ -937,18 +950,18 @@ public SetEventHandler(eventHandler: {info.app.typeName}_EventHandler):void
                 sb.AppendLine($"public async Invoke{method.request.typeName}(msg: {method.request.typeName}): Promise<{method.response.typeName}>");
                 using (sb.IndentWithCurlyBrackets())
                 {
-                    sb.AppendLine($"let requestId = _requestResponseIdCounter++;");
-                    sb.AppendLine($"_requestResponseIdCounter=_requestResponseIdCounter>255?0:_requestResponseIdCounter;");
+                    sb.AppendLine($"let requestId = this._requestResponseIdCounter++;");
+                    sb.AppendLine($"this._requestResponseIdCounter=this._requestResponseIdCounter>255?0:this._requestResponseIdCounter;");
 
                     
                     sb.AppendLines($@"
-    var deferred = {{}};
+    var deferred : any = {{}};
     deferred.promise = new Promise(resolve => {{
         deferred.resolve = resolve;
     }});
     this._responseTcs[requestId]= deferred;".Split(new[] { "\r\n", "\n" }, StringSplitOptions.None));
                     
-                    sb.AppendLine($"await this.sendMessage({i}, requestId, w => {method.request.typeName}.serializeCore(w, msg));");
+                    sb.AppendLine($"await this.sendMessage({i+info.methods.Count}, requestId, w => {method.request.typeName}.serializeCore(w, msg));");
                     
                     sb.AppendLine($"let response = await deferred.promise;");
                     sb.AppendLine($"delete   this._responseTcs[requestId];");
@@ -1013,7 +1026,7 @@ public SetEventHandler(eventHandler: {info.app.typeName}_EventHandler):void
                                 sb.AppendLine($"new Uint8Array(dst).set(buffer);");
                                 sb.AppendLine($"const obj: {e.request.typeName} = {e.request.typeName}.deserialize(dst);");
                                 sb.AppendLine($"let response= await this._eventHandler.On{e.request.typeName}(obj);");
-                                sb.AppendLine($"await this.sendMessage({i+info.methods.Count}, requestId, w => {e.response.typeName}.serializeCore(w, response));");
+                                sb.AppendLine($"await this.sendMessage({i+info.methods.Count+info.methodsWithResponse.Count}, requestId, w => {e.response.typeName}.serializeCore(w, response));");
                                 sb.AppendLine($"break;");
                             }
                         }
@@ -1076,6 +1089,8 @@ public SetEventHandler(eventHandler: {info.app.typeName}_EventHandler):void
         public List<(TypeDeclarationSyntax request, TypeSyntax response) > MessagesToUnityWithResponse { get; } = new();
 
         public List<TypeDeclarationSyntax > MessagesToBlazor { get; } = new();
+        
+        public List<(TypeDeclarationSyntax request, TypeSyntax response) > MessagesToBlazorWithResponse { get; } = new();
 
         /// <summary>
         ///     Called for every syntax node in the compilation, we can inspect the nodes and save any information useful for
@@ -1102,22 +1117,20 @@ public SetEventHandler(eventHandler: {info.app.typeName}_EventHandler):void
             }
 
             // any field with at least one attribute is a candidate for property generation
-            if (context.Node is TypeDeclarationSyntax typeDeclarationSyntax)
+            if (context.Node is TypeDeclarationSyntax typeDeclarationSyntax && typeDeclarationSyntax.AttributeLists.SelectMany(e => e.Attributes).Any(e =>
+                    e.Name.NormalizeWhitespace().ToFullString() == "MemoryPackable"))
             {
-                if (typeDeclarationSyntax.AttributeLists.SelectMany(e => e.Attributes).Any(e =>
-                        e.Name.NormalizeWhitespace().ToFullString() == "MemoryPackable") &&
-                    (typeDeclarationSyntax.BaseList?.Types.Any(o => o.Type.ToString() == "IMessageToUnity") ?? false))
+                if (typeDeclarationSyntax.BaseList?.Types.Any(o => o.Type.ToString() == "IMessageToUnity") ?? false)
                 {
                     MessagesToUnity.Add(typeDeclarationSyntax);
                 }
 
-                if (typeDeclarationSyntax.AttributeLists.SelectMany(e => e.Attributes).Any(e =>
-                        e.Name.NormalizeWhitespace().ToFullString() == "MemoryPackable") && (typeDeclarationSyntax
+                if (typeDeclarationSyntax
                             .BaseList?.Types.Select(o => o.Type).OfType<GenericNameSyntax>()
-                            .TryGet(o => o.Identifier.ToString() == "IMessageToUnity", out var messageToUnityAttr) ??
-                        false))
+                            .TryGet(o => o.Identifier.ToString() == "IMessageToUnity", out var messageToUnityWithResponseAttr) ??
+                        false)
                 {
-                    if (messageToUnityAttr.TypeArgumentList.Arguments.Count == 0)
+                    if (messageToUnityWithResponseAttr.TypeArgumentList.Arguments.Count == 0)
                     {
                         throw new InvalidOperationException();
                     }
@@ -1125,15 +1138,30 @@ public SetEventHandler(eventHandler: {info.app.typeName}_EventHandler):void
                     {
 
                         MessagesToUnityWithResponse.Add((typeDeclarationSyntax,
-                            messageToUnityAttr.TypeArgumentList.Arguments[0]));
+                            messageToUnityWithResponseAttr.TypeArgumentList.Arguments[0]));
                     }
                 }
 
-                if (typeDeclarationSyntax.AttributeLists.SelectMany(e => e.Attributes).Any(e =>
-                        e.Name.NormalizeWhitespace().ToFullString() == "MemoryPackable") &&
-                    (typeDeclarationSyntax.BaseList?.Types.Any(o => o.Type.ToString() == "IMessageToBlazor") ?? false))
+                if (typeDeclarationSyntax.BaseList?.Types.Any(o => o.Type.ToString() == "IMessageToBlazor") ?? false)
                 {
                     MessagesToBlazor.Add(typeDeclarationSyntax);
+                }
+
+                if (typeDeclarationSyntax
+                            .BaseList?.Types.Select(o => o.Type).OfType<GenericNameSyntax>()
+                            .TryGet(o => o.Identifier.ToString() == "IMessageToBlazor", out var messageToBlazorWithResponseAttr) ??
+                        false)
+                {
+                    if (messageToBlazorWithResponseAttr.TypeArgumentList.Arguments.Count == 0)
+                    {
+                        throw new InvalidOperationException();
+                    }
+                    else
+                    {
+
+                        MessagesToBlazorWithResponse.Add((typeDeclarationSyntax,
+                            messageToBlazorWithResponseAttr.TypeArgumentList.Arguments[0]));
+                    }
                 }
             }
         }
