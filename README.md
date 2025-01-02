@@ -72,11 +72,10 @@ benchmarks
   - Interop (avg 0.50 ms)
   - MemoryPack (avg 0.33 ms)
 
-### Prio 0 (what to do next)
-
-- generate blazor interop code, preferably in  another project referencing the types in shared
+### Prio 0 (what to do next)[
 
 - try again to get matrix for screen to world as that would reduce the need for extra interop call
+  - even basic raycast can be then doable in .NET
 
 - Maui app with native Unity build
   https://docs.unity3d.com/6000.1/Documentation/Manual/UnityasaLibrary-Windows.html
@@ -86,6 +85,10 @@ benchmarks
 
 
 ### Prio 1 (stretch goals)
+
+- split up the generator and refactor into nicer types
+
+- better JS plugin via $ as in https://github.com/Made-For-Gamers/NEAR-Unity-WebGL-API/blob/main/Assets/WebGLSupport/WebGLInput/WebGLInput.jslib
 
 - Unify visuals of all renderers
     - add camera transform setting (and getting, as to have a request to set but I can get the real one)

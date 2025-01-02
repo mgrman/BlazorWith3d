@@ -1,5 +1,4 @@
-﻿using BlazorWith3d.Babylon;
-using BlazorWith3d.ExampleApp.Client.Shared;
+﻿using BlazorWith3d.ExampleApp.Client.Shared;
 using BlazorWith3d.JsApp;
 
 using Microsoft.AspNetCore.Components;
@@ -25,6 +24,7 @@ public class BlocksOnGridBabylonRenderer:BaseJsBinaryApiRenderer, IDisposable
             await base.OnAfterRenderAsync(firstRender);
             return;
         }
+        await base.OnAfterRenderAsync(firstRender);
 
         _unityAppApi = new BlocksOnGrid3DApp_BinaryApi(this);
         _unityAppApi.OnMessageError += (bytes, exception) =>

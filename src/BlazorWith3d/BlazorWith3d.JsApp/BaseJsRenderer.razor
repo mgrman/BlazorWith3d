@@ -6,7 +6,7 @@
 @implements IAsyncDisposable
 
 <canvas @ref="_containerElementReference" class="my-component"   style="width: 100%; height: 100%; position: relative;"  tabindex="-1">
-    This component is defined in the <strong>BlazorWith3d.ExampleApp.Client.Babylon</strong> library.
+    This component will be controlled by component inheriting from this one
 </canvas>
 
 
@@ -18,9 +18,6 @@
     
     public virtual string JsAppPath => "";
     
-    private DotNetObjectReference<JsMessageReceiverProxy>? _messageReceiverProxyReference;
-
-
     public virtual async ValueTask DisposeAsync()
     {
         if (_typescriptApp != null)
@@ -29,21 +26,7 @@
             await _typescriptApp.DisposeAsync();
             _typescriptApp = null;
         }
-
-        _messageReceiverProxyReference?.Dispose();
     }
-
-    protected override void OnInitialized()
-    {
-        _messageReceiverProxyReference = DotNetObjectReference.Create(CreateReceiverProxy());
-        base.OnInitialized();
-    }
-
-    protected virtual JsMessageReceiverProxy CreateReceiverProxy()
-    {
-        return new JsMessageReceiverProxy();
-    }
-
 
     protected async Task InitializeTypeScriptApp()
     {
@@ -52,12 +35,6 @@
             throw new InvalidOperationException($"{nameof(JsAppPath)} is not overriden!");
         }
 
-        if (_messageReceiverProxyReference== null)
-        {
-            throw new InvalidOperationException($"{nameof(_messageReceiverProxyReference)} is not initialized!");
-        }
-
-
         var moduleTask = new Lazy<Task<IJSObjectReference>>(() => JsRuntime.InvokeAsync
             <IJSObjectReference>
             ("import", JsAppPath).AsTask());
@@ -65,17 +42,12 @@
         module = await moduleTask.Value;
         
         
-        _typescriptApp = await InitializeJsApp(module, _messageReceiverProxyReference);
+        _typescriptApp = await InitializeJsApp(module);
     }
 
-    protected virtual async Task<IJSObjectReference?> InitializeJsApp(IJSObjectReference module, DotNetObjectReference<JsMessageReceiverProxy> messageReceiverProxyReference)
+    protected virtual async Task<IJSObjectReference?> InitializeJsApp(IJSObjectReference module)
     {
         throw new InvalidOperationException();
-    }
-
-
-    protected class JsMessageReceiverProxy()
-    {
     }
 }
 

@@ -1,5 +1,4 @@
-﻿using BlazorWith3d.Babylon;
-using BlazorWith3d.Shared;
+﻿using BlazorWith3d.Shared;
 
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
@@ -24,15 +23,13 @@ public class BaseJsBinaryApiWithResponseRenderer:BaseJsRenderer, IBinaryApiWithR
     
     private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
 
-    protected override JsMessageReceiverProxy CreateReceiverProxy()
-    {
-        return new BinaryApiJsMessageReceiverProxy(OnMessageBytesReceived,OnMessageBytesWithResponseReceived);
-    }
+    private DotNetObjectReference<BinaryApiJsMessageReceiverProxy>? _messageReceiverProxyReference;
 
 
-    protected override async Task<IJSObjectReference?> InitializeJsApp(IJSObjectReference module, DotNetObjectReference<JsMessageReceiverProxy> messageReceiverProxyReference)
+    protected override async Task<IJSObjectReference?> InitializeJsApp(IJSObjectReference module)
     { 
-        return await module.InvokeAsync<IJSObjectReference>(InitializeMethodName, _containerElementReference,messageReceiverProxyReference,nameof(BinaryApiJsMessageReceiverProxy.OnMessageBytesReceived),nameof(BinaryApiJsMessageReceiverProxy.OnMessageBytesWithResponse) );
+        _messageReceiverProxyReference = DotNetObjectReference.Create(new BinaryApiJsMessageReceiverProxy(OnMessageBytesReceived,OnMessageBytesWithResponseReceived));
+        return await module.InvokeAsync<IJSObjectReference>(InitializeMethodName, _containerElementReference,_messageReceiverProxyReference,nameof(BinaryApiJsMessageReceiverProxy.OnMessageBytesReceived),nameof(BinaryApiJsMessageReceiverProxy.OnMessageBytesWithResponse) );
     }
 
     public Func<byte[], ValueTask>? MainMessageHandler { get; set; }
@@ -94,7 +91,13 @@ public class BaseJsBinaryApiWithResponseRenderer:BaseJsRenderer, IBinaryApiWithR
         }
     }
 
-    protected class BinaryApiJsMessageReceiverProxy(Action<byte[]> onMessageBytesReceived,Func<byte[], ValueTask<byte[]>> onMessageBytesWithResponseReceived):JsMessageReceiverProxy
+    public override ValueTask DisposeAsync()
+    {
+        _messageReceiverProxyReference?.Dispose();
+        return base.DisposeAsync();
+    }
+
+    protected class BinaryApiJsMessageReceiverProxy(Action<byte[]> onMessageBytesReceived,Func<byte[], ValueTask<byte[]>> onMessageBytesWithResponseReceived)
     {
         [JSInvokable]
         public void OnMessageBytesReceived(byte[] msg)

@@ -1,5 +1,4 @@
-﻿using BlazorWith3d.Babylon;
-using BlazorWith3d.Shared;
+﻿using BlazorWith3d.Shared;
 
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
@@ -20,39 +19,16 @@ public class BaseJsBinaryApiRenderer:BaseJsRenderer, IBinaryApi
         
     public override string JsAppPath => "";
     
-    private readonly List<byte[]> _unsentMessages = new();
-
     protected virtual string InitializeMethodName => "InitializeApp";
     
     private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
 
-    protected override JsMessageReceiverProxy CreateReceiverProxy()
-    {
-        return new BinaryApiJsMessageReceiverProxy(OnMessageBytesReceived);
-    }
+    private DotNetObjectReference<BinaryApiJsMessageReceiverProxy>? _messageReceiverProxyReference;
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (!firstRender)
-        {
-            await base.OnAfterRenderAsync(firstRender);
-            return;
-        }
-        await base.OnAfterRenderAsync(firstRender);
-
-        foreach (var msg in _unsentMessages)
-        {
-            await SendMessage(msg);
-        }
-
-        _unsentMessages.Clear();
-
-    }
-
-
-    protected override async Task<IJSObjectReference?> InitializeJsApp(IJSObjectReference module, DotNetObjectReference<JsMessageReceiverProxy> messageReceiverProxyReference)
+    protected override async Task<IJSObjectReference?> InitializeJsApp(IJSObjectReference module)
     { 
-        return await module.InvokeAsync<IJSObjectReference>(InitializeMethodName, _containerElementReference,messageReceiverProxyReference,nameof(BinaryApiJsMessageReceiverProxy.OnMessageBytesReceived) );
+        _messageReceiverProxyReference = DotNetObjectReference.Create(new BinaryApiJsMessageReceiverProxy(OnMessageBytesReceived));
+        return await module.InvokeAsync<IJSObjectReference>(InitializeMethodName, _containerElementReference,_messageReceiverProxyReference,nameof(BinaryApiJsMessageReceiverProxy.OnMessageBytesReceived) );
     }
 
     public Func<byte[], ValueTask>? MainMessageHandler { get; set; }
@@ -66,8 +42,7 @@ public class BaseJsBinaryApiRenderer:BaseJsRenderer, IBinaryApi
     {
         if (_typescriptApp == null)
         {
-            _unsentMessages.Add(messageBytes);
-            return;
+            throw new InvalidOperationException();
         }
 
         try
@@ -85,12 +60,18 @@ public class BaseJsBinaryApiRenderer:BaseJsRenderer, IBinaryApi
         }
     }
     
-    protected class BinaryApiJsMessageReceiverProxy(Action<byte[]> onMessageBytesReceived):JsMessageReceiverProxy
+    public class BinaryApiJsMessageReceiverProxy(Action<byte[]> onMessageBytesReceived)
     {
         [JSInvokable]
         public void OnMessageBytesReceived(byte[] msg)
         {
             onMessageBytesReceived(msg);
         }
+    }
+
+    public override ValueTask DisposeAsync()
+    {
+        _messageReceiverProxyReference?.Dispose();
+        return base.DisposeAsync();
     }
 }
