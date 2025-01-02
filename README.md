@@ -74,18 +74,16 @@ benchmarks
 
 ### Prio 0 (what to do next)[
 
-- try again to get matrix for screen to world as that would reduce the need for extra interop call
-  - even basic raycast can be then doable in .NET
-
 - Maui app with native Unity build
   https://docs.unity3d.com/6000.1/Documentation/Manual/UnityasaLibrary-Windows.html
 - https://github.com/matthewrdev/UnityUaal.Maui
 
-- three port to C# for maui https://github.com/hjoykim/THREE
-
 
 ### Prio 1 (stretch goals)
 
+- try again to get matrix for screen to world as that would reduce the need for extra interop call
+    - even basic raycast can be then doable in .NET
+  
 - split up the generator and refactor into nicer types
 
 - better JS plugin via $ as in https://github.com/Made-For-Gamers/NEAR-Unity-WebGL-API/blob/main/Assets/WebGLSupport/WebGLInput/WebGLInput.jslib
@@ -151,7 +149,7 @@ benchmarks
 
 ### Prio 3 (maybe but not really target of the project)
 
-
+- three port to C# for maui https://github.com/hjoykim/THREE
 - Urho https://github.com/Urho-Net/Urho.Net
 - Official Maui integration for Evergine https://evergine.com/download/
 - https://monogame.net/
