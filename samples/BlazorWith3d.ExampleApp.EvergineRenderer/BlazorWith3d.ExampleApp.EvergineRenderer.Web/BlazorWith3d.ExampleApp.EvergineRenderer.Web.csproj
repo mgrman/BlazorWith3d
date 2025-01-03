@@ -12,10 +12,6 @@
     <!-- <AOTMode>LLVMOnly</AOTMode> -->
   </PropertyGroup>
 
-  <ItemGroup>
-    <TrimmerRootDescriptor Include="link-descriptor.xml" />
-  </ItemGroup>
-
   <PropertyGroup>
     <DefineConstants>WASM</DefineConstants>
     <GenerateEvergineContent>False</GenerateEvergineContent>

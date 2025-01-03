@@ -14,6 +14,12 @@
         <BlazorCacheBootResources>false</BlazorCacheBootResources>
     </PropertyGroup>
 
+    <PropertyGroup>
+        <DefineConstants>WASM</DefineConstants>
+        <GenerateEvergineContent>False</GenerateEvergineContent>
+        <GenerateEvergineAssets>True</GenerateEvergineAssets>
+        <WasmAllowUndefinedSymbols>True</WasmAllowUndefinedSymbols>
+    </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.0" />
@@ -27,6 +33,15 @@
 
     <ItemGroup>
       <ProjectReference Include="..\BlazorWith3d.ExampleApp.Client\BlazorWith3d.ExampleApp.Client.csproj" />
+      <ProjectReference Include="..\BlazorWith3d.ExampleApp.EvergineRenderer\BlazorWith3d.ExampleApp.EvergineRenderer\BlazorWith3d.ExampleApp.EvergineRenderer.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <TrimmerRootDescriptor Include="link-descriptor.xml" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Components\" />
     </ItemGroup>
 
 </Project>

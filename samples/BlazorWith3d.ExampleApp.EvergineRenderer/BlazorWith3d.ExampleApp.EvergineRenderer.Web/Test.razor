@@ -1,0 +1,21 @@
+﻿@page "/test"
+
+<script type="text/javascript" src="evergine.js"></script>
+<!-- Then, start loading the assets into the vfs -->
+<script src="assets.js"></script>
+
+<!-- Finally, run evergine -->
+<script type="text/javascript">
+      var app = new App(
+        "BlazorWith3d.ExampleApp.EvergineRenderer.Web",
+        "BlazorWith3d.ExampleApp.EvergineRenderer.Web.Program",
+        new EvergineModule()
+      );
+      Blazor.start().then(function () {
+        // It is not mandatory to run Evergine now, but it must run after blazor is started
+        app.startEvergine();
+      });
+
+      //// It is possible to delete the Evergine instance by running
+      // app.destroyEvergine();
+    </script>

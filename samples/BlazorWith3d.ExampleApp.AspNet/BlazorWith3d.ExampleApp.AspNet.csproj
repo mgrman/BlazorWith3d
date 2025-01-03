@@ -20,6 +20,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\BlazorWith3d.ExampleApp.AspNet.WebAssembly\BlazorWith3d.ExampleApp.AspNet.WebAssembly.csproj" />
+      <ProjectReference Include="..\BlazorWith3d.ExampleApp.EvergineRenderer\BlazorWith3d.ExampleApp.EvergineRenderer.Web\BlazorWith3d.ExampleApp.EvergineRenderer.Web.csproj" />
     </ItemGroup>
 
 </Project>
