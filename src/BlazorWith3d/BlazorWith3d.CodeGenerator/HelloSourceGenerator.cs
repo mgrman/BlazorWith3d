@@ -98,19 +98,12 @@ public class HelloSourceGenerator : ISourceGenerator
         {
             var text = HelloSourceGenerator_DotnetApis.GenerateClass(appInfo);
             context.AddSource($"{appInfo.app.typeName}.g.cs", text);
-        }
 
-        foreach (var appInfo in renderers)
-        {
-            var text = HelloSourceGenerator_DotnetApis.GenerateClass(appInfo);
-
-            context.AddSource($"{appInfo.app.typeName}.g.cs", text);
-
-            var generatedTypeScript= HelloSourceGenerator_TypeScript.GenerateTypeScriptClass(context, appInfo);
+            var generatedTypeScript = HelloSourceGenerator_TypeScript.GenerateTypeScriptClass(context, appInfo);
 
             if (generatedTypeScript != null)
             {
-                var (path, ts) = generatedTypeScript.Value;
+                var (ts, path) = generatedTypeScript.Value;
                 // save to file
                 try
                 {
@@ -126,6 +119,14 @@ public class HelloSourceGenerator : ISourceGenerator
                     Trace.WriteLine(ex.ToString());
                 }
             }
+        }
+
+        foreach (var appInfo in renderers)
+        {
+            var text = HelloSourceGenerator_DotnetApis.GenerateClass(appInfo);
+
+            context.AddSource($"{appInfo.app.typeName}.g.cs", text);
+
         }
 
         foreach (var o in receiver.BlazorBindingTypes)

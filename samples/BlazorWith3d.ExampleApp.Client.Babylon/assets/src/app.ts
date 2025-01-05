@@ -27,50 +27,48 @@ import {RemoveBlockTemplate} from "com.blazorwith3d.exampleapp.client.shared/mem
 import { UnityAppInitialized } from "com.blazorwith3d.exampleapp.client.shared/memorypack/UnityAppInitialized";
 import { UpdateBlockInstance } from "com.blazorwith3d.exampleapp.client.shared/memorypack/UpdateBlockInstance";
 import {
-    BlocksOnGridUnityApi_BinaryApi,
-    BlocksOnGridUnityApi_MethodInvoker_DirectInterop,
-    IBlocksOnGridUnityApi_EventHandler,
-    IBlocksOnGridUnityApi_MethodInvoker
-} from "com.blazorwith3d.exampleapp.client.shared/memorypack/IBlocksOnGridUnityApi";
-import {BlazorBinaryApi} from "com.blazorwith3d.exampleapp.client.shared/BlazorBinaryApi";
+    BlocksOnGrid3DController_DirectInterop,
+    BlocksOnGrid3DController_BinaryApiWithResponse, IBlocksOnGrid3DController, IBlocksOnGrid3DRenderer
+} from "com.blazorwith3d.exampleapp.client.shared/memorypack/IBlocksOnGrid3DController";
+import {BlazorBinaryApiWithResponse} from "com.blazorwith3d.exampleapp.client.shared/BlazorBinaryApiWithResponse";
 import { RequestRaycast } from "com.blazorwith3d.exampleapp.client.shared/memorypack/RequestRaycast";
 import { RequestScreenToWorldRay } from "com.blazorwith3d.exampleapp.client.shared/memorypack/RequestScreenToWorldRay";
 import { ScreenToWorldRayResponse } from "com.blazorwith3d.exampleapp.client.shared/memorypack/ScreenToWorldRayResponse";
 import { RaycastResponse } from "com.blazorwith3d.exampleapp.client.shared/memorypack/RaycastResponse";
 import { TriggerTestToBlazor } from "com.blazorwith3d.exampleapp.client.shared/memorypack/TriggerTestToBlazor";
 
-export function InitializeApp_BinaryApi(canvas: HTMLCanvasElement, dotnetObject: any, onMessageReceivedMethodName: string) {
+export function InitializeApp_BinaryApi(canvas: HTMLCanvasElement, dotnetObject: any, onMessageReceivedMethodName: string, onMessageReceivedWithResponseMethodName: string) {
     let sendMessageCallback: (msgBytes: Uint8Array) => Promise<any> = msgBytes => dotnetObject.invokeMethodAsync(onMessageReceivedMethodName, msgBytes);
+    let sendMessageWithResponseCallback: (msgBytes: Uint8Array) => Promise<Uint8Array> = msgBytes => dotnetObject.invokeMethodAsync(onMessageReceivedWithResponseMethodName, msgBytes);
 
 
-    let binaryApi= new BlazorBinaryApi(sendMessageCallback);
-    let blazorApp=new BlocksOnGridUnityApi_BinaryApi(binaryApi);
+    let binaryApi = new BlazorBinaryApiWithResponse(sendMessageCallback, sendMessageWithResponseCallback);
+    let blazorApp = new BlocksOnGrid3DController_BinaryApiWithResponse(binaryApi);
 
-    let app= new DebugApp(canvas, blazorApp);
+    let app = new DebugApp(canvas, blazorApp);
 
-    blazorApp.SetEventHandler(app);
+    blazorApp.SetRenderer(app);
 
-    let appAsAny :any =app ;
-    appAsAny.ProcessMessage= msg=> {
+    let appAsAny: any = app;
+    appAsAny.ProcessMessage = msg => {
         return binaryApi.mainMessageHandler(msg);
+    }
+    appAsAny.ProcessMessageWithResponse = msg => {
+        return binaryApi.mainMessageWithResponseHandler(msg);
     }
     return appAsAny;
 }
 
-export function InitializeApp_DirectInterop(canvas: HTMLCanvasElement, dotnetObject: any) {
-    return new DebugApp(canvas, new BlocksOnGridUnityApi_MethodInvoker_DirectInterop(dotnetObject));
-}
-
-export class DebugApp implements IBlocksOnGridUnityApi_EventHandler{
+export class DebugApp implements IBlocksOnGrid3DRenderer{
     private templates: Array<AddBlockTemplate> = new Array<AddBlockTemplate>();
     private instances: Array<[instance: AddBlockInstance, mesh: Mesh]> = new Array<[instance: AddBlockInstance, mesh: Mesh]>();
 
     private canvas: HTMLCanvasElement;
     private scene: Scene;
     private plane: Mesh;
-    private _methodInvoker: IBlocksOnGridUnityApi_MethodInvoker;
+    private _methodInvoker: IBlocksOnGrid3DController;
 
-    constructor(canvas: HTMLCanvasElement, methodInvoker: IBlocksOnGridUnityApi_MethodInvoker) {
+    constructor(canvas: HTMLCanvasElement, methodInvoker: IBlocksOnGrid3DController) {
 
         this.canvas=canvas;
         this._methodInvoker = methodInvoker;
@@ -124,17 +122,17 @@ export class DebugApp implements IBlocksOnGridUnityApi_EventHandler{
             this.scene.render();
         });
 
-        this._methodInvoker.InvokeUnityAppInitialized(new UnityAppInitialized()).then(_ => console.log("UnityAppInitialized invoked"));
+        this._methodInvoker.OnUnityAppInitialized(new UnityAppInitialized()).then(_ => console.log("UnityAppInitialized invoked"));
     }
 
     public Quit(): void {
         console.log("Quit called");
     }
 
-    async OnTriggerTestToBlazor(_: TriggerTestToBlazor): Promise<void> {
+    public async InvokeTriggerTestToBlazor(_: TriggerTestToBlazor): Promise<void> {
 
         setTimeout(async ()=> {
-            var response=await this._methodInvoker.InvokeTestToBlazor({ id : 13  })
+            var response=await this._methodInvoker.OnTestToBlazor({ id : 13  })
 
 
             if (response.id != 13)
@@ -145,7 +143,7 @@ export class DebugApp implements IBlocksOnGridUnityApi_EventHandler{
         } ,1000)
     }
 
-    public async OnUpdateBlockInstance(obj: UpdateBlockInstance) : Promise<any> {
+    public async InvokeUpdateBlockInstance(obj: UpdateBlockInstance) : Promise<any> {
         console.log("OnUpdateBlockInstance", obj);
 
 
@@ -157,12 +155,12 @@ export class DebugApp implements IBlocksOnGridUnityApi_EventHandler{
     }
 
 
-    public async OnRemoveBlockTemplate(obj: RemoveBlockTemplate): Promise<any>  {
+    public async InvokeRemoveBlockTemplate(obj: RemoveBlockTemplate): Promise<any>  {
         console.log("RemoveBlockTemplate", obj);
         this.templates = this.templates.filter(o => o.templateId !== obj.templateId);
     }
 
-    public async OnRemoveBlockInstance(obj: RemoveBlockInstance): Promise<any>  {
+    public async InvokeRemoveBlockInstance(obj: RemoveBlockInstance): Promise<any>  {
         console.log("RemoveBlockInstance", obj);
 
         const [instance, mesh] = this.instances.find(o => o[0].blockId === obj.blockId);
@@ -171,7 +169,7 @@ export class DebugApp implements IBlocksOnGridUnityApi_EventHandler{
         this.scene.removeMesh(mesh);
     }
 
-    public async OnAddBlockInstance(obj: AddBlockInstance): Promise<any>  {
+    public async InvokeAddBlockInstance(obj: AddBlockInstance): Promise<any>  {
         console.log("AddBlockInstance", obj);
 
         var template = this.templates.find(o => o.templateId === obj.templateId);
@@ -195,7 +193,7 @@ export class DebugApp implements IBlocksOnGridUnityApi_EventHandler{
     }
 
 
-    public async OnRequestScreenToWorldRay(msg: RequestScreenToWorldRay): Promise<ScreenToWorldRayResponse> {
+    public async InvokeRequestScreenToWorldRay(msg: RequestScreenToWorldRay): Promise<ScreenToWorldRayResponse> {
 
 
         var ray = this.scene.createPickingRay(msg.screen.x, msg.screen.y, Matrix.Identity(), this.scene.activeCamera);	
@@ -215,7 +213,7 @@ export class DebugApp implements IBlocksOnGridUnityApi_EventHandler{
         };
     }
 
-    public async OnRequestRaycast(msg: RequestRaycast): Promise<RaycastResponse> {
+    public async InvokeRequestRaycast(msg: RequestRaycast): Promise<RaycastResponse> {
 
         var start = new Vector3(msg.ray.origin.x, msg.ray.origin.y, msg.ray.origin.z);
         var dir = new Vector3(msg.ray.direction.x, msg.ray.direction.y, msg.ray.direction.z);
@@ -240,17 +238,17 @@ export class DebugApp implements IBlocksOnGridUnityApi_EventHandler{
          return response;
     }
 
-    public async OnAddBlockTemplate(template: AddBlockTemplate):Promise<any>  {
+    public async InvokeAddBlockTemplate(template: AddBlockTemplate):Promise<any>  {
         console.log("AddBlockTemplate", template);
         this.templates.push(template);
     }
 
-    public async OnPerfCheck(obj: PerfCheck) :Promise<PerfCheck>
+    public async InvokePerfCheck(obj: PerfCheck) :Promise<PerfCheck>
     {
         return  obj;
     }
 
-    public async OnBlazorControllerInitialized(obj: BlazorControllerInitialized) :Promise<void> {
+    public async InvokeBlazorControllerInitialized(obj: BlazorControllerInitialized) :Promise<void> {
 
         console.log("OnBlazorControllerInitialized", obj);
 

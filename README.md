@@ -74,15 +74,7 @@ benchmarks
 
 ### Prio 0 (what to do next)
 
-- move from types with attributes to generation from interface methods
-  - there is already precedence to custom serialization on top of MemoryPack (e.g. the method ID, and the request ID in some APIs)
-  - the arguments can be serialized via provided serialization method, but then put one by one with lenght header prepended into the message
-    - {messageId}{arg0Length}{arg0}{arg1Lenght}{arg1}...
-    - as we control both serialization and deserialization, we can expect all to be there.
-    - ... potentially allowing even different serialization methods in next step 
-!!! the approach with manual headers does not work,as the header was byte only and some messages are longer than 255 bytes
-    - so test if memoryPack can handle headerless approach, ie leave all message length handling to it
-    - as I could make the header an int, but that seems unnecessary if memory pack could potentially handler it, otherwise that will be needed
+- test 
 
 - try again to get matrix for screen to world as that would reduce the need for extra interop call
     - even basic raycast can be then doable in .NET
