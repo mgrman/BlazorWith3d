@@ -5,46 +5,25 @@ namespace BlazorWith3d.Shared
     [AttributeUsage(AttributeTargets.Class, Inherited = false)]
     public sealed class Blazor3DAppBindingAttribute : Attribute
     {
-        public Blazor3DAppBindingAttribute()
-        {
-            
-        }
     }
     
     
     [AttributeUsage(AttributeTargets.Interface, Inherited = false)]
-    public sealed class Blazor3DAppAttribute : Attribute
+    public sealed class Blazor3DControllerAttribute : Attribute
     {
-        public Blazor3DAppAttribute(Type serializerType)
+        public Blazor3DControllerAttribute(Type rendererType)
         {
-            
+
         }
     }
-    
     
     [AttributeUsage(AttributeTargets.Interface, Inherited = false)]
-    public sealed class Unity3DAppAttribute : Attribute
+    public sealed class Blazor3DRendererAttribute : Attribute
     {
-        public Unity3DAppAttribute(Type serializerType)
+        public Blazor3DRendererAttribute(Type controllerType)
         {
-            
+
         }
-    }
-
-    public interface IMessageToBlazor
-    {
-    }
-
-    public interface IMessageToBlazor<TResponse>
-    {
-    }
-
-    public interface IMessageToUnity
-    {
-    }
-
-    public interface IMessageToUnity<TResponse>
-    {
     }
     
 #if COMMON_DOTNET

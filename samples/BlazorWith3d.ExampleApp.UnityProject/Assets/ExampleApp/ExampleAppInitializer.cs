@@ -12,7 +12,7 @@ using Random = UnityEngine.Random;
 
 namespace ExampleApp
 {
-    public class ExampleAppInitializer : MonoBehaviour, IBlocksOnGridUnityApi_EventHandler
+    public class ExampleAppInitializer : MonoBehaviour, IBlocksOnGrid3DRenderer
     {
         public static Uri HostUrl = null;
         
@@ -20,7 +20,7 @@ namespace ExampleApp
 
         private readonly Dictionary<int, BlockController> _blocks = new();
         private readonly Dictionary<int, BlockController> _templates = new();
-        private IBlocksOnGridUnityApi _appApi;
+        private IBlocksOnGrid3DController _appApi;
         private GameObject _templateRoot;
 
         private List<IDisposable> _disposables=new List<IDisposable>();
@@ -57,7 +57,7 @@ namespace ExampleApp
                 var relay = new BlazorWebSocketRelay(_backendWebsocketUrl);
                 _asyncDisposables.Add(relay);
                 var blazorApi = relay;
-                _appApi = new BlocksOnGridUnityApi_BinaryApi(blazorApi);
+                _appApi = new BlocksOnGrid3DController_BinaryApi(blazorApi, new MemoryPackBinaryApiSerializer());
                 
                 var uriBuilder = new UriBuilder(_backendWebsocketUrl);
                 uriBuilder.Scheme="http";
@@ -69,22 +69,22 @@ namespace ExampleApp
             var blazorApi = UnityBlazorApi.Singleton;
 
             if(Environment.GetCommandLineArgs().Contains("BinaryApiWithResponse", StringComparer.OrdinalIgnoreCase)){
-                _appApi = new BlocksOnGridUnityApi_BinaryApiWithResponse(blazorApi);
+                _appApi = new BlocksOnGrid3DController_BinaryApiWithResponse(blazorApi, new MemoryPackBinaryApiSerializer());
             }
             else{
-                _appApi = new BlocksOnGridUnityApi_BinaryApi(blazorApi);
+                _appApi = new BlocksOnGrid3DController_BinaryApi(blazorApi, new MemoryPackBinaryApiSerializer());
 
             }
 #endif
             Console.WriteLine($"{Screen.width},{Screen.height}");
-            _appApi.SetEventHandler(this);
+            _appApi.SetRenderer(this);
             
             
                 
 #if !UNITY_EDITOR
             UnityBlazorApi.InitializeWebGLInterop();
 #endif
-            await _appApi.InvokeUnityAppInitialized(new UnityAppInitialized());
+            await _appApi.OnUnityAppInitialized(new UnityAppInitialized());
         }
 
         private async Awaitable OnDestroy()
@@ -100,7 +100,7 @@ namespace ExampleApp
             }
         }
 
-        public async ValueTask OnBlazorControllerInitialized(BlazorControllerInitialized _)
+        public async ValueTask InvokeBlazorControllerInitialized(BlazorControllerInitialized _)
         {
             Debug.Log($"BlazorControllerInitialized: ");
             foreach (var block in _templates.Values)
@@ -119,7 +119,7 @@ namespace ExampleApp
         }
 
 
-        public async ValueTask OnAddBlockTemplate(AddBlockTemplate msg)
+        public async ValueTask InvokeAddBlockTemplate(AddBlockTemplate msg)
         {
             Debug.Log($"Adding block template: {JsonUtility.ToJson(msg)}");
 
@@ -133,7 +133,7 @@ namespace ExampleApp
             Debug.Log($"Added block template: {JsonUtility.ToJson(msg)}");
         }
 
-        public async ValueTask  OnRemoveBlockTemplate(RemoveBlockTemplate msg)
+        public async ValueTask  InvokeRemoveBlockTemplate(RemoveBlockTemplate msg)
         {
             Debug.Log($"Removing block template: {JsonUtility.ToJson(msg)}");
             
@@ -143,7 +143,7 @@ namespace ExampleApp
             Debug.Log($"Removed block template: {JsonUtility.ToJson(msg)}");
         }
 
-        public async ValueTask  OnAddBlockInstance(AddBlockInstance msg)
+        public async ValueTask  InvokeAddBlockInstance(AddBlockInstance msg)
         {
             Debug.Log($"Adding block : {JsonUtility.ToJson(msg)}");
             var template = _templates[msg.TemplateId];
@@ -154,7 +154,7 @@ namespace ExampleApp
             Debug.Log($"Added block : {JsonUtility.ToJson(msg)}");
         }
 
-        public async ValueTask  OnRemoveBlockInstance(RemoveBlockInstance msg)
+        public async ValueTask  InvokeRemoveBlockInstance(RemoveBlockInstance msg)
         {
             Debug.Log($"Removing block: {JsonUtility.ToJson(msg)}");
             Destroy( _blocks[msg.BlockId].gameObject);
@@ -163,17 +163,17 @@ namespace ExampleApp
             Debug.Log($"Removed block: {JsonUtility.ToJson(msg)}");
         }
 
-        public async ValueTask  OnUpdateBlockInstance(UpdateBlockInstance obj)
+        public async ValueTask  InvokeUpdateBlockInstance(UpdateBlockInstance obj)
         {
             _blocks[obj.BlockId].UpdatePose(obj);
         }
 
-        public async ValueTask OnTriggerTestToBlazor(TriggerTestToBlazor msg)
+        public async ValueTask InvokeTriggerTestToBlazor(TriggerTestToBlazor msg)
         {
             await Awaitable.WaitForSecondsAsync(1);
 
             var id = Random.Range(0, 1000);
-            var response = await _appApi.InvokeTestToBlazor(new TestToBlazor(){Id = id});
+            var response = await _appApi.OnTestToBlazor(new TestToBlazor(){Id = id});
 
             if (response.Id != id)
             {
@@ -182,12 +182,12 @@ namespace ExampleApp
             Debug.Log("TriggerTestToBlazor is done");
         }
 
-        public async ValueTask<PerfCheck> OnPerfCheck(PerfCheck msg)
+        public async ValueTask<PerfCheck> InvokePerfCheck(PerfCheck msg)
         {
             return msg;
         }
 
-        public async ValueTask<ScreenToWorldRayResponse>  OnRequestScreenToWorldRay(RequestScreenToWorldRay obj)
+        public async ValueTask<ScreenToWorldRayResponse>  InvokeRequestScreenToWorldRay(RequestScreenToWorldRay obj)
         {
             // convert to Unity screen coordinates
             var unityScreenPoint = new Vector3(obj.Screen.X, Screen.height - obj.Screen.Y, 0);
@@ -204,7 +204,12 @@ namespace ExampleApp
             };
         }
 
-        public async ValueTask<RaycastResponse> OnRequestRaycast(RequestRaycast obj)
+        public void SetController(IBlocksOnGrid3DController controller)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async ValueTask<RaycastResponse> InvokeRequestRaycast(RequestRaycast obj)
         {
             var ray = obj.Ray.ToUnity();
 

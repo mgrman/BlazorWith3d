@@ -4,7 +4,7 @@
 @using BlazorWith3d.ExampleApp.Client.Shared
 @using Microsoft.Extensions.Logging
 @using Microsoft.JSInterop
-@implements IBlocksOnGrid3DApp
+@implements IBlocksOnGrid3DRenderer
 @implements IDisposable
 @inject ILogger<BlocksOnGridHTMLComponent> Logger
 @inject IJSRuntime JsRuntime
@@ -47,7 +47,7 @@
     private ElementReference _rendererContainerReference;
 
     private IJSObjectReference jsInteropModule;
-    private IBlocksOnGrid3DApp_EventHandler? _eventHandler;
+    private IBlocksOnGrid3DController? _eventHandler;
     private IDisposable? _rendererAssignment;
 
     [CascadingParameter] 
@@ -196,12 +196,6 @@ public void Dispose()
         };
     }
     
-    public void SetEventHandler(IBlocksOnGrid3DApp_EventHandler? eventHandler)
-    {
-        _eventHandler = eventHandler;
-        eventHandler?.OnUnityAppInitialized(new UnityAppInitialized());
-    }
-
     public async ValueTask InvokeTriggerTestToBlazor(TriggerTestToBlazor msg)
     {
         await Task.Delay(1000);
@@ -214,5 +208,11 @@ public void Dispose()
             throw new InvalidOperationException();
         }
         Logger.LogCritical("TriggerTestToBlazor is done");
+    }
+
+    public void SetController(IBlocksOnGrid3DController? controller)
+    {
+        _eventHandler = controller;
+        controller?.OnUnityAppInitialized(new UnityAppInitialized());
     }
 }

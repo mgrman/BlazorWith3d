@@ -136,7 +136,14 @@ namespace BlazorWith3d.Unity
         private async void ResponseReceived(byte[] data)
         {
             await Awaitable.MainThreadAsync();
-            MainMessageHandler?.Invoke(data);
+            try
+            {
+                MainMessageHandler?.Invoke(data);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+            }
         }
 
         public async ValueTask DisposeAsync()

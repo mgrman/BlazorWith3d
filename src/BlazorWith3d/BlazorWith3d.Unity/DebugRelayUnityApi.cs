@@ -17,8 +17,6 @@ public class DebugRelayUnityApi
         _logger = logger;
     }
     
-    
-    
     public async Task HandleWebSocket(WebSocket webSocket)
     {
         _webSocket = webSocket;

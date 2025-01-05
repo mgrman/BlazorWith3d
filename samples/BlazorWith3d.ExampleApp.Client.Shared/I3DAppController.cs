@@ -8,7 +8,7 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
 {
     public interface I3DAppController
     {
-        ValueTask<IDisposable> InitializeRenderer(IBlocksOnGrid3DApp rendererApi, Func<ValueTask>? afterEventHandlerIsSet);
+        ValueTask<IDisposable> InitializeRenderer(IBlocksOnGrid3DRenderer rendererApi, Func<ValueTask>? afterEventHandlerIsSet);
     }
 }
 #endif

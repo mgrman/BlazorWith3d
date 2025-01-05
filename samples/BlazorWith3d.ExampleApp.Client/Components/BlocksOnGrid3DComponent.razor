@@ -12,7 +12,7 @@
 @inject IJSRuntime JsRuntime
 @implements I3DAppController
 @implements IAsyncDisposable
-@implements IBlocksOnGrid3DApp_EventHandler
+@implements IBlocksOnGrid3DController
 
 <text>@(RendererInfo.Name) @(RendererInfo.IsInteractive?"Interactive":"Static")</text>
 
@@ -199,7 +199,7 @@
     private List<AddBlockTemplate> _templates = new();
     private List<AddBlockInstance> _instances = new();
 
-    private IBlocksOnGrid3DApp? _rendererApi;
+    private IBlocksOnGrid3DRenderer? _rendererApi;
     private DotNetObjectReference<JsProxy>? _jsProxyReference;
 
     private UnityAppInitialized _appState;
@@ -251,7 +251,11 @@
         await base.OnAfterRenderAsync(firstRender);
     }
 
-    public async ValueTask<IDisposable> InitializeRenderer(IBlocksOnGrid3DApp rendererApi, Func<ValueTask>? afterEventHandlerIsSet)
+    public void SetRenderer(IBlocksOnGrid3DRenderer? renderer)
+    {
+        throw new NotImplementedException();
+    }
+    public async ValueTask<IDisposable> InitializeRenderer(IBlocksOnGrid3DRenderer rendererApi, Func<ValueTask>? afterEventHandlerIsSet)
     {
         await _initializeRendererSemaphoreSlim.WaitAsync();
         try
@@ -263,7 +267,7 @@
             _rendererApi = rendererApi;
             if (_rendererApi != null)
             {
-                _rendererApi.SetEventHandler(this);
+                _rendererApi.SetController(this);
 
                 if (afterEventHandlerIsSet != null)
                 {
@@ -281,7 +285,7 @@
             _initializeRendererSemaphoreSlim.Release();
         }
 
-        return new DisposableAction(() => rendererApi.SetEventHandler(null));
+        return new DisposableAction(() => rendererApi.SetController(null));
     }
 
     public async ValueTask OnUnityAppInitialized(UnityAppInitialized msg)
@@ -547,5 +551,6 @@
     {
         await _rendererApi.InvokeTriggerTestToBlazor(new TriggerTestToBlazor());
     }
+
 
 }

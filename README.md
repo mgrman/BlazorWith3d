@@ -72,14 +72,17 @@ benchmarks
   - Interop (avg 0.50 ms)
   - MemoryPack (avg 0.33 ms)
 
-### Prio 0 (what to do next)[
+### Prio 0 (what to do next)
 
-- Maui app with native Unity build
-  https://docs.unity3d.com/6000.1/Documentation/Manual/UnityasaLibrary-Windows.html
-- https://github.com/matthewrdev/UnityUaal.Maui
-
-
-### Prio 1 (stretch goals)
+- move from types with attributes to generation from interface methods
+  - there is already precedence to custom serialization on top of MemoryPack (e.g. the method ID, and the request ID in some APIs)
+  - the arguments can be serialized via provided serialization method, but then put one by one with lenght header prepended into the message
+    - {messageId}{arg0Length}{arg0}{arg1Lenght}{arg1}...
+    - as we control both serialization and deserialization, we can expect all to be there.
+    - ... potentially allowing even different serialization methods in next step 
+!!! the approach with manual headers does not work,as the header was byte only and some messages are longer than 255 bytes
+    - so test if memoryPack can handle headerless approach, ie leave all message length handling to it
+    - as I could make the header an int, but that seems unnecessary if memory pack could potentially handler it, otherwise that will be needed
 
 - try again to get matrix for screen to world as that would reduce the need for extra interop call
     - even basic raycast can be then doable in .NET
@@ -93,6 +96,8 @@ benchmarks
     - unify different coordinate systems
     - add setting of background color
     - even background plane should be just a mesh to load
+
+### Prio 1 (stretch goals)
 
 - do Isometric or fake-3d in CSS only for HTML version
     - https://developer.mozilla.org/en-US/docs/Web/CSS/transform-function/perspective
@@ -149,10 +154,30 @@ benchmarks
 
 ### Prio 3 (maybe but not really target of the project)
 
+- native Veldrid based renderer https://veldrid.dev/
+  - has MAUI support https://github.com/xtuzy/Veldrid.Samples or https://www.nuget.org/packages/Veldrid.Maui/
+
+- Maui app with native Unity build
+  - https://github.com/matthewrdev/UnityUaal.Maui (not working in windows, as MAUI in general does not support embedding other exes as views)
+    - Unity in Maui is not officially supported. There are ways but more focused on mobile
+    - Maui windows does not allow unity exe direct yet. There is a feature request for this
+
+
+- Winforms app with Blazor and Unity 
+  - https://docs.unity3d.com/6000.1/Documentation/Manual/UnityasaLibrary-Windows.html
+  - https://learn.microsoft.com/en-us/aspnet/core/blazor/hybrid/tutorials/windows-forms?view=aspnetcore-9.0
+
+
+- Evergine 
+  - has MAUI support (not tested)
+  - has WASM support 
+    - Evergine could work better for Maui but wasm Is still weird, as it needs to be hooked into was compilation, not just razor project. 
+    - Also wasm build works, but creating reusable razor component is not officially available,  and without payed support harder to achieve as community is very small.
+
 - three port to C# for maui https://github.com/hjoykim/THREE
 - Urho https://github.com/Urho-Net/Urho.Net
-- Official Maui integration for Evergine https://evergine.com/download/
 - https://monogame.net/
+
 
 - but even the serialize methods might be worth to be chosen by the generator based on target so potentially messages can be generated from method arguments
     - e.g. use memoryPack if type annotated, otherwise use json serialization
@@ -170,8 +195,6 @@ benchmarks
 
 
 ### Not gonna do for now
-- appInitialized message should be on renderer level, as it means replay state in general
-    - RESOLUTION seems to work well on app level for now
 
 - even generate structs for message arguments!
     - RESOLUTION not usable until Code generators can be chained (ie then the code can be memorypack usable)

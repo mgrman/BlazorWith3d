@@ -2,6 +2,7 @@
 using System.Buffers;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 
 using BlazorWith3d.Shared;
 using MemoryPack;
@@ -9,7 +10,7 @@ using MemoryPack;
 
 namespace BlazorWith3d.ExampleApp.Client.Shared
 {
-    internal class MemoryPackBinaryApiSerializer:IBinaryApiSerializer
+    public class MemoryPackBinaryApiSerializer:IBinaryApiSerializer
     {
         public void SerializeObject<T>(T obj, IBufferWriter<byte> writer)
         {
@@ -22,29 +23,37 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
         }
     }
     
-#if COMMON_DOTNET || UNITY_EDITOR
-    [Blazor3DApp(typeof(MemoryPackBinaryApiSerializer))]
-    public partial interface IBlocksOnGrid3DApp
+    [Blazor3DRenderer(typeof(IBlocksOnGrid3DController))]
+    public partial interface IBlocksOnGrid3DRenderer
     {
+        ValueTask InvokeBlazorControllerInitialized(BlazorControllerInitialized msg);
+        ValueTask<RaycastResponse> InvokeRequestRaycast(RequestRaycast msg);
+        ValueTask InvokeAddBlockTemplate(AddBlockTemplate msg);
+        ValueTask InvokeAddBlockInstance(AddBlockInstance msg);
+        ValueTask InvokeRemoveBlockInstance(RemoveBlockInstance msg);
+        ValueTask InvokeRemoveBlockTemplate(RemoveBlockTemplate msg);
+        ValueTask InvokeUpdateBlockInstance(UpdateBlockInstance msg);
+        ValueTask InvokeTriggerTestToBlazor(TriggerTestToBlazor msg);
+        ValueTask<PerfCheck> InvokePerfCheck(PerfCheck msg);
+        ValueTask<ScreenToWorldRayResponse> InvokeRequestScreenToWorldRay(RequestScreenToWorldRay msg);
     }
-#endif
     
-//#if COMMON_UNITY
-    [Unity3DApp(typeof(MemoryPackBinaryApiSerializer))]
-    public partial interface IBlocksOnGridUnityApi
+    [Blazor3DController(typeof(IBlocksOnGrid3DRenderer))]
+    public partial interface IBlocksOnGrid3DController
+    {
+        ValueTask OnUnityAppInitialized(UnityAppInitialized msg);
+        ValueTask<TestToBlazor> OnTestToBlazor(TestToBlazor msg);
+    }
+    
+    [MemoryPackable]
+    [GenerateTypeScript]
+    public partial class BlazorControllerInitialized 
     {
     }
-//#endif
 
     [MemoryPackable]
     [GenerateTypeScript]
-    public partial class BlazorControllerInitialized : IMessageToUnity
-    {
-    }
-
-    [MemoryPackable]
-    [GenerateTypeScript]
-    public partial class PerfCheck : IMessageToUnity<PerfCheck>
+    public partial class PerfCheck 
     {
         public float Aaa { get; set; }
         public double Bbb{ get; set; }
@@ -55,13 +64,13 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
 
     [MemoryPackable]
     [GenerateTypeScript]
-    public partial class UnityAppInitialized : IMessageToBlazor
+    public partial class UnityAppInitialized 
     {
     }
 
     [MemoryPackable]
     [GenerateTypeScript]
-    public partial class AddBlockTemplate : IMessageToUnity
+    public partial class AddBlockTemplate 
     {
         public PackableVector3 Size{ get; set; }
         public int TemplateId{ get; set; }
@@ -71,7 +80,7 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
 
     [MemoryPackable]
     [GenerateTypeScript]
-    public partial class AddBlockInstance : IMessageToUnity
+    public partial class AddBlockInstance 
     {
         public int BlockId{ get; set; }
         public PackableVector2 Position{ get; set; }
@@ -81,21 +90,21 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
 
     [MemoryPackable]
     [GenerateTypeScript]
-    public partial class RemoveBlockInstance : IMessageToUnity
+    public partial class RemoveBlockInstance 
     {
         public int BlockId{ get; set; }
     }
 
     [MemoryPackable]
     [GenerateTypeScript]
-    public partial class RemoveBlockTemplate : IMessageToUnity
+    public partial class RemoveBlockTemplate 
     {
         public int TemplateId{ get; set; }
     }
 
     [MemoryPackable]
     [GenerateTypeScript]
-    public partial class UpdateBlockInstance : IMessageToUnity
+    public partial class UpdateBlockInstance 
     {
         public int BlockId{ get; set; }
         public PackableVector2 Position{ get; set; }
@@ -104,7 +113,7 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
 
     [MemoryPackable]
     [GenerateTypeScript]
-    public partial class RequestRaycast : IMessageToUnity<RaycastResponse>
+    public partial class RequestRaycast 
     {
         public PackableRay Ray{ get; set; }
     }
@@ -119,7 +128,7 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
 
     [MemoryPackable]
     [GenerateTypeScript]
-    public partial class RequestScreenToWorldRay : IMessageToUnity<ScreenToWorldRayResponse>
+    public partial class RequestScreenToWorldRay
     {
         public PackableVector2 Screen{ get; set; }
     }
@@ -133,13 +142,13 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
 
     [MemoryPackable]
     [GenerateTypeScript]
-    public partial class TriggerTestToBlazor: IMessageToUnity
+    public partial class TriggerTestToBlazor
     {
     }
 
     [MemoryPackable]
     [GenerateTypeScript]
-    public partial class TestToBlazor: IMessageToBlazor<TestToBlazor> 
+    public partial class TestToBlazor
     {
         public int Id { get; set; }
     }

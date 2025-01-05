@@ -1,3 +1,5 @@
+using System.Buffers;
+
 using Blazored.LocalStorage;
 using BlazorWith3d.Components;
 using BlazorWith3d.ExampleApp.Client.Services;
@@ -16,6 +18,11 @@ builder.Services.AddBlazoredLocalStorage(c =>
     c.JsonSerializerOptions.IgnoreReadOnlyFields = false;
     c.JsonSerializerOptions.IgnoreReadOnlyProperties = false;
 });
+
+ArrayBufferWriter<byte> _writer = new ArrayBufferWriter<byte>(100);
+
+var currentPos = _writer.WrittenCount;
+
 
 builder.Services.AddSingleton<DebugRelayUnityApi>();
 builder.Services.AddScoped<IFlagProvider,ServerFlagProvider>();
@@ -92,3 +99,4 @@ app.MapRazorComponents<App>()
     .AddAdditionalAssemblies(typeof(BlazorWith3d.ExampleApp.Client.Unity._Imports).Assembly);
 
 app.Run();
+
