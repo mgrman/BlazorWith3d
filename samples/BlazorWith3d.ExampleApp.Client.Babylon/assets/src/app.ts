@@ -25,7 +25,6 @@ import {AddBlockTemplate} from "com.blazorwith3d.exampleapp.client.shared/memory
 import {RemoveBlockInstance} from "com.blazorwith3d.exampleapp.client.shared/memorypack/RemoveBlockInstance";
 import {RemoveBlockTemplate} from "com.blazorwith3d.exampleapp.client.shared/memorypack/RemoveBlockTemplate";
 import { UnityAppInitialized } from "com.blazorwith3d.exampleapp.client.shared/memorypack/UnityAppInitialized";
-import { UpdateBlockInstance } from "com.blazorwith3d.exampleapp.client.shared/memorypack/UpdateBlockInstance";
 import {
     BlocksOnGrid3DController_DirectInterop,
     BlocksOnGrid3DController_BinaryApiWithResponse, IBlocksOnGrid3DController, IBlocksOnGrid3DRenderer
@@ -36,6 +35,7 @@ import { RequestScreenToWorldRay } from "com.blazorwith3d.exampleapp.client.shar
 import { ScreenToWorldRayResponse } from "com.blazorwith3d.exampleapp.client.shared/memorypack/ScreenToWorldRayResponse";
 import { RaycastResponse } from "com.blazorwith3d.exampleapp.client.shared/memorypack/RaycastResponse";
 import { TriggerTestToBlazor } from "com.blazorwith3d.exampleapp.client.shared/memorypack/TriggerTestToBlazor";
+import { PackableVector2 } from "com.blazorwith3d.exampleapp.client.shared/memorypack/PackableVector2";
 
 export function InitializeApp_BinaryApi(canvas: HTMLCanvasElement, dotnetObject: any, onMessageReceivedMethodName: string, onMessageReceivedWithResponseMethodName: string) {
     let sendMessageCallback: (msgBytes: Uint8Array) => Promise<any> = msgBytes => dotnetObject.invokeMethodAsync(onMessageReceivedMethodName, msgBytes);
@@ -143,14 +143,14 @@ export class DebugApp implements IBlocksOnGrid3DRenderer{
         } ,1000)
     }
 
-    public async InvokeUpdateBlockInstance(obj: UpdateBlockInstance) : Promise<any> {
-        console.log("OnUpdateBlockInstance", obj);
+    public async InvokeUpdateBlockInstance(blockId: number, position: PackableVector2, rotationZ: number) : Promise<any> {
+        console.log("OnUpdateBlockInstance", blockId, position, rotationZ);
 
 
-        const [instance, mesh] = this.instances.find(o => o[0].blockId === obj.blockId);
+        const [instance, mesh] = this.instances.find(o => o[0].blockId === blockId);
 
-        instance.position = obj.position;
-        instance.rotationZ = obj.rotationZ;
+        instance.position = position;
+        instance.rotationZ = rotationZ;
         this.UpdateMeshPosition(mesh, instance);
     }
 

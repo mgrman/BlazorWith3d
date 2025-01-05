@@ -9,7 +9,6 @@ import {AddBlockTemplate} from "com.blazorwith3d.exampleapp.client.shared/memory
 import {RemoveBlockInstance} from "com.blazorwith3d.exampleapp.client.shared/memorypack/RemoveBlockInstance";
 import {RemoveBlockTemplate} from "com.blazorwith3d.exampleapp.client.shared/memorypack/RemoveBlockTemplate";
 import { UnityAppInitialized } from "com.blazorwith3d.exampleapp.client.shared/memorypack/UnityAppInitialized";
-import { UpdateBlockInstance } from "com.blazorwith3d.exampleapp.client.shared/memorypack/UpdateBlockInstance";
 import {
     BlocksOnGrid3DController_DirectInterop,
     BlocksOnGrid3DController_BinaryApiWithResponse, IBlocksOnGrid3DController, IBlocksOnGrid3DRenderer
@@ -21,6 +20,7 @@ import { ScreenToWorldRayResponse } from "com.blazorwith3d.exampleapp.client.sha
 import { RaycastResponse } from "com.blazorwith3d.exampleapp.client.shared/memorypack/RaycastResponse";
 import { TriggerTestToBlazor } from 'com.blazorwith3d.exampleapp.client.shared/memorypack/TriggerTestToBlazor';
 import { TestToBlazor } from 'com.blazorwith3d.exampleapp.client.shared/memorypack/TestToBlazor';
+import { PackableVector2 } from 'com.blazorwith3d.exampleapp.client.shared/memorypack/PackableVector2';
 
 
 export function InitializeApp_BinaryApi(canvas: HTMLCanvasElement, dotnetObject: any, onMessageReceivedMethodName: string, onMessageReceivedWithResponseMethodName: string) {
@@ -127,15 +127,15 @@ export class DebugApp implements IBlocksOnGrid3DRenderer {
         console.log("Quit called");
     }
 
-    public async InvokeUpdateBlockInstance(obj: UpdateBlockInstance) : Promise<any> {
-        console.log("OnUpdateBlockInstance", obj);
+    public async InvokeUpdateBlockInstance(blockId: number, position: PackableVector2, rotationZ: number) : Promise<any> {
+        console.log("OnUpdateBlockInstance", blockId, position, rotationZ);
 
 
-        const {instance, mesh} = this.instances[obj.blockId];
+        const {instance, mesh} = this.instances[blockId];
 
-        instance.position = obj.position;
-        instance.rotationZ = obj.rotationZ;
-        this.UpdateMeshPosition( obj.blockId);
+        instance.position = position;
+        instance.rotationZ = rotationZ;
+        this.UpdateMeshPosition(blockId);
     }
 
 

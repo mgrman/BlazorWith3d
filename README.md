@@ -74,8 +74,6 @@ benchmarks
 
 ### Prio 0 (what to do next)
 
-- test 
-
 - try again to get matrix for screen to world as that would reduce the need for extra interop call
     - even basic raycast can be then doable in .NET
   

@@ -84,8 +84,17 @@ internal static class HelloSourceGenerator_TypeScript
         sb.AppendLine($"import {{MemoryPackWriter}} from \"./MemoryPackWriter\";");
         sb.AppendLine($"import {{MemoryPackReader}} from \"./MemoryPackReader\";");
 
+
+        var knownTypes = new Dictionary<string, (string tsType, string customSerialization, string customDeserialization)>()
+        {
+            { "Int32",("number","{0}.writeInt32({1})","{0}.readInt32()")},
+           { "Single",("number", "{0}.writeFloat32({1})","{0}.readFloat32()")}
+        };
+
+
         var typesToImport = info.methods.SelectMany(o => o.arguments.Select(a=>a.argType.typeName).ConcatOptional(o.returnType?.typeName, o.returnType!=null))
             .Concat(info.events.SelectMany(o => o.arguments.Select(a => a.argType.typeName).ConcatOptional(o.returnType?.typeName, o.returnType != null)))
+            .Where(o=> !knownTypes.ContainsKey(o))
             .Distinct();
 
         foreach (var type in typesToImport)
@@ -94,12 +103,35 @@ internal static class HelloSourceGenerator_TypeScript
         }
 
 
+        (string tsType, string serializationFormat, string deserializationFormat) GetTsType(TypeInfo type)
+        {
+            if(knownTypes.TryGetValue(type.typeName, out var knownInfo))
+            {
+                return (knownInfo.tsType, knownInfo.customSerialization, knownInfo.customDeserialization);
+            }
+            else
+            {
+                return (type.typeName, $"{type.typeName}.serializeCore({{0}}, {{1}})", $"{type.typeName}.deserializeCore({{0}});");
+            }
+        }
+
+        string TsType(TypeInfo? type)
+        {
+            if (type == null)
+            {
+                return "void";
+            }
+            return GetTsType(type).tsType;
+        }
+
+
         sb.AppendLine($"export interface {info.eventHandler.typeName}");
         using (sb.IndentWithCurlyBrackets())
         {
             foreach (var e in info.events)
             {
-                sb.AppendLine($"{e.name}({e.arguments.Select(a=>$"{a.argName}: {a.argType.typeName}").JoinStringWithComma()}): Promise<{(e.returnType==null?"void":e.returnType.typeName)}>;");
+
+                sb.AppendLine($"{e.name}({e.arguments.Select(a => $"{a.argName}: {TsType(a.argType)}").JoinStringWithComma()}): Promise<{TsType(e.returnType )}>;");
             }
         }
 
@@ -109,7 +141,7 @@ internal static class HelloSourceGenerator_TypeScript
             sb.AppendLine($"Set{info.eventHandlerConceptName}({info.eventHandlerConceptName.ToCamelCase()}: {info.eventHandler.typeName}):void;");
             foreach (var m in info.methods)
             {
-                sb.AppendLine($"{m.name}({m.arguments.Select(a => $"{a.argName}: {a.argType.typeName}").JoinStringWithComma()}): Promise<{(m.returnType == null ? "void" : m.returnType.typeName)}>;");
+                sb.AppendLine($"{m.name}({m.arguments.Select(a => $"{a.argName}: {TsType(a.argType)}").JoinStringWithComma()}): Promise<{TsType(m.returnType)}>;");
             }
         }
 
@@ -131,7 +163,7 @@ internal static class HelloSourceGenerator_TypeScript
             }
             foreach (var m in info.methods)
             {
-                sb.AppendLine($"public {m.name}({m.arguments.Select(a => $"{a.argName}: {a.argType.typeName}").JoinStringWithComma()}): Promise<{(m.returnType == null ? "void" : m.returnType.typeName)}>");
+                sb.AppendLine($"public {m.name}({m.arguments.Select(a => $"{a.argName}: {TsType(a.argType)}").JoinStringWithComma()}): Promise<{TsType(m.returnType)}>");
                 using (sb.IndentWithCurlyBrackets())
                 {
                     sb.AppendLine($"return this._dotnetObject.invokeMethodAsync(\"{m.name}\", {m.arguments.Select(a => $"{a.argName}").JoinStringWithComma()});");
@@ -170,16 +202,17 @@ internal static class HelloSourceGenerator_TypeScript
 
             foreach (var (m, i) in info.methods.EnumerateWithIndex())
             {
-                sb.AppendLine($"public async {m.name}({m.arguments.Select(a => $"{a.argName}: {a.argType.typeName}").JoinStringWithComma()}): Promise<{(m.returnType == null ? "void" : m.returnType.typeName)}>");
+                sb.AppendLine($"public async {m.name}({m.arguments.Select(a => $"{a.argName}: {TsType(a.argType)}").JoinStringWithComma()}): Promise<{TsType(m.returnType)}>");
                 using (sb.IndentWithCurlyBrackets())
                 {
                     if (m.returnType == null)
                     {
                         sb.AppendLine($"const writer = MemoryPackWriter.getSharedInstance();");
                         sb.AppendLine($"writer.writeInt8({i});");
-                        foreach(var a in m.arguments)
+                        foreach (var a in m.arguments)
                         {
-                            sb.AppendLine($"{a.argType.typeName}.serializeCore(writer, {a.argName})");
+                            sb.AppendLine(string.Format(GetTsType(a.argType).serializationFormat, "writer", a.argName));
+
                         }
                         sb.AppendLine($"const encodedMessage = writer.toArray();");
                         sb.AppendLine($"await this._binaryApi.sendMessage(encodedMessage);");
@@ -190,14 +223,18 @@ internal static class HelloSourceGenerator_TypeScript
                         sb.AppendLine($"writer.writeInt8({i});");
                         foreach (var a in m.arguments)
                         {
-                            sb.AppendLine($"{a.argType.typeName}.serializeCore(writer, {a.argName})");
+                            sb.AppendLine(string.Format(GetTsType(a.argType).serializationFormat, "writer", a.argName));
                         }
                         sb.AppendLine($"const encodedMessage = writer.toArray();");
                         sb.AppendLine($"var responseMessage=await  this._binaryApi.sendMessageWithResponse(encodedMessage);");
 
                         sb.AppendLine($"var dst = new ArrayBuffer(responseMessage.byteLength);");
                         sb.AppendLine($"new Uint8Array(dst).set(responseMessage);");
-                        sb.AppendLine($"let response= {m.returnType.typeName}.deserialize(dst);");
+
+
+                        sb.AppendLine($"const reader=new MemoryPackReader(dst);");
+                        sb.AppendLine($"let response: {TsType(m.returnType)} = {string.Format(GetTsType(m.returnType).deserializationFormat, "reader")};");
+
                         sb.AppendLine($"return response;");
                     }
                 }
@@ -231,7 +268,7 @@ internal static class HelloSourceGenerator_TypeScript
 
                                 foreach(var a in e.arguments)
                                 {
-                                    sb.AppendLine($"const {a.argName}: {a.argType.typeName} = {a.argType.typeName}.deserializeCore(reader);");
+                                    sb.AppendLine($"const {a.argName}: {TsType(a.argType)} = {string.Format(GetTsType(a.argType).deserializationFormat, "reader")};");
                                 }
 
                                 sb.AppendLine($"await this._eventHandler.{e.name}({e.arguments.Select(a=>a.argName).JoinStringWithComma()});");
@@ -273,13 +310,17 @@ internal static class HelloSourceGenerator_TypeScript
 
                                 foreach (var a in e.arguments)
                                 {
-                                    sb.AppendLine($"const {a.argName}: {a.argType.typeName} = {a.argType.typeName}.deserializeCore(reader);");
+                                    sb.AppendLine($"const {a.argName}: {TsType(a.argType)} = {string.Format(GetTsType(a.argType).deserializationFormat, "reader")};");
                                 }
 
                                 sb.AppendLine($"let response=await this._eventHandler.{e.name}({e.arguments.Select(a => a.argName).JoinStringWithComma()});");
 
+                                sb.AppendLine($"const writer = MemoryPackWriter.getSharedInstance();");
+                                {
+                                    sb.AppendLine(string.Format(GetTsType(e.returnType).serializationFormat, "writer", "response"));
+                                }
+                                sb.AppendLine($"return writer.toArray();");
 
-                                sb.AppendLine($"return {e.returnType.typeName}.serialize(response);");
                                 sb.AppendLine($"break;");
                             }
                         }

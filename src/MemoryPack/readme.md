@@ -14,3 +14,8 @@ Changes:
 - in MemoryPackGenerator.Parser.cs change ParseMemberKind method to consider memberType.IsUnmanagedType only if the member type does not have GenerateTypeScript attribute
 
 Rest of changes are more to make the fork work within my repo
+
+# TODO before PR can be opened
+MemoryPackSerializer.Serialize and MemoryPackSerializer.Deserialize still have the optimization that if the type is unmanaged withtout refs, then copy memory direct
+Extend the check that the type must not have GenerateTypescript annotation
+- for now it is manually skipped in MemoryPackBinaryApiSerializer by using reader/writer directly

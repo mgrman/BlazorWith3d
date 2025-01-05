@@ -495,12 +495,7 @@
 
         dragging.instance.Position = new Vector2(newPositionX, newPositionY);
         
-        _rendererApi.InvokeUpdateBlockInstance(new UpdateBlockInstance()
-        {
-            BlockId = dragging.instance.BlockId,
-            Position= new Vector2(newPositionX,newPositionY),
-            RotationZ= dragging.instance.RotationZ,
-        });
+        _rendererApi.InvokeUpdateBlockInstance(dragging.instance.BlockId, new Vector2(newPositionX,newPositionY), dragging.instance.RotationZ);
         
         }
         finally

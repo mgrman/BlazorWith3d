@@ -41,6 +41,9 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d.JsApp", "src\BlazorWith3d\BlazorWith3d.JsApp\BlazorWith3d.JsApp.csproj", "{C3CDE7A6-8733-4DCD-8928-800073E33565}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MemoryPackFork", "MemoryPackFork", "{F9B3F897-7C97-4DA4-A0F0-C3D5095AE10A}"
+	ProjectSection(SolutionItems) = preProject
+		src\MemoryPack\readme.md = src\MemoryPack\readme.md
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MemoryPack.Generator", "src\MemoryPack\MemoryPack.Generator\MemoryPack.Generator.csproj", "{C0A522D6-75D9-4414-8BBD-9E19435EA6C3}"
 EndProject

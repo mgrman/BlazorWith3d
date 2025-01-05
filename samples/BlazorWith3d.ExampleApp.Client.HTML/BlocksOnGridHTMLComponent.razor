@@ -132,11 +132,11 @@ public void Dispose()
         return ValueTask.CompletedTask;
     }
 
-    public ValueTask InvokeUpdateBlockInstance(UpdateBlockInstance msg)
+    public ValueTask InvokeUpdateBlockInstance(int blockId, PackableVector2 position,float rotationZ)
     {
-        var instance = _instances.FirstOrDefault(o => o.BlockId == msg.BlockId);
-        instance.Position = new PackableVector2(){X=msg.Position.X,Y= msg.Position.Y};
-        instance.RotationZ = msg.RotationZ;
+        var instance = _instances.FirstOrDefault(o => o.BlockId == blockId);
+        instance.Position = position;
+        instance.RotationZ = rotationZ;
         StateHasChanged();
         return ValueTask.CompletedTask;
     }

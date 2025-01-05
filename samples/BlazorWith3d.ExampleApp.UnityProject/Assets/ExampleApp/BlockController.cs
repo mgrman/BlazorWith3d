@@ -56,10 +56,10 @@ namespace ExampleApp
             UpdatePose();
         }
 
-        public void UpdatePose(UpdateBlockInstance newPose)
+        public void UpdatePose(PackableVector2 position,float rotationZ)
         {
-            _instance.Position = newPose.Position;
-            _instance.RotationZ = newPose.RotationZ;
+            _instance.Position = position;
+            _instance.RotationZ = rotationZ;
 
             UpdatePose();
         }
