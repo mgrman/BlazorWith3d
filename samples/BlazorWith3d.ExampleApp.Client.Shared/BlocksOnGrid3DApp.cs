@@ -17,9 +17,11 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
             MemoryPackSerializer.Serialize<T, IBufferWriter<byte>>(writer, obj);
         }
 
-        public T? DeserializeObject<T>(ReadOnlySpan<byte> bytes)
+        public T? DeserializeObject<T>(ReadOnlySpan<byte> bytes, out int readBytes)
         {
-            return MemoryPackSerializer.Deserialize<T>(bytes);
+            T? item=default;
+            readBytes= MemoryPackSerializer.Deserialize<T>(bytes, ref item);
+            return item;
         }
     }
     

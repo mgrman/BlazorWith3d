@@ -34,66 +34,77 @@ public class HelloSourceGenerator : ISourceGenerator
             return;
         }
 
-        foreach (var o in receiver.BlazorBindingTypes)
+
+        var controllers = receiver.ControllerTypes.Select(typeDeclaration =>
         {
-            var mainInterfaceType = o.BaseList.Types.OfType<SimpleBaseTypeSyntax>()
-                .Select(t =>
-                {
-                    var semanticModel = context.Compilation.GetSemanticModel(t.SyntaxTree);
 
-                    var mainInterfaceType = semanticModel.GetTypeInfo(t.Type).Type;
-                    if (mainInterfaceType.GetAttributes().Any(a => a.AttributeClass.Name=="Blazor3DAppAttribute"))
-                    {
-                        return mainInterfaceType;
-                    }
-
-                    return null;
-                })
-                .FirstOrDefault(o=>o != null);
-            
-            var bindingType =GetTypeInfo( o);
-
-            var invokerInterfaceType = mainInterfaceType.Interfaces.First(o => o.Name.EndsWith("_MethodInvoker"));
-
-            var eventHandlerInterfaceType = invokerInterfaceType.ContainingAssembly.GetTypeByMetadataName($"{invokerInterfaceType.ContainingNamespace.ToDisplayString()}.{mainInterfaceType.Name}_EventHandler");
-
-
-
-            var text = HelloSourceGenerator_BlazorBinding.GenerateBindingClass(bindingType, mainInterfaceType, invokerInterfaceType, eventHandlerInterfaceType);
-
-            context.AddSource($"{bindingType.typeName}.g.cs", text);
-
-        }
-
-
-        var messagesToRenderer = receiver.MessagesToRenderer
-            .Select(m=>GetMethodInfo(m,context.Compilation)).ToList();
-
-        var messagesToController = receiver.MessagesToController
-            .Select(m=>GetMethodInfo(m,context.Compilation)).ToList();
-
-        
-        foreach (var typeDeclaration in receiver.ControllerTypes)
-        {
             var controllerType = GetTypeInfo(typeDeclaration.mainType);
             var rendererType = GetTypeInfo(typeDeclaration.eventHandlerType, context.Compilation);
 
-            var appInfo= new AppInfo(controllerType,"Renderer", rendererType, messagesToController, messagesToRenderer);
-            
-            var text = HelloSourceGenerator_DotnetApis.GenerateClass(appInfo);
-            context.AddSource($"{controllerType.typeName}.g.cs", text);
-        }
 
-        foreach (var typeDeclaration in receiver.RendererTypes)
+
+            var methods = typeDeclaration.mainType.Members
+                .OfType<MethodDeclarationSyntax>()
+                .Select(m => GetMethodInfo(m, context.Compilation))
+                .Where(m => m != null)
+                .ToList();
+
+
+
+            var events = context.Compilation
+                .GetSemanticModel(typeDeclaration.eventHandlerType.SyntaxTree)
+                .GetTypeInfo(typeDeclaration.eventHandlerType)
+                .Type
+                .GetMembers()
+                .OfType<IMethodSymbol>()
+                .Select(m => GetMethodInfo(m, context.Compilation))
+                .Where(m => m != null)
+                .ToList();
+
+            return new AppInfo(controllerType, "Renderer", rendererType, methods, events);
+        });
+
+
+        var renderers = receiver.RendererTypes.Select(typeDeclaration =>
         {
             var rendererType = GetTypeInfo(typeDeclaration.mainType);
             var controllerType = GetTypeInfo(typeDeclaration.eventHandlerType, context.Compilation);
 
-            var appInfo= new AppInfo(rendererType, "Controller", controllerType, messagesToRenderer, messagesToController);
 
+
+            var methods = typeDeclaration.mainType.Members
+                .OfType<MethodDeclarationSyntax>()
+                .Select(m => GetMethodInfo(m, context.Compilation))
+                .Where(m => m != null)
+                .ToList();
+
+
+            var events = context.Compilation
+                .GetSemanticModel(typeDeclaration.eventHandlerType.SyntaxTree)
+                .GetTypeInfo(typeDeclaration.eventHandlerType)
+                .Type
+                .GetMembers()
+                .OfType<IMethodSymbol>()
+                .Select(m => GetMethodInfo(m, context.Compilation))
+                .Where(m=>m!=null)
+                .ToList();
+
+            return new AppInfo(rendererType, "Controller", controllerType, methods, events);
+
+        });
+
+
+        foreach (var appInfo in controllers)
+        {
+            var text = HelloSourceGenerator_DotnetApis.GenerateClass(appInfo);
+            context.AddSource($"{appInfo.app.typeName}.g.cs", text);
+        }
+
+        foreach (var appInfo in renderers)
+        {
             var text = HelloSourceGenerator_DotnetApis.GenerateClass(appInfo);
 
-            context.AddSource($"{rendererType.typeName}.g.cs", text);
+            context.AddSource($"{appInfo.app.typeName}.g.cs", text);
 
             var generatedTypeScript= HelloSourceGenerator_TypeScript.GenerateTypeScriptClass(context, appInfo);
 
@@ -115,6 +126,41 @@ public class HelloSourceGenerator : ISourceGenerator
                     Trace.WriteLine(ex.ToString());
                 }
             }
+        }
+
+        foreach (var o in receiver.BlazorBindingTypes)
+        {
+            var rendererInterface = context.Compilation.GetSemanticModel(o.renderer.SyntaxTree).GetTypeInfo(o.renderer).Type as INamedTypeSymbol;
+            if (!rendererInterface.GetAttributes().Any(a => a.AttributeClass.Name == "Blazor3DRendererAttribute"))
+            {
+                throw new InvalidOperationException();
+            }
+            var controllerInterface = context.Compilation.GetSemanticModel(o.controller.SyntaxTree).GetTypeInfo(o.controller).Type as INamedTypeSymbol;
+            if (!controllerInterface.GetAttributes().Any(a => a.AttributeClass.Name == "Blazor3DControllerAttribute"))
+            {
+                throw new InvalidOperationException();
+            }
+
+            var bindingType = GetTypeInfo(o.mainType);
+
+
+
+            var events = controllerInterface.GetMembers()
+                .OfType<IMethodSymbol>()
+                .Select(m => GetMethodInfo(m, context.Compilation))
+                .Where(m => m != null)
+                .ToList();
+
+            var methods = rendererInterface.GetMembers()
+                .OfType<IMethodSymbol>()
+                .Select(m => GetMethodInfo(m, context.Compilation))
+                .Where(m => m != null)
+                .ToList();
+
+            var text = HelloSourceGenerator_BlazorBinding.GenerateBindingClass(bindingType, new AppInfo(GetTypeInfo(rendererInterface, context.Compilation), "Controller", GetTypeInfo(controllerInterface, context.Compilation), methods, events));
+
+            context.AddSource($"{bindingType.typeName}.g.cs", text);
+
         }
     }
 
@@ -141,6 +187,12 @@ public class HelloSourceGenerator : ISourceGenerator
         return new TypeInfo(typeName, namespaceName);
     }
 
+    private static TypeInfo GetTypeInfo(INamedTypeSymbol typeSymbol, Compilation compilation)
+    {
+
+        return new TypeInfo(typeSymbol.Name, typeSymbol.ContainingNamespace.ToDisplayString());
+    }
+
     private static TypeInfo GetTypeInfo(TypeSyntax typeSyntax, Compilation compilation)
     {
         var semanticModel = compilation.GetSemanticModel(typeSyntax.SyntaxTree);
@@ -148,6 +200,46 @@ public class HelloSourceGenerator : ISourceGenerator
         var typeInfo = semanticModel.GetTypeInfo(typeSyntax).Type;
 
         return new TypeInfo(typeInfo.Name, typeInfo.ContainingNamespace.ToDisplayString());
+    }
+
+    private static MethodInfo GetMethodInfo(IMethodSymbol method, Compilation compilation)
+    {
+        var name = method.Name;
+        if (name == "SetRenderer" || name == "SetController")
+        {
+            return null;
+        }
+
+        INamedTypeSymbol? returnType;
+        if (method.ReturnType is INamedTypeSymbol identifierNameSyntax)
+        {
+            if (identifierNameSyntax.Name != "ValueTask")
+            {
+                throw new InvalidOperationException();
+            }
+            if (identifierNameSyntax.IsGenericType  && identifierNameSyntax.TypeArguments.Length==1)
+            {
+                returnType = identifierNameSyntax.TypeArguments[0] as INamedTypeSymbol;
+            }
+            else
+            {
+                returnType = null;
+            }
+        }
+        else
+        {
+            throw new InvalidOperationException();
+        }
+
+        var arguments = new List<(TypeInfo argType, string argName)>();
+        foreach (var arg in method.Parameters)
+        {
+            var argName = arg.Name;
+            var argType = GetTypeInfo(arg.Type as INamedTypeSymbol, compilation);
+            arguments.Add((argType, argName)); 
+        }
+
+        return new MethodInfo(name, returnType==null?null:GetTypeInfo(returnType , compilation), arguments.ToArray());
     }
 
     private static MethodInfo GetMethodInfo(MethodDeclarationSyntax method, Compilation compilation)
@@ -201,12 +293,7 @@ public class HelloSourceGenerator : ISourceGenerator
 
         public List<(InterfaceDeclarationSyntax mainType, TypeSyntax eventHandlerType)> RendererTypes { get; } = new();
 
-        public List<TypeDeclarationSyntax  > BlazorBindingTypes { get; } = new();
-
-        public List<MethodDeclarationSyntax > MessagesToRenderer { get; } = new();
-
-        public List<MethodDeclarationSyntax > MessagesToController { get; } = new();
-
+        public List<(TypeDeclarationSyntax mainType, TypeSyntax controller, TypeSyntax renderer)> BlazorBindingTypes { get; } = new();
         /// <summary>
         ///     Called for every syntax node in the compilation, we can inspect the nodes and save any information useful for
         ///     generation
@@ -222,11 +309,6 @@ public class HelloSourceGenerator : ISourceGenerator
                     var rendererType = (blazor3DAppAttr.ArgumentList.Arguments[0].Expression as TypeOfExpressionSyntax).Type;
 
                     ControllerTypes.Add((interfaceDeclarationSyntax, rendererType));
-
-                    foreach (var method in interfaceDeclarationSyntax.Members.OfType<MethodDeclarationSyntax>())
-                    {
-                        MessagesToController.Add(method);
-                    }
                 }
 
                 if (interfaceDeclarationSyntax.AttributeLists.SelectMany(e => e.Attributes)
@@ -234,11 +316,6 @@ public class HelloSourceGenerator : ISourceGenerator
                 {
                     var controllerType = (unity3DAppAttr.ArgumentList.Arguments[0].Expression as TypeOfExpressionSyntax).Type;
                     RendererTypes.Add((interfaceDeclarationSyntax, controllerType));
-
-                    foreach (var method in interfaceDeclarationSyntax.Members.OfType<MethodDeclarationSyntax>())
-                    {
-                        MessagesToRenderer.Add(method);
-                    }
                 }
             }
             
@@ -247,10 +324,12 @@ public class HelloSourceGenerator : ISourceGenerator
             {
                 if (typeDeclarationSyntax.AttributeLists.SelectMany(e => e.Attributes)
                     .TryGet(e => e.Name.NormalizeWhitespace().ToFullString() == "Blazor3DAppBinding",
-                        out var blazor3DAppAttr))
+                        out var blazor3DBindingAttr))
                 {
 
-                    BlazorBindingTypes.Add(typeDeclarationSyntax);
+                    var controllerType = (blazor3DBindingAttr.ArgumentList.Arguments[0].Expression as TypeOfExpressionSyntax).Type;
+                    var rendererType = (blazor3DBindingAttr.ArgumentList.Arguments[1].Expression as TypeOfExpressionSyntax).Type;
+                    BlazorBindingTypes.Add((typeDeclarationSyntax,controllerType, rendererType));
                 }
             }
         }

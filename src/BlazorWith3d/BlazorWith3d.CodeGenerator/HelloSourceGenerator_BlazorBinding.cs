@@ -9,13 +9,12 @@ namespace BlazorWith3d.Unity.CodeGenerator;
 internal static class HelloSourceGenerator_BlazorBinding
 {
     
-    internal static string GenerateBindingClass(TypeInfo bindingType, ITypeSymbol mainInterfaceType, INamedTypeSymbol invokerInterfaceType, INamedTypeSymbol eventHandlerInterfaceType)
+    internal static string GenerateBindingClass(TypeInfo bindingType, AppInfo renderer)
     {
-        IReadOnlyList<string> namespacesToInclude = new[]{bindingType.@namespace,
-            mainInterfaceType.ContainingNamespace.ToDisplayString(),
-             invokerInterfaceType.ContainingNamespace.ToDisplayString(),
-              eventHandlerInterfaceType.ContainingNamespace.ToDisplayString(),
-        };
+        IReadOnlyList<string> namespacesToInclude = new[] { bindingType.@namespace }
+            .Concat(renderer?.namespacesToInclude ?? Enumerable.Empty<string>())
+            .Distinct()
+            .ToList();
 
         var sb = new IndentedStringBuilder();
 
@@ -31,10 +30,10 @@ internal static class HelloSourceGenerator_BlazorBinding
         sb.AppendLine($"namespace {bindingType.@namespace}");
         using (sb.IndentWithCurlyBrackets())
         {
-            sb.AppendLine($"public partial class {bindingType.typeName}: {eventHandlerInterfaceType.Name} ");
+            sb.AppendLine($"public partial class {bindingType.typeName} : {renderer.app.typeName} ");
             using (sb.IndentWithCurlyBrackets())
             {
-                sb.AppendLine($"private {eventHandlerInterfaceType.Name}? _eventHandler;");
+                sb.AppendLine($"private {renderer.eventHandler.typeName}? _eventHandler;");
                 sb.AppendLine($"private IJSObjectReference? _typescriptApp;");
 
                 sb.AppendLine($"public event Action<byte[], Exception> OnMessageError;");
@@ -42,58 +41,36 @@ internal static class HelloSourceGenerator_BlazorBinding
                 sb.AppendLine($"public void SetTypescriptApp(IJSObjectReference typescriptApp)");
                 using (sb.IndentWithCurlyBrackets())
                 {
-
                     sb.AppendLine($"_typescriptApp=typescriptApp;");
                 }
 
-                sb.AppendLine($"public void SetEventHandler({eventHandlerInterfaceType.Name}? eventHandler)");
+                sb.AppendLine($"public void Set{renderer.eventHandlerConceptName}({renderer.eventHandler.typeName}? {renderer.eventHandlerConceptName.ToCamelCase()})");
                 using (sb.IndentWithCurlyBrackets())
                 {
 
-                    sb.AppendLine($"_eventHandler=eventHandler;");
+                    sb.AppendLine($"_eventHandler={renderer.eventHandlerConceptName.ToCamelCase()};");
                 }
 
-                foreach (var member in invokerInterfaceType.GetMembers())
+                foreach (var m in renderer.methods)
                 {
-                    if (member is IMethodSymbol methodSymbol)
+
+                    sb.AppendLine($"public ValueTask{(m.returnType == null ? "" : $"<{m.returnType.typeName}>")} {m.name}({m.arguments.Select(a => $"{a.argType.typeName} {a.argName}").JoinStringWithComma()})");
+                    using (sb.IndentWithCurlyBrackets())
                     {
-                        if ((methodSymbol.ReturnType as INamedTypeSymbol).Name != "ValueTask")
-                        {
-                            throw new InvalidOperationException();
-                        }
-
-                        var returnType = (methodSymbol.ReturnType as INamedTypeSymbol).TypeArguments.FirstOrDefault()?.Name;
-
-                        sb.AppendLine($"public {methodSymbol.ReturnType} {methodSymbol.Name}({string.Join(", ", methodSymbol.Parameters.Select(p => $"{p.Type.Name} {p.Name}"))})");
-                        using (sb.IndentWithCurlyBrackets())
-                        {
-
-                            var jsMethodName = methodSymbol.Name.StartsWith("Invoke") ? $"On{methodSymbol.Name.Substring("Invoke".Length)}" : throw new InvalidOperationException();
-                            sb.AppendLine($"return _typescriptApp.Invoke{(returnType == null ? "Void" : "")}Async{(returnType != null ? $"<{returnType}>" : "")}(\"{jsMethodName}\", {string.Join(", ", methodSymbol.Parameters.Select(p => p.Name))});");
-                        }
+                        sb.AppendLine($"return _typescriptApp.Invoke{(m.returnType==null ? "Void" : "")}Async{(m.returnType != null ? $"<{m.returnType.typeName}>" : "")}(\"{m.name}\", {m.arguments.Select(a => a.argName).JoinStringWithComma()});");
                     }
+
                 }
 
-                foreach (var member in eventHandlerInterfaceType.GetMembers())
+                foreach (var e in renderer.events)
                 {
-                    if (member is IMethodSymbol methodSymbol)
+                    sb.AppendLine($"[JSInvokable]");
+                    sb.AppendLine($"public ValueTask{(e.returnType == null ? "" : $"<{e.returnType.typeName}>")} {e.name}({e.arguments.Select(a => $"{a.argType.typeName} {a.argName}").JoinStringWithComma()})");
+                    using (sb.IndentWithCurlyBrackets())
                     {
-                        if ((methodSymbol.ReturnType as INamedTypeSymbol).Name != "ValueTask")
-                        {
-                            throw new InvalidOperationException();
-                        }
-
-                        var returnType = (methodSymbol.ReturnType as INamedTypeSymbol).TypeArguments.FirstOrDefault()?.Name;
-
-
-                        
-                        sb.AppendLine($"[JSInvokable]");
-                        sb.AppendLine($"public {methodSymbol.ReturnType} {methodSymbol.Name}({string.Join(", ", methodSymbol.Parameters.Select(p => $"{p.Type.Name} {p.Name}"))})");
-                        using (sb.IndentWithCurlyBrackets())
-                        {
-                            sb.AppendLine($"return _eventHandler.{methodSymbol.Name}({string.Join(", ", methodSymbol.Parameters.Select(p => p.Name))});");
-                        }
+                        sb.AppendLine($"return _eventHandler.{e.name}({e.arguments.Select(a => a.argName).JoinStringWithComma()});");
                     }
+
                 }
 
             }

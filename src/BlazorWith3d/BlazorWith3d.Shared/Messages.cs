@@ -5,6 +5,10 @@ namespace BlazorWith3d.Shared
     [AttributeUsage(AttributeTargets.Class, Inherited = false)]
     public sealed class Blazor3DAppBindingAttribute : Attribute
     {
+        public Blazor3DAppBindingAttribute(Type controllerType,Type rendererType)
+        {
+
+        }
     }
     
     

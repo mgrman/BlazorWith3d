@@ -8,7 +8,7 @@ namespace BlazorWith3d.ExampleApp.Client.ThreeJS;
 
 public class BlocksOnGridThreeJSRenderer: BaseJsBinaryApiWithResponseRenderer, IDisposable
 {
-    private BlocksOnGrid3DApp_BinaryApiWithResponse? unityAppApi;
+    private BlocksOnGrid3DRenderer_BinaryApiWithResponse? unityAppApi;
 
     [CascadingParameter] 
     public required I3DAppController ParentApp { get; set; }
@@ -27,7 +27,7 @@ public class BlocksOnGridThreeJSRenderer: BaseJsBinaryApiWithResponseRenderer, I
         }
 
 
-        unityAppApi = new BlocksOnGrid3DApp_BinaryApiWithResponse(this);
+        unityAppApi = new BlocksOnGrid3DRenderer_BinaryApiWithResponse(this, new MemoryPackBinaryApiSerializer());
         unityAppApi.OnMessageError += (bytes, exception) =>
         {
             Logger.LogError($"Error deserializing message {bytes}", exception);

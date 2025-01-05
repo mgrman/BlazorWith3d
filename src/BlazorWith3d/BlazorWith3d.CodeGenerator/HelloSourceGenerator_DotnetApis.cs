@@ -136,20 +136,10 @@ internal static class HelloSourceGenerator_DotnetApis
 
                             foreach(var argIndex in argIndices)
                             {
-                                sb.AppendLine($"var headerArg{argIndex}Position= _writer.WrittenCount;");
-                                sb.AppendLine($"Span<byte> arg{argIndex}HeaderSpan = stackalloc byte[1];");
-                                sb.AppendLine($"_writer.Write(arg{argIndex}HeaderSpan);");
                                 sb.AppendLine($"_serializer.SerializeObject(arg{argIndex}, _writer);");
-                                sb.AppendLine($"var arg{argIndex}Length= _writer.WrittenCount-headerArg{argIndex}Position-1;");
                             }
 
                             sb.AppendLine("var encodedMessage = _writer.WrittenSpan.ToArray();");
-
-                            foreach (var argIndex in argIndices)
-                            {
-                                sb.AppendLine($"encodedMessage[headerArg{argIndex}Position]=(byte)arg{argIndex}Length;");
-                            }
-
                             sb.AppendLine($"return _binaryApi.SendMessage(encodedMessage);");
                         }
                         sb.AppendLine("catch (Exception ex)");
@@ -171,14 +161,13 @@ internal static class HelloSourceGenerator_DotnetApis
                     {
 
                         sb.AppendLine($"var currentIndex=headerLength;");
+                        sb.AppendLine($"int readCount;");
+                        sb.AppendLine($"ReadOnlySpan<byte> span;");
                         foreach (var i in argIndices)
                         {
-                            sb.AppendLine($"var arg{i}Header=message[currentIndex];");
-                            sb.AppendLine($"currentIndex+=1;");
-
-                            sb.AppendLine($"var span = new ReadOnlySpan<byte>(message, currentIndex, arg{i}Header);");
-                            sb.AppendLine($"var arg{i}= _serializer.DeserializeObject<T{i}>(span);");
-                            sb.AppendLine($"currentIndex+=arg{i}Header;");
+                            sb.AppendLine($"span = new ReadOnlySpan<byte>(message, currentIndex, message.Length-currentIndex);");
+                            sb.AppendLine($"var arg{i}= _serializer.DeserializeObject<T{i}>(span, out readCount);");
+                            sb.AppendLine($"currentIndex+=readCount;");
                         }
                         sb.AppendLine($"return {argIndices.Select(i => $"arg{i}").JoinStringWithComma().WrapWithParenthesis(paramCount > 1)};");
                     }
@@ -300,11 +289,9 @@ internal static class HelloSourceGenerator_DotnetApis
                         }
                         else
                         {
-                            var sendMessageGenericTypes = m.arguments.Select(a => a.argType.typeName).Concat([m.returnType.typeName]).JoinStringWithComma();
-
                             sb.AppendLine($"var encodedMessage=SerializeMessage({i}, {string.Join(", ", m.arguments.Select(a => a.argName))});");
                             sb.AppendLine($"var responseMessage=await _binaryApi.SendMessageWithResponse(encodedMessage);");
-                            sb.AppendLine($"var response=_serializer.DeserializeObject<{m.returnType.typeName}>(responseMessage);");
+                            sb.AppendLine($"var response=_serializer.DeserializeObject<{m.returnType.typeName}>(responseMessage, out var _);");
                             sb.AppendLine($"return response;");
                         }
                     }
@@ -336,19 +323,10 @@ internal static class HelloSourceGenerator_DotnetApis
 
                             foreach (var argIndex in argIndices)
                             {
-                                sb.AppendLine($"var headerArg{argIndex}Position= _writer.WrittenCount;");
-                                sb.AppendLine($"Span<byte> arg{argIndex}HeaderSpan = stackalloc byte[1];");
-                                sb.AppendLine($"_writer.Write(arg{argIndex}HeaderSpan);");
                                 sb.AppendLine($"_serializer.SerializeObject(arg{argIndex}, _writer);");
-                                sb.AppendLine($"var arg{argIndex}Length= _writer.WrittenCount-headerArg{argIndex}Position-1;");
                             }
 
                         sb.AppendLine("var encodedMessage = _writer.WrittenSpan.ToArray();");
-
-                        foreach (var argIndex in argIndices)
-                        {
-                            sb.AppendLine($"encodedMessage[headerArg{argIndex}Position]=(byte)arg{argIndex}Length;");
-                        }
 
                         sb.AppendLine("return encodedMessage;");
 
@@ -376,14 +354,14 @@ internal static class HelloSourceGenerator_DotnetApis
                     {
 
                         sb.AppendLine($"var currentIndex=headerLength;");
+
+                        sb.AppendLine($"int readCount;");
+                        sb.AppendLine($"ReadOnlySpan<byte> span;");
                         foreach (var i in argIndices)
                         {
-                            sb.AppendLine($"var arg{i}Header=message[currentIndex];");
-                            sb.AppendLine($"currentIndex+=1;");
-
-                            sb.AppendLine($"var span = new ReadOnlySpan<byte>(message, currentIndex, arg{i}Header);");
-                            sb.AppendLine($"var arg{i}= _serializer.DeserializeObject<T{i}>(span);");
-                            sb.AppendLine($"currentIndex+=arg{i}Header;");
+                            sb.AppendLine($"span = new ReadOnlySpan<byte>(message, currentIndex, message.Length-currentIndex);");
+                            sb.AppendLine($"var arg{i}= _serializer.DeserializeObject<T{i}>(span, out readCount);");
+                            sb.AppendLine($"currentIndex+=readCount;");
                         }
                         sb.AppendLine($"return {argIndices.Select(i => $"arg{i}").JoinStringWithComma().WrapWithParenthesis(paramCount > 1)};");
                     }

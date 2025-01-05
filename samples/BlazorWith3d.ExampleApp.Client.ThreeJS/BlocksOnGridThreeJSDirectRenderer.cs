@@ -9,7 +9,6 @@ namespace BlazorWith3d.ExampleApp.Client.ThreeJS;
 
 public class BlocksOnGridThreeJSDirectRenderer : BaseJsRenderer, IDisposable
 {
-    private IBlocksOnGrid3DApp_EventHandler? _eventHandler;
     private IDisposable? _rendererAssignment;
 
     [CascadingParameter] 
