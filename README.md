@@ -10,6 +10,30 @@ so source gen supports the low level binary api
 if renderer wants, it can implement this high level API only
 with potentially another source gen to generate the pure JS wrapper (as sending messages back to .NET needs some boilerplate)
 
+## Findings
+
+Native Blazor interop is sufficient for most cases of JS libraries (but some binary approaches can still be faster than underling JSON) 
+
+Generators can be used to create the binding classes based on an interface. After initial set up, quick nice to work with and extend.
+
+Simple method/event style interfaces can be implemented even with stream only. useful to get websocket connection to Unity Editr as it is slower than other approaches.
+
+Coordinate systems between different rendering libraries can be a pain. Choose carefully, but conversions are always doable.
+
+This repo shows numerous approaches, but in the end, one or two are probably enough for your app.
+
+The level of abstraction how much to do in 3d specific library vs in main app should depend on usecase and the amount of code that should be shared.
+e.g. if only one renderer then easier to do more in the renderer. If more are expected than moving more to main Blazor app can be benefitial
+
+This repo show generating a communication channel based on an interface. i.e. shows practical usage of source generators to help with boilerplate
+
+But the approach (as in Unity Editor Websocket debugging) can be used for communication over any channel. 
+The generator is not created to work over some kind of generic channel or Stream. Although it could, it is always intended that the final application might need to fork it and adjust it.
+As generic apparoaches loose performance (e.g. binary channels with direct response support being faster than binary channel without it, or having Blazor specific code)
+
+This approach can be used for interprocess communication or any other kinds of native integrations. 
+As source generators can create the binding code on both sides, or create apis on top of simple two way stream (e.g. as in Unity WebGL interop, the interop is too messy to generate for each method signature, as it is more basic than Blazor/JS interop) 
+
 ## Renderers
 
 - coordinate systems
@@ -69,31 +93,20 @@ benchmarks
   - Interop (avg 0,48 ms)
   - MemoryPack (avg 0,56 ms)
 - WASM
-  - Interop (avg 0.50 ms)
+  - Interop (avg 0.50 ms)  // slower but works with more types than memorypack, so you could get rid of that dependency (the slowdown is worse when the larger the messages are)
   - MemoryPack (avg 0.33 ms)
 
 ### Prio 0 (what to do next)
-
-- try again to get matrix for screen to world as that would reduce the need for extra interop call
-    - even basic raycast can be then doable in .NET
   
-- split up the generator and refactor into nicer types
+- add JSON serialization for Unity build
+
+- but even the serialize methods might be worth to be chosen at generation time or at runtime
+    - e.g. use memoryPack if type annotated, otherwise use json serialization
+    - types which are not memorypack annotated get serialized as JSON (although )
+    - usefull for TypeScript as memoryPack does not create proper generic de/serializer to handle bcl types (int, float,...) on root level
+    - in the end, MemoryPack should be optional addon the dev chooses to use, for C# and for Typescript
 
 - better JS plugin via $ as in https://github.com/Made-For-Gamers/NEAR-Unity-WebGL-API/blob/main/Assets/WebGLSupport/WebGLInput/WebGLInput.jslib
-
-- Unify visuals of all renderers
-    - add camera transform setting (and getting, as to have a request to set but I can get the real one)
-    - unify different coordinate systems
-    - add setting of background color
-    - even background plane should be just a mesh to load
-
-### Prio 1 (stretch goals)
-
-- do Isometric or fake-3d in CSS only for HTML version
-    - https://developer.mozilla.org/en-US/docs/Web/CSS/transform-function/perspective
-    - must refactor it, to recreate the scene approach as in Unity, to make sense of it
-    - should use pre-rendered images
-    - mainly as otherwise it is hard to render depth
 
 - render screen in unity and stream to blazor for debug mode
 
@@ -101,40 +114,52 @@ benchmarks
   https://learn.microsoft.com/en-us/aspnet/core/blazor/components/render-modes?view=aspnetcore-9.0
   https://learn.microsoft.com/en-us/aspnet/core/blazor/components/rendering?view=aspnetcore-9.0#streaming-rendering
 
-
 - Optimize Typescript dev experience
     - add option to live recompile changes
     - add debugging support to IDEs
     - switch to Vite as everybody's using it ( see https://doc.babylonjs.com/guidedLearning/usingVite/ )
- 
 
+- Optimize Typescript API
+    - remove memory copies during message handling
+      - might need to adjust generated memorypack code, to allow reading from buffers starting at non-zero position 
+
+- double check catching of exceptions as they happen in "native" code and do not always propagate properly
+
+- cleanup, refactor generator, too many things seemingly hardcoded and edge cases not handled (e.g. namespaces of messages, or if multiple apps are defined)
+
+### Prio 1 (core tasks of the repo)
+
+- Incremental source gen 
+
+- consider special WASM only interop, as that might be faster
+
+- add explicit serializer interface for Typescript (to be able to override and mainly expose new types serialization)
+ 
 ### Prio 2 (make it nicer)
+
+- Unify visuals of all renderers
+    - add camera transform setting (and getting, as to have a request to set but I can get the real one)
+    - unify different coordinate systems
+    - add setting of background color
+    - even background plane should be just a mesh to load
+
+- try again to get matrix for screen to world as that would reduce the need for extra interop call
+    - even basic raycast can be then doable in .NET
+        - e.g. https://github.com/bepu/bepuphysics2/blob/master/Demos/Demos/RayCastingDemo.cs
+
+- do Isometric or fake-3d in CSS only for HTML version
+    - https://developer.mozilla.org/en-US/docs/Web/CSS/transform-function/perspective
+    - must refactor it, to recreate the scene approach as in Unity, to make sense of it
+    - should use pre-rendered images
+    - mainly as otherwise it is hard to render depth
+    - add top down thumbnail image of model (for HTML)
 
 - add Visuals Transform setting so it can be customized and reused
 
 - implement GLB loading for babylon
 - check if current GLTF instancing in Unity is working
-- add top down thumbnail image of model (for HTML)
-
-- consider support for union types to handle collider definition etc
-
-- Optimize Typescript API
-    - remove memory copies during message handling
-
-- consider special WASM only interop, as that might be faster
-
-- generate methods directly creating instance inside, ie if internal struct, then the simple method can create an instance directly inside, to make nicer API
-    - add reusable singleton support for messages without fields
-    - to support structs and classes
-    - test with pregenerated memory pack Typescript files if struct is working (ie if it is only a limitation of memorypack or blazor interop)
-
-- Incremental source gen
-
-- cleanup, refactor generator, too many things seemingly hardcoded and edge cases not handled (e.g. namespaces of messages, or if multiple apps are defined)
 
 - split packages/libraries by abstraction level (raw message, then typed message, then generated API)
-
-- double check catching of exceptions as they happen in "native" code and do not always propagate properly
 
 - test/add support to generator for defining messages from other assemblies
 
@@ -143,6 +168,8 @@ benchmarks
     - could be worth having a method to negotiate the serialization scheme (kinda send supported schemes when connecting to renderer and it picks one)
 
 ### Prio 3 (maybe but not really target of the project)
+
+- consider support for union types to handle collider definition etc (lower prio as this goes a bit into serialization libraries support)
 
 - native Veldrid based renderer https://veldrid.dev/
   - has MAUI support https://github.com/xtuzy/Veldrid.Samples or https://www.nuget.org/packages/Veldrid.Maui/
@@ -169,15 +196,10 @@ benchmarks
 - https://monogame.net/
 
 
-- but even the serialize methods might be worth to be chosen by the generator based on target so potentially messages can be generated from method arguments
-    - e.g. use memoryPack if type annotated, otherwise use json serialization
-    - hmm, this might be too confusing, but could allow creating own serializer of multiple method arguments into one message
-        - ie first byte is which method, then each arg has header specifing length of data and serialized data.
-    - types which are not memorypack annotated get serialized as JSON (although )
   
 - add support for negotiation of serialization modes
     - so unity can do DEBUG build with JSON only serializaion, e.g. for debug builds with embedded WebGL template as using memory pack is cumbersome there
-    - 
+
 - consider some generic reactive dictionary or patch requests on object support
     - e.g. that both sides can instantiate kind of reactive dictionry and through generic messages they both can be kept automatically in sync, with changes always propagating to the other side
     - kinda like flux https://facebookarchive.github.io/flux/docs/in-depth-overview/
