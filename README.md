@@ -60,13 +60,17 @@ As source generators can create the binding code on both sides, or create apis o
     - camera looks in NegativeZ
     - Rotation order X, Y, Z (when going local to world) but can be chosen
 
-### Unity WebGL (interop with Unity WASM)
+### Unity WebGL (interop with Unity WASM via Binary Interop API)
 
-### BabylonJS (interop with TypeScript)
+### BabylonJS (interop with TypeScript via Binary Interop API)
+
+Kept mainly for historical reasons, as ThreeJS seems to be more fitting for this usecase (as this is a game engine first, and threeJS is a renderer first).
+
+### ThreeJS (interop with TypeScript via Binary Interop API and Blazor interop)
 
 ### Pure HTML (developed directly in Blazor)
 
-## Blazor 
+## Blazor
 
 ### Compilation flags
 
@@ -97,14 +101,15 @@ benchmarks
   - MemoryPack (avg 0.33 ms)
 
 ### Prio 0 (what to do next)
-  
-- add JSON serialization for Unity build
+
+- add JSON serialization for Unity build (to perf check what would it mean to remove MemoryPack)
 
 - but even the serialize methods might be worth to be chosen at generation time or at runtime
     - e.g. use memoryPack if type annotated, otherwise use json serialization
     - types which are not memorypack annotated get serialized as JSON (although )
     - usefull for TypeScript as memoryPack does not create proper generic de/serializer to handle bcl types (int, float,...) on root level
     - in the end, MemoryPack should be optional addon the dev chooses to use, for C# and for Typescript
+      - i.e. generator should detect it and complement it, but if it is not available, then it should generate the types and use JSON serialization itself (in basic form to ilustrate the concept)
 
 - better JS plugin via $ as in https://github.com/Made-For-Gamers/NEAR-Unity-WebGL-API/blob/main/Assets/WebGLSupport/WebGLInput/WebGLInput.jslib
 
