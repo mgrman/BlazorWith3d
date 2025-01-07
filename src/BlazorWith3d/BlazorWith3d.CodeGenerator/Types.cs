@@ -18,8 +18,9 @@ internal record AppInfo(
         .Distinct();
 }
 
-internal record TypeInfo(string typeName, string @namespace)
+internal record TypeInfo(string typeNameOrig, string @namespace, bool isNullable, bool isMemoryPackTypescriptGenerated)
 {
+    public string typeName => isNullable ? typeNameOrig + "?" : typeNameOrig;
     public string TypeNameWithoutIPrefix=> typeName.StartsWith("I")? typeName.Substring(1) : typeName;
 }
 

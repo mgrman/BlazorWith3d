@@ -132,7 +132,7 @@ public void Dispose()
         return ValueTask.CompletedTask;
     }
 
-    public ValueTask InvokeUpdateBlockInstance(int blockId, PackableVector2 position,float rotationZ)
+    public ValueTask InvokeUpdateBlockInstance(int? blockId, PackableVector2 position,float rotationZ)
     {
         var instance = _instances.FirstOrDefault(o => o.BlockId == blockId);
         instance.Position = position;

@@ -185,22 +185,30 @@ public class HelloSourceGenerator : ISourceGenerator
             throw new InvalidOperationException();
         }
 
-        return new TypeInfo(typeName, namespaceName);
+        return new TypeInfo(typeName, namespaceName, false, typeDeclaration.AttributeLists.SelectMany(a => a.Attributes).Any(a => a.Name.NormalizeWhitespace().ToFullString().StartsWith("GenerateTypeScript")));
     }
 
     private static TypeInfo GetTypeInfo(INamedTypeSymbol typeSymbol, Compilation compilation)
     {
+        var typeName = typeSymbol.Name;
+        bool isNullable = typeSymbol.NullableAnnotation == NullableAnnotation.Annotated;
+        if (typeName == nameof(Nullable))
+        {
+            isNullable = true;
+            typeName = typeSymbol.TypeArguments[0].Name;
+        }
 
-        return new TypeInfo(typeSymbol.Name, typeSymbol.ContainingNamespace.ToDisplayString());
+
+        return new TypeInfo(typeName, typeSymbol.ContainingNamespace.ToDisplayString(), isNullable, typeSymbol.GetAttributes().Any(a=>a.AttributeClass.Name.StartsWith("GenerateTypeScript")));
     }
 
     private static TypeInfo GetTypeInfo(TypeSyntax typeSyntax, Compilation compilation)
     {
         var semanticModel = compilation.GetSemanticModel(typeSyntax.SyntaxTree);
 
-        var typeInfo = semanticModel.GetTypeInfo(typeSyntax).Type;
+        var typeInfo = semanticModel.GetTypeInfo(typeSyntax).Type as INamedTypeSymbol;
 
-        return new TypeInfo(typeInfo.Name, typeInfo.ContainingNamespace.ToDisplayString());
+        return GetTypeInfo(typeInfo, compilation);
     }
 
     private static MethodInfo GetMethodInfo(IMethodSymbol method, Compilation compilation)
@@ -245,24 +253,26 @@ public class HelloSourceGenerator : ISourceGenerator
 
     private static MethodInfo GetMethodInfo(MethodDeclarationSyntax method, Compilation compilation)
     {
-     var name=     method.Identifier.Text;
+        var name = method.Identifier.Text;
 
         TypeInfo? returnType;
-        if(method.ReturnType is IdentifierNameSyntax identifierNameSyntax)
+        if (method.ReturnType is IdentifierNameSyntax identifierNameSyntax)
         {
-            if(identifierNameSyntax.Identifier.ValueText!= "ValueTask")
+            if (identifierNameSyntax.Identifier.ValueText != "ValueTask")
             {
                 throw new InvalidOperationException();
             }
+
             returnType = null;
 
         }
-        else if( method.ReturnType is GenericNameSyntax genericNameSyntax)
+        else if (method.ReturnType is GenericNameSyntax genericNameSyntax)
         {
             if (genericNameSyntax.Identifier.ValueText != "ValueTask")
             {
                 throw new InvalidOperationException();
             }
+
             returnType = GetTypeInfo(genericNameSyntax.TypeArgumentList.Arguments[0], compilation);
         }
         else
@@ -270,11 +280,11 @@ public class HelloSourceGenerator : ISourceGenerator
             throw new InvalidOperationException();
         }
 
-            var arguments = new List<(TypeInfo argType, string argName)>();
-        foreach(var arg in method.ParameterList.Parameters)
+        var arguments = new List<(TypeInfo argType, string argName)>();
+        foreach (var arg in method.ParameterList.Parameters)
         {
             var argName = arg.Identifier.ValueText;
-            var argType= GetTypeInfo(arg.Type, compilation);
+            var argType = GetTypeInfo(arg.Type, compilation);
             arguments.Add((argType, argName));
         }
 

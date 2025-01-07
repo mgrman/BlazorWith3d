@@ -163,9 +163,14 @@ namespace ExampleApp
             Debug.Log($"Removed block: {JsonUtility.ToJson(msg)}");
         }
 
-        public async ValueTask  InvokeUpdateBlockInstance(int blockId, PackableVector2 position,float rotationZ)
+        public async ValueTask InvokeUpdateBlockInstance(int? blockId, PackableVector2 position, float rotationZ)
         {
-            _blocks[blockId].UpdatePose(position,rotationZ);
+            if (blockId == null || !_blocks.TryGetValue(blockId.Value, out var block))
+            {
+                return;
+            }
+
+            block.UpdatePose(position, rotationZ);
         }
 
         public async ValueTask InvokeTriggerTestToBlazor(TriggerTestToBlazor msg)

@@ -127,7 +127,7 @@ export class DebugApp implements IBlocksOnGrid3DRenderer {
         console.log("Quit called");
     }
 
-    public async InvokeUpdateBlockInstance(blockId: number, position: PackableVector2, rotationZ: number) : Promise<any> {
+    public async InvokeUpdateBlockInstance(blockId: number| null, position: PackableVector2, rotationZ: number) : Promise<any> {
         console.log("OnUpdateBlockInstance", blockId, position, rotationZ);
 
 

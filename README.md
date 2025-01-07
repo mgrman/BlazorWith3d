@@ -42,6 +42,10 @@ But can be considered if the required renderers are not using native Blazor JS i
 Or a solution based on Newtonsoft JSON can be used, as that is more feature complete but is an extra dependency.
 
 
+The TS generation is a bit intertwined with MemoryPack, since you could get rid of it, and in some cases it would work fine. But mixed modes need to sync TS code and C# code which is a bit messier.
+So it is kept connected for now to MemoryPack.
+But for DirectInterop any other or custom TS type generator from C# types could be used.
+
 ## Renderers
 
 - coordinate systems
@@ -109,9 +113,6 @@ benchmarks
   - MemoryPack (avg 0.33 ms)
 
 ### Prio 0 (what to do next)
-
-- make memorypack optional for Typescript code generation
-  - i.e. generator should detect it and complement it, but if it is not available, then it should generate the types and use JSON serialization itself (in basic form to ilustrate the concept)
 
 - better JS plugin via $ as in https://github.com/Made-For-Gamers/NEAR-Unity-WebGL-API/blob/main/Assets/WebGLSupport/WebGLInput/WebGLInput.jslib
 

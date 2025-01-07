@@ -1,6 +1,4 @@
-﻿using System;
-using System.Buffers;
-using System.Numerics;
+﻿using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -12,49 +10,6 @@ using MemoryPack;
 
 namespace BlazorWith3d.ExampleApp.Client.Shared
 {
-    public class MemoryPackBinaryApiSerializer:IBinaryApiSerializer
-    {
-
-        public void SerializeObject<T>(T obj, IBufferWriter<byte> bufferWriter)
-        {
-            // manual working with this shit, as memorypack optimization for unmanaged types does not work with Typescript, to disable it
-            var writerState = MemoryPackWriterOptionalStatePool.Rent(MemoryPackSerializerOptions.Default);
-            try
-            {
-                var writer = new MemoryPackWriter<IBufferWriter<byte>>(ref bufferWriter, writerState);
-                MemoryPackSerializer.Serialize(ref writer, obj);
-            }
-            finally
-            {
-                writerState.Reset();
-            }
-
-
-        }
-
-        public T? DeserializeObject<T>(ReadOnlySpan<byte> bytes, out int readBytes)
-        {
-            T? item=default;
-
-            var readerState = MemoryPackReaderOptionalStatePool.Rent(MemoryPackSerializerOptions.Default);
-
-            var reader = new MemoryPackReader(bytes, readerState);
-            try
-            {
-                reader.ReadValue(ref item);
-                readBytes = reader.Consumed;
-
-                return item;
-            }
-            finally
-            {
-                reader.Dispose();
-                readerState.Reset();
-            }
-
-        }
-    }
-    
     [Blazor3DRenderer(typeof(IBlocksOnGrid3DController))]
     public partial interface IBlocksOnGrid3DRenderer
     {
@@ -64,7 +19,7 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
         ValueTask InvokeAddBlockInstance(AddBlockInstance msg);
         ValueTask InvokeRemoveBlockInstance(RemoveBlockInstance msg);
         ValueTask InvokeRemoveBlockTemplate(RemoveBlockTemplate msg);
-        ValueTask InvokeUpdateBlockInstance(int blockId, PackableVector2 position,float rotationZ);
+        ValueTask InvokeUpdateBlockInstance(int? blockId, PackableVector2 position,float rotationZ);
         ValueTask InvokeTriggerTestToBlazor(TriggerTestToBlazor msg);
         ValueTask<PerfCheck> InvokePerfCheck(PerfCheck msg);
         ValueTask<ScreenToWorldRayResponse> InvokeRequestScreenToWorldRay(RequestScreenToWorldRay msg);
