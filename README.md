@@ -34,6 +34,14 @@ As generic apparoaches loose performance (e.g. binary channels with direct respo
 This approach can be used for interprocess communication or any other kinds of native integrations. 
 As source generators can create the binding code on both sides, or create apis on top of simple two way stream (e.g. as in Unity WebGL interop, the interop is too messy to generate for each method signature, as it is more basic than Blazor/JS interop) 
 
+The serializers can be replaced, e.g. use built in JSON serializers. Although Unity one is very limited, e.g. no property support, no nullable struct support, root object must be class, ....
+Although MemoryPack has own limitations, e.g. no Typescript generation for structs (has to be done in fork)
+
+Built in Unity serializer is not used as it breaks compatibility with native Blazor JS interop (which does not support serializing fields)
+But can be considered if the required renderers are not using native Blazor JS interop (as the field support can be added)
+Or a solution based on Newtonsoft JSON can be used, as that is more feature complete but is an extra dependency.
+
+
 ## Renderers
 
 - coordinate systems
@@ -102,14 +110,8 @@ benchmarks
 
 ### Prio 0 (what to do next)
 
-- add JSON serialization for Unity build (to perf check what would it mean to remove MemoryPack)
-
-- but even the serialize methods might be worth to be chosen at generation time or at runtime
-    - e.g. use memoryPack if type annotated, otherwise use json serialization
-    - types which are not memorypack annotated get serialized as JSON (although )
-    - usefull for TypeScript as memoryPack does not create proper generic de/serializer to handle bcl types (int, float,...) on root level
-    - in the end, MemoryPack should be optional addon the dev chooses to use, for C# and for Typescript
-      - i.e. generator should detect it and complement it, but if it is not available, then it should generate the types and use JSON serialization itself (in basic form to ilustrate the concept)
+- make memorypack optional for Typescript code generation
+  - i.e. generator should detect it and complement it, but if it is not available, then it should generate the types and use JSON serialization itself (in basic form to ilustrate the concept)
 
 - better JS plugin via $ as in https://github.com/Made-For-Gamers/NEAR-Unity-WebGL-API/blob/main/Assets/WebGLSupport/WebGLInput/WebGLInput.jslib
 
