@@ -43,8 +43,11 @@
         {
             debugApi = null;
             StateHasChanged();
-            debugApi = new BinaryApiThreadWrapper(obj, async t => await InvokeAsync(async () => await t()));
-            StateHasChanged();
+            if (obj != null)
+            {
+                debugApi = new BinaryApiThreadWrapper(obj, async t => await InvokeAsync(async () => await t()));
+                StateHasChanged();
+            }
         });
     }
 

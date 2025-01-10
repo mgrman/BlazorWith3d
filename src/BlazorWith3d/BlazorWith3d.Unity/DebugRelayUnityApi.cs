@@ -38,10 +38,12 @@ public class DebugRelayUnityApi
             }
             catch (WebSocketException ex)
             {
+                ConnectedApi?.Invoke(null);
                 _logger.LogWarning(ex,"HandleWebSocket OnMessageFromUnity error");
             }
             catch (Exception ex)
             {
+                ConnectedApi?.Invoke(null);
                 _logger.LogError(ex,"HandleWebSocket OnMessageFromUnity error");
             }
         }
