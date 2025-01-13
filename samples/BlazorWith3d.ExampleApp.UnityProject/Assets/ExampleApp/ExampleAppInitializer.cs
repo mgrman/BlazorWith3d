@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 using BlazorWith3d.ExampleApp.Client.Shared;
@@ -55,6 +56,10 @@ namespace ExampleApp
             else
             {
                 var relay = new BlazorWebSocketRelay(_backendWebsocketUrl);
+
+                var imageCapturer = new CameraImageStreamer(relay);
+                _disposables.Add(imageCapturer);
+                
                 _asyncDisposables.Add(relay);
                 var blazorApi = relay;
                 _appApi = new BlocksOnGrid3DController_BinaryApi(blazorApi, new MemoryPackBinaryApiSerializer());
@@ -241,4 +246,67 @@ namespace ExampleApp
             };
         }
     }
+
+#if UNITY_EDITOR
+
+    public class CameraImageStreamer:IDisposable
+    {
+        private readonly BlazorWebSocketRelay _relay;
+        private readonly CancellationTokenSource _cts;
+        private readonly RenderTexture _renderTexture;
+        private readonly Texture2D _screenshot;
+
+        public CameraImageStreamer(BlazorWebSocketRelay relay)
+        {
+            _relay = relay;
+            _cts = new CancellationTokenSource();
+            _renderTexture = new RenderTexture(Screen.width, Screen.height, 24);
+            
+            _screenshot = new Texture2D(Screen.width, Screen.height, TextureFormat.RGB24, false);
+            Stream();
+
+        }
+
+        private async Awaitable Stream()
+        {
+            while (!_cts.IsCancellationRequested && Application.isPlaying)  
+            {
+                try
+                {
+                    await Awaitable.NextFrameAsync();
+
+                    if (!_relay.IsConnected)
+                    {
+                        continue;
+                    }
+
+                    var cam = Camera.main;
+                    cam.targetTexture = _renderTexture;
+                    cam.Render();
+                    cam.targetTexture = null;
+
+                    RenderTexture.active = _renderTexture;
+                    _screenshot.ReadPixels(new Rect(0, 0, Screen.width, Screen.height), 0, 0);
+                    _screenshot.Apply();
+                    RenderTexture.active = null;
+
+                    byte[] bytes = _screenshot.EncodeToJPG();
+
+                    await _relay.UpdateScreen(bytes);
+
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                    return;
+                }
+            }
+        }
+
+        public void Dispose()
+        {
+            _cts.Cancel();
+        }
+    }
+#endif
 }

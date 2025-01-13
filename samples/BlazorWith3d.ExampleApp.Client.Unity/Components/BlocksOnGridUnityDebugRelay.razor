@@ -3,8 +3,28 @@
 @using BlazorWith3d.Unity
 @using Microsoft.Extensions.Logging
 @inject ILogger<BlocksOnGridUnityDebugRelay> Logger
+@inject IJSRuntime JS
 @implements IDisposable
 
+<img @ref="_image" style="width:100%; height: 100%; position: relative; pointer-events: none" 
+    />
+    <script>
+    window.setSource = async (element, stream, contentType, title) => {
+        const arrayBuffer = await stream.arrayBuffer();
+        let blobOptions = {};
+        if (contentType) {
+            blobOptions['type'] = contentType;
+        }
+        const blob = new Blob([arrayBuffer], blobOptions);
+        const url = URL.createObjectURL(blob);
+        element.title = title;
+        element.onload = () => {
+            URL.revokeObjectURL(url);
+        }
+        element.src = url;
+    }
+</script>
+    
 @code {
     private BlocksOnGrid3DRenderer_BinaryApi? unityAppApi;
     private IDisposable? _rendererAssignment;
@@ -13,7 +33,11 @@
     public required I3DAppController ParentApp { get; set; }
     
     [Parameter] 
-    public IBinaryApi DebugApi { get; set; }
+    public DebugRelayUnityApi.BinaryApiForSocket DebugApi { get; set; }
+
+    private ElementReference _image;
+
+    private bool _updatingImage;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -23,14 +47,45 @@
             return;
         }
         
-        unityAppApi = new BlocksOnGrid3DRenderer_BinaryApi(DebugApi, new MemoryPackBinaryApiSerializer());
+        var mainThreadApi = new BinaryApiThreadWrapper(DebugApi, async t => await InvokeAsync(async () => await t()));
+        unityAppApi = new BlocksOnGrid3DRenderer_BinaryApi(mainThreadApi, new MemoryPackBinaryApiSerializer());
         _rendererAssignment=await ParentApp.InitializeRenderer(unityAppApi,null);
+
+        DebugApi.NewFrame += UpdateFrame;
+    }
+
+    private async void UpdateFrame(byte[] obj)
+    {
+        if (_updatingImage)
+        {
+            return;
+        }
+
+        _updatingImage = true;
+        try
+        {
+            await InvokeAsync(async () =>
+            {
+                using var imageStream = new MemoryStream(obj);
+                var strRef = new DotNetStreamReference(imageStream);
+                
+                await JS.InvokeVoidAsync("setSource", _image, strRef, "image/jpg",
+                    "frame");
+
+                StateHasChanged();
+            });
+        }
+        finally
+        {
+            _updatingImage = false;
+        }
     }
 
     public void Dispose()
     {
         unityAppApi?.Dispose();
         _rendererAssignment?.Dispose();
+        DebugApi.NewFrame -= UpdateFrame;
     }
 
 }

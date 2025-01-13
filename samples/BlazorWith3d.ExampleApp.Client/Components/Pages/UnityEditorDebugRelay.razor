@@ -19,7 +19,7 @@
 
 @code{
 
-    IBinaryApi debugApi;
+    DebugRelayUnityApi.BinaryApiForSocket? debugApi;
 
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -45,7 +45,7 @@
             StateHasChanged();
             if (obj != null)
             {
-                debugApi = new BinaryApiThreadWrapper(obj, async t => await InvokeAsync(async () => await t()));
+                debugApi = obj;
                 StateHasChanged();
             }
         });

@@ -114,9 +114,16 @@ benchmarks
 
 ### Prio 0 (what to do next)
 
-- better JS plugin via $ as in https://github.com/Made-For-Gamers/NEAR-Unity-WebGL-API/blob/main/Assets/WebGLSupport/WebGLInput/WebGLInput.jslib
+- switch to ArraySegment instead of byte[]
 
-- render screen in unity and stream to blazor for debug mode
+- switch debug relay back as normal renderer
+    - maybe with long initialization while it waits for connection?
+
+- unity should refresh on new connection (e.g. backend was restarted)
+
+- add checks if no renderer
+
+- better JS plugin via $ as in https://github.com/Made-For-Gamers/NEAR-Unity-WebGL-API/blob/main/Assets/WebGLSupport/WebGLInput/WebGLInput.jslib
 
 - Investigate and optimize render modes and stream rendering and better handling of Maui limitations for render mode
   https://learn.microsoft.com/en-us/aspnet/core/blazor/components/render-modes?view=aspnetcore-9.0

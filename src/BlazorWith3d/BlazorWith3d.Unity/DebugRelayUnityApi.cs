@@ -23,18 +23,36 @@ public class DebugRelayUnityApi
 
         var api = new BinaryApiForSocket(webSocket);
         ConnectedApi?.Invoke(api);
-        
-        
-        
-        var buffer =new ArraySegment<byte>( new byte[1024 * 4]);
+
+
+        int bufferIndex = 0;
+        var buffer =new ArraySegment<byte>( new byte[1024 *1024 * 4]);
         while (webSocket.State == WebSocketState.Open)
         {
-
             try
             {
-                var receiveResult = await webSocket.ReceiveAsync(buffer, CancellationToken.None);
-                var msg = buffer.Slice(0, receiveResult.Count).ToArray();
-                api.MainMessageHandler.Invoke(msg);
+                var bufferToFill = buffer.Slice(bufferIndex);
+                var receiveResult = await webSocket.ReceiveAsync(bufferToFill, CancellationToken.None);
+                bufferIndex+=receiveResult.Count;
+
+                if (receiveResult.EndOfMessage)
+                {
+                    var msgType = buffer[0];
+                    var msg = buffer.Slice(1, bufferIndex-1).ToArray();
+                    bufferIndex = 0;
+                    switch (msgType)
+                    {
+                        case 0:
+                            api.MainMessageHandler.Invoke(msg);
+                            break;
+                        case 1:
+                            api.OnNewFrame(msg);
+                            break;
+                        default:
+                            throw new InvalidOperationException();
+
+                    }
+                }
             }
             catch (WebSocketException ex)
             {
@@ -60,6 +78,12 @@ public class DebugRelayUnityApi
         }
 
         public Func<byte[],ValueTask>? MainMessageHandler { get; set; }
+        public event Action<byte[]> NewFrame;
+
+        public void OnNewFrame(byte[] image)
+        {
+            NewFrame?.Invoke(image);
+        }
 
         public async ValueTask SendMessage(byte[] bytes)
         {

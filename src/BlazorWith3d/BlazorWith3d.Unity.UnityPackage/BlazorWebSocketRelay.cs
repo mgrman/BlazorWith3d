@@ -21,6 +21,8 @@ namespace BlazorWith3d.Unity
 
 
         public Func<byte[], ValueTask>? MainMessageHandler { get; set; }
+        
+        public bool IsConnected => _ws != null && _ws.State == WebSocketState.Open;
 
 
         public BlazorWebSocketRelay(string url)
@@ -84,7 +86,7 @@ namespace BlazorWith3d.Unity
             foreach (var unsentMessage in _unsentMessages)
             {
                 
-                SendMessageInner(unsentMessage);
+                SendMessageInner(0,unsentMessage);
             }
             _unsentMessages.Clear();
         }
@@ -124,12 +126,24 @@ namespace BlazorWith3d.Unity
                 return new ValueTask();
             }
 
-            SendMessageInner(bytes);
+            SendMessageInner(0,bytes);
             return new ValueTask();
         }
 
-        private void SendMessageInner(byte[] bytes)
+        public ValueTask UpdateScreen(byte[] bytes)
         {
+            if (_ws?.State!= WebSocketState.Open)
+            {
+                return new ValueTask();
+            }
+
+            SendMessageInner(1,bytes);
+            return new ValueTask();
+        }
+
+        private void SendMessageInner(byte prefix, byte[] bytes)
+        {
+            _ws.SendAsync(new []{prefix}, WebSocketMessageType.Binary, false, _cts.Token);
             _ws.SendAsync(bytes, WebSocketMessageType.Binary, true, _cts.Token);
         }
 
