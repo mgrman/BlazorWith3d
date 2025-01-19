@@ -116,8 +116,13 @@ benchmarks
 
 - switch to nicer ways to share memory in WASM special case
     - https://learn.microsoft.com/en-us/aspnet/core/client-side/dotnet-interop/?view=aspnetcore-9.0#type-mappings
-    - there should be better mapping with arraySegments now
+    - there should be better mapping with arraySegments now, potentially preventing memorycopy when creating array for normal JS interop
 
+- Optimize Typescript API
+    - remove memory copies during message handling
+        - might need to adjust generated memorypack code, to allow reading from buffers starting at non-zero position
+    - could use extra args in interop with offset and count, to be able to slice the array on JS side
+    - but as the MemoryPack reader is not respecting offsets, it should be adapted first
 
 - switch debug relay back as normal renderer
     - maybe with long initialization while it waits for connection?
@@ -140,11 +145,6 @@ benchmarks
     - https://khalidabuhakmeh.com/running-vite-with-aspnet-core-web-applications
     - https://github.com/techgems/Vite.NET/tree/master/dotnet-vite
     - https://github.com/Eptagone/Vite.AspNetCore/tree/main
-
-- Optimize Typescript API
-    - remove memory copies during message handling
-      - might need to adjust generated memorypack code, to allow reading from buffers starting at non-zero position
-      - 
 
 - double check catching of exceptions as they happen in "native" code and do not always propagate properly
 
