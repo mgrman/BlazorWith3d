@@ -27,7 +27,7 @@ public class BlocksOnGridThreeJSRenderer: BaseJsBinaryApiWithResponseRenderer, I
         }
 
 
-        unityAppApi = new BlocksOnGrid3DRenderer_BinaryApiWithResponse(this, new MemoryPackBinaryApiSerializer());
+        unityAppApi = new BlocksOnGrid3DRenderer_BinaryApiWithResponse(this, new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory());
         unityAppApi.OnMessageError += (bytes, exception) =>
         {
             Logger.LogError($"Error deserializing message {bytes}", exception);

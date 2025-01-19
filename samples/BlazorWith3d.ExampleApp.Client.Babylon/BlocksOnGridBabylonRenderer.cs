@@ -26,7 +26,7 @@ public class BlocksOnGridBabylonRenderer:BaseJsBinaryApiWithResponseRenderer, ID
         }
         await base.OnAfterRenderAsync(firstRender);
 
-        _unityAppApi = new BlocksOnGrid3DRenderer_BinaryApiWithResponse(this, new MemoryPackBinaryApiSerializer());
+        _unityAppApi = new BlocksOnGrid3DRenderer_BinaryApiWithResponse(this, new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory());
         _unityAppApi.OnMessageError += (bytes, exception) =>
         {
             Logger.LogError($"Error deserializing message {bytes}", exception);

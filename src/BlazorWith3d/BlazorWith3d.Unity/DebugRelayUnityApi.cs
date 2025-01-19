@@ -77,7 +77,7 @@ public class DebugRelayUnityApi
             _webSocket = webSocket;
         }
 
-        public Func<byte[],ValueTask>? MainMessageHandler { get; set; }
+        public Func<ArraySegment<byte>,ValueTask>? MainMessageHandler { get; set; }
         public event Action<byte[]> NewFrame;
 
         public void OnNewFrame(byte[] image)
@@ -85,17 +85,21 @@ public class DebugRelayUnityApi
             NewFrame?.Invoke(image);
         }
 
-        public async ValueTask SendMessage(byte[] bytes)
+        public  ValueTask SendMessage(IBufferWriterWithArraySegment<byte> bytes)
         {
             if (_webSocket.State != WebSocketState.Open)
             {
                 throw new InvalidOperationException();
             }
 
-            await _webSocket.SendAsync(bytes,
+            _webSocket.SendAsync(bytes.WrittenArray,
                 WebSocketMessageType.Binary,
                 true,
                 CancellationToken.None);
+            
+            bytes.Dispose();
+            
+            return ValueTask.CompletedTask;
         }
     }
 }

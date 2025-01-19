@@ -27,15 +27,14 @@
 
     public virtual string UnityBuildFilesRootPath => Assets[""];
 
-    [Parameter]
-    public bool IsWithResponse { get; set; }
+    [Parameter] public bool IsWithResponse { get; set; }
 
     private SemaphoreSlim acesssSemaphore = new SemaphoreSlim(1, 1);
-    
-    
+
+
     public async ValueTask DisposeAsync()
     {
-        
+
         if (_unityApi != null)
         {
             await _unityApi.InvokeVoidAsync("Quit");
@@ -60,23 +59,26 @@
         var moduleTask = new Lazy<Task<IJSObjectReference>>(() => JsRuntime.InvokeAsync<IJSObjectReference>("import", "./_content/BlazorWith3d.Unity/unityInitialization.js").AsTask());
         var module = await moduleTask.Value;
 
-        _unityApi = await module.InvokeAsync<IJSObjectReference>("showUnity", UnityBuildFilesRootPath, _containerElementReference, _messageReceiverProxyReference, nameof(JsMessageReceiverProxy.OnMessageBytesReceived),  nameof(JsMessageReceiverProxy.OnMessageBytesReceivedWithResponse),IsWithResponse);
+        _unityApi = await module.InvokeAsync<IJSObjectReference>("showUnity", UnityBuildFilesRootPath, _containerElementReference, _messageReceiverProxyReference, nameof(JsMessageReceiverProxy.OnMessageBytesReceived), nameof(JsMessageReceiverProxy.OnMessageBytesReceivedWithResponse), IsWithResponse);
 
     }
 
-    public Func<byte[], ValueTask>? MainMessageHandler { get; set; }
+    public Func<ArraySegment<byte>, ValueTask>? MainMessageHandler { get; set; }
 
     private ValueTask OnMessageBytesReceived(byte[] messageBytes)
     {
-       return MainMessageHandler.Invoke(messageBytes);
+        return MainMessageHandler.Invoke(messageBytes);
     }
 
-private ValueTask<byte[]> OnMessageWithResponseBytesReceived(byte[] messageBytes)
-{
-return MainMessageWithResponseHandler.Invoke(messageBytes);
-}
+    private async ValueTask<byte[]> OnMessageWithResponseBytesReceived(byte[] messageBytes)
+    {
+        var response= await MainMessageWithResponseHandler.Invoke(messageBytes);
+        var responseByteArray= response.WrittenArray.ToArray();// ToArray() as JS interop only has fast path for byte[] type
+        response.Dispose();
+        return responseByteArray;
+    }
 
-    public async ValueTask SendMessage(byte[] messageBytes)
+    public async ValueTask SendMessage(IBufferWriterWithArraySegment<byte> messageBytes)
     {
         if (_unityApi == null)
         {
@@ -86,7 +88,7 @@ return MainMessageWithResponseHandler.Invoke(messageBytes);
         try
         {
             await acesssSemaphore.WaitAsync();
-            await _unityApi.InvokeVoidAsync("SendMessage", messageBytes);
+            await _unityApi.InvokeVoidAsync("SendMessage", messageBytes.WrittenArray.ToArray());
         }
         catch (Exception ex)
         {
@@ -95,27 +97,29 @@ return MainMessageWithResponseHandler.Invoke(messageBytes);
         }
         finally
         {
+            messageBytes.Dispose();
             acesssSemaphore.Release();
         }
     }
 
-    private class JsMessageReceiverProxy(Func<byte[],ValueTask> onMessageBytesReceived,Func<byte[],ValueTask<byte[]>> onMessageWithResponseBytesReceived)
+    private class JsMessageReceiverProxy(Func<byte[], ValueTask> onMessageBytesReceived, Func<byte[], ValueTask<byte[]>> onMessageWithResponseBytesReceived)
     {
         [JSInvokable]
         public ValueTask OnMessageBytesReceived(byte[] msg)
         {
-           return onMessageBytesReceived(msg);
+            return onMessageBytesReceived(msg);
         }
-        
+
         [JSInvokable]
         public ValueTask<byte[]> OnMessageBytesReceivedWithResponse(byte[] msg)
         {
-           return onMessageWithResponseBytesReceived(msg);
+            return onMessageWithResponseBytesReceived(msg);
         }
     }
 
-    public Func<byte[], ValueTask<byte[]>>? MainMessageWithResponseHandler { get; set; }
-    public async ValueTask<byte[]> SendMessageWithResponse(byte[] bytes)
+    public Func<ArraySegment<byte>, ValueTask<IBufferWriterWithArraySegment<byte>>>? MainMessageWithResponseHandler { get; set; }
+
+    public async ValueTask<ArraySegment<byte>> SendMessageWithResponse(IBufferWriterWithArraySegment<byte> bytes)
     {
         if (_unityApi == null)
         {
@@ -125,7 +129,7 @@ return MainMessageWithResponseHandler.Invoke(messageBytes);
         try
         {
             await acesssSemaphore.WaitAsync();
-            return await _unityApi.InvokeAsync<byte[]>("SendMessageWithResponse", bytes);
+            return await _unityApi.InvokeAsync<byte[]>("SendMessageWithResponse", bytes.WrittenArray.ToArray());
         }
         catch (Exception ex)
         {
@@ -134,6 +138,7 @@ return MainMessageWithResponseHandler.Invoke(messageBytes);
         }
         finally
         {
+            bytes.Dispose();
             acesssSemaphore.Release();
         }
     }

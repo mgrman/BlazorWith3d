@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using BlazorWith3d.ExampleApp.Client.Shared;
+using BlazorWith3d.Shared;
 using BlazorWith3d.Unity;
 using UnityEngine;
 
@@ -62,7 +63,7 @@ namespace ExampleApp
                 
                 _asyncDisposables.Add(relay);
                 var blazorApi = relay;
-                _appApi = new BlocksOnGrid3DController_BinaryApi(blazorApi, new MemoryPackBinaryApiSerializer());
+                _appApi = new BlocksOnGrid3DController_BinaryApiWithResponse(new BinaryApiWithResponseOverBinaryApi(blazorApi), new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory());
                 
                 var uriBuilder = new UriBuilder(_backendWebsocketUrl);
                 uriBuilder.Scheme="http";
@@ -74,10 +75,10 @@ namespace ExampleApp
             var blazorApi = UnityBlazorApi.Singleton;
 
             if(Environment.GetCommandLineArgs().Contains("BinaryApiWithResponse", StringComparer.OrdinalIgnoreCase)){
-                _appApi = new BlocksOnGrid3DController_BinaryApiWithResponse(blazorApi, new MemoryPackBinaryApiSerializer());
+                _appApi = new BlocksOnGrid3DController_BinaryApiWithResponse(blazorApi, new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory());
             }
             else{
-                _appApi = new BlocksOnGrid3DController_BinaryApi(blazorApi, new MemoryPackBinaryApiSerializer());
+                _appApi = new BlocksOnGrid3DController_BinaryApiWithResponse(new BinaryApiWithResponseOverBinaryApi(blazorApi), new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory());
 
             }
 #endif

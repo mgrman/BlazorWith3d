@@ -32,20 +32,24 @@ public class BaseJsBinaryApiWithResponseRenderer:BaseJsRenderer, IBinaryApiWithR
         return await module.InvokeAsync<IJSObjectReference>(InitializeMethodName, _containerElementReference,_messageReceiverProxyReference,nameof(BinaryApiJsMessageReceiverProxy.OnMessageBytesReceived),nameof(BinaryApiJsMessageReceiverProxy.OnMessageBytesWithResponse) );
     }
 
-    public Func<byte[], ValueTask>? MainMessageHandler { get; set; }
-    public Func<byte[], ValueTask<byte[]>>? MainMessageWithResponseHandler { get; set; }
+    public Func<ArraySegment<byte>, ValueTask>? MainMessageHandler { get; set; }
+    public Func<ArraySegment<byte>, ValueTask<IBufferWriterWithArraySegment<byte>>>? MainMessageWithResponseHandler { get; set; }
 
 
     private void OnMessageBytesReceived(byte[] messageBytes)
     {
         MainMessageHandler.Invoke(messageBytes);
     }
-    private ValueTask<byte[]> OnMessageBytesWithResponseReceived(byte[] messageBytes)
+    
+    private async ValueTask<byte[]> OnMessageBytesWithResponseReceived(byte[] messageBytes)
     {
-       return MainMessageWithResponseHandler.Invoke(messageBytes);
+       var response= await MainMessageWithResponseHandler.Invoke(messageBytes);
+       var responseByteArray= response.WrittenArray.ToArray();// ToArray() as JS interop only has fast path for byte[] type
+       response.Dispose();
+       return responseByteArray;
     }
     
-    public async ValueTask SendMessage(byte[] messageBytes)
+    public async ValueTask SendMessage(IBufferWriterWithArraySegment<byte>  messageBytes)
     {
         if (_typescriptApp == null)
         {
@@ -55,7 +59,8 @@ public class BaseJsBinaryApiWithResponseRenderer:BaseJsRenderer, IBinaryApiWithR
         try
         {
             await _semaphore.WaitAsync();
-            await _typescriptApp.InvokeVoidAsync("ProcessMessage", messageBytes);
+            await _typescriptApp.InvokeVoidAsync("ProcessMessage", messageBytes.WrittenArray.ToArray()); // ToArray() as JS interop only has fast path for byte[] type
+            messageBytes.Dispose();
         }
         catch (Exception ex)
         {
@@ -67,7 +72,7 @@ public class BaseJsBinaryApiWithResponseRenderer:BaseJsRenderer, IBinaryApiWithR
         }
     }
 
-    public async ValueTask<byte[]> SendMessageWithResponse(byte[] bytes)
+    public async ValueTask<ArraySegment<byte>> SendMessageWithResponse(IBufferWriterWithArraySegment<byte> bytes)
     {
         if (_typescriptApp == null)
         {
@@ -77,7 +82,8 @@ public class BaseJsBinaryApiWithResponseRenderer:BaseJsRenderer, IBinaryApiWithR
         try
         {
             await _semaphore.WaitAsync();
-            var response = await _typescriptApp.InvokeAsync<byte[]>("ProcessMessageWithResponse", bytes);
+            var response = await _typescriptApp.InvokeAsync<byte[]>("ProcessMessageWithResponse", bytes.WrittenArray.ToArray());// ToArray() as JS interop only has fast path for byte[] type
+            bytes.Dispose();
             return response;
         }
         catch (Exception ex)

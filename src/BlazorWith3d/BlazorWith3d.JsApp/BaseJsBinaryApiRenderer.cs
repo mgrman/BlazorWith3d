@@ -31,14 +31,14 @@ public class BaseJsBinaryApiRenderer:BaseJsRenderer, IBinaryApi
         return await module.InvokeAsync<IJSObjectReference>(InitializeMethodName, _containerElementReference,_messageReceiverProxyReference,nameof(BinaryApiJsMessageReceiverProxy.OnMessageBytesReceived) );
     }
 
-    public Func<byte[], ValueTask>? MainMessageHandler { get; set; }
+    public Func<ArraySegment<byte>, ValueTask>? MainMessageHandler { get; set; }
 
     private void OnMessageBytesReceived(byte[] messageBytes)
     {
         MainMessageHandler.Invoke(messageBytes);
     }
     
-    public async ValueTask SendMessage(byte[] messageBytes)
+    public async ValueTask SendMessage(IBufferWriterWithArraySegment<byte> messageBytes)
     {
         if (_typescriptApp == null)
         {
@@ -48,7 +48,7 @@ public class BaseJsBinaryApiRenderer:BaseJsRenderer, IBinaryApi
         try
         {
             await _semaphore.WaitAsync();
-            await _typescriptApp.InvokeVoidAsync("ProcessMessage", messageBytes);
+            await _typescriptApp.InvokeVoidAsync("ProcessMessage", messageBytes.WrittenArray.ToArray());// ToArray() as JS interop only has fast path for byte[] type
         }
         catch (Exception ex)
         {

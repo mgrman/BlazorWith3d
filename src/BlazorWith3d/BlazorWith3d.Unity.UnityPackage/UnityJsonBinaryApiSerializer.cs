@@ -29,7 +29,7 @@ namespace BlazorWith3d.Unity
             
         }
 
-        public T? DeserializeObject<T>(ReadOnlySpan<byte> bytes, out int readBytes)
+        public T? DeserializeObject<T>(ArraySegment<byte>  bytes, out int readBytes)
         {
             var headerBytes = BitConverter.ToInt32(bytes.Slice(0, 4));
             

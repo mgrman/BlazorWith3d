@@ -1,4 +1,5 @@
 ﻿using BlazorWith3d.ExampleApp.Client.Shared;
+using BlazorWith3d.Shared;
 using BlazorWith3d.Unity;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
@@ -28,7 +29,7 @@ public class BlocksOnGridUnityRenderer:BaseUnityRenderer, IDisposable
 
         if (IsWithResponse)
         {
-            var unityAppApi = new BlocksOnGrid3DRenderer_BinaryApiWithResponse(this, new MemoryPackBinaryApiSerializer());
+            var unityAppApi = new BlocksOnGrid3DRenderer_BinaryApiWithResponse(this, new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory());
             unityAppApi.OnMessageError += (bytes, exception) =>
             {
                 Logger.LogError($"Error deserializing message {bytes}", exception);
@@ -37,7 +38,7 @@ public class BlocksOnGridUnityRenderer:BaseUnityRenderer, IDisposable
         }
         else
         {
-            var unityAppApi = new BlocksOnGrid3DRenderer_BinaryApi(this, new MemoryPackBinaryApiSerializer());
+            var unityAppApi = new BlocksOnGrid3DRenderer_BinaryApiWithResponse(new BinaryApiWithResponseOverBinaryApi(this), new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory());
             unityAppApi.OnMessageError += (bytes, exception) =>
             {
                 Logger.LogError($"Error deserializing message {bytes}", exception);

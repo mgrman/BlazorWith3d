@@ -54,24 +54,24 @@ var BlazorApiUnity = {
         delete Module["BlazorApi_ReadMessageBuffer"][id]
     },
 
-    _SendMessageFromUnity: function (array, size) {
+    _SendMessageFromUnity: function (array,offset, size) {
         //console.log("Array at "+array)
         //console.log("size at "+size)
 
         // the emscripten heap is wrapped with array, so the memory is exposed but not copied 
-        var buffer = new Uint8Array(HEAPU8.buffer, array, size);
+        var buffer = new Uint8Array(HEAPU8.buffer, array+offset, size);
         //console.log("buffer at "+buffer.length);
 
         // void BlazorApi_OnMessageFromUnityHandler(byte[] message)
         Module["BlazorApi_OnMessageFromUnityHandler"](buffer)
     },
 
-    _SendMessageWithResponseFromUnity: async function (id, array, size) {
+    _SendMessageWithResponseFromUnity: async function (id, array, offset, size) {
         //console.log("Array at "+array)
         //console.log("size at "+size)
 
         // the emscripten heap is wrapped with array, so the memory is exposed but not copied 
-        var buffer = new Uint8Array(HEAPU8.buffer, array, size);
+        var buffer = new Uint8Array(HEAPU8.buffer, array+offset, size);
         //console.log("buffer at "+buffer.length);
 
         // byte[] BlazorApi_OnMessageWithResponseFromUnityHandler(byte[] message)
@@ -91,12 +91,12 @@ var BlazorApiUnity = {
         return id;
     },
 
-    _SendResponseFromUnity: function (id, array, size) {
+    _SendResponseFromUnity: function (id, array, offset, size) {
         //console.log("Array at "+array)
         //console.log("size at "+size)
 
         // the emscripten heap is wrapped with array, so the memory is exposed but not copied 
-        var buffer = new Uint8Array(HEAPU8.buffer, array, size);
+        var buffer = new Uint8Array(HEAPU8.buffer, array+offset, size);
         //console.log("buffer at "+buffer.length);
 
         // void BlazorApi_OnMessageFromUnityHandler(byte[] message)

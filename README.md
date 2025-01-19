@@ -114,7 +114,10 @@ benchmarks
 
 ### Prio 0 (what to do next)
 
-- switch to ArraySegment instead of byte[]
+- switch to nicer ways to share memory in WASM special case
+    - https://learn.microsoft.com/en-us/aspnet/core/client-side/dotnet-interop/?view=aspnetcore-9.0#type-mappings
+    - there should be better mapping with arraySegments now
+
 
 - switch debug relay back as normal renderer
     - maybe with long initialization while it waits for connection?
@@ -133,10 +136,15 @@ benchmarks
     - add option to live recompile changes
     - add debugging support to IDEs
     - switch to Vite as everybody's using it ( see https://doc.babylonjs.com/guidedLearning/usingVite/ )
+    - https://www.google.com/search?q=aspnet+%22razor+library%22+vite
+    - https://khalidabuhakmeh.com/running-vite-with-aspnet-core-web-applications
+    - https://github.com/techgems/Vite.NET/tree/master/dotnet-vite
+    - https://github.com/Eptagone/Vite.AspNetCore/tree/main
 
 - Optimize Typescript API
     - remove memory copies during message handling
-      - might need to adjust generated memorypack code, to allow reading from buffers starting at non-zero position 
+      - might need to adjust generated memorypack code, to allow reading from buffers starting at non-zero position
+      - 
 
 - double check catching of exceptions as they happen in "native" code and do not always propagate properly
 
@@ -147,6 +155,8 @@ benchmarks
 - Incremental source gen 
 
 - consider special WASM only interop, as that might be faster
+  - also it opens to support of span or arraySegment types to reduce copying of memory
+  - e.g. new binaryAPIWithResponse with types mapping to memoryView could be nice, as then the rest works as before
 
 - add explicit serializer interface for Typescript (to be able to override and mainly expose new types serialization)
  
@@ -222,6 +232,9 @@ benchmarks
 
 
 ### Not gonna do for now
+
+- switch to ArraySegment instead of byte[]
+    - RESOLUTION: JS interop in Blazor generically supports faster conversion only for byte[] type, ArraySegment is supported as memoryView only in WASM interop
 
 - even generate structs for message arguments!
     - RESOLUTION not usable until Code generators can be chained (ie then the code can be memorypack usable)

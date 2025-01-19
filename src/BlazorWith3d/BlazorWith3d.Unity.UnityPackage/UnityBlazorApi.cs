@@ -14,9 +14,9 @@ namespace BlazorWith3d.Unity
         private static Dictionary<int, AwaitableCompletionSource<byte[]>> s_responses=new ();
         
         
-        private static Func<byte[], ValueTask>? s_mainMessageHandler;
+        private static Func<ArraySegment<byte>, ValueTask>? s_mainMessageHandler;
 
-        public static Func<byte[], ValueTask>? MainMessageHandler
+        public static Func<ArraySegment<byte>, ValueTask>? MainMessageHandler
         {
             get => s_mainMessageHandler;
             set
@@ -32,9 +32,9 @@ namespace BlazorWith3d.Unity
                 s_mainMessageHandler = value;
             }
         }
-        private static Func<byte[], ValueTask<byte[]>>? s_mainMessageWithResponseHandler;
+        private static Func<ArraySegment<byte>, ValueTask<IBufferWriterWithArraySegment<byte>>>? s_mainMessageWithResponseHandler;
 
-        public static Func<byte[], ValueTask<byte[]>>? MainMessageWithResponseHandler
+        public static Func<ArraySegment<byte>, ValueTask<IBufferWriterWithArraySegment<byte>>>? MainMessageWithResponseHandler
         {
             get => s_mainMessageWithResponseHandler;
             set
@@ -62,12 +62,12 @@ namespace BlazorWith3d.Unity
             _InitializeApi(_ReadMessage,MainMessageWithResponseHandler==null?null:_ReadMessageWithResponse,MainMessageWithResponseHandler==null?null: _ReadResponse);
         }
 
-        Func<byte[], ValueTask>? IBinaryApi.MainMessageHandler { 
+        Func<ArraySegment<byte>, ValueTask>? IBinaryApi.MainMessageHandler { 
             get => MainMessageHandler;
             set => MainMessageHandler = value;
         }
 
-        Func<byte[], ValueTask<byte[]>>? IBinaryApiWithResponse.MainMessageWithResponseHandler { 
+        Func<ArraySegment<byte>, ValueTask<IBufferWriterWithArraySegment<byte>>>? IBinaryApiWithResponse.MainMessageWithResponseHandler { 
             get => MainMessageWithResponseHandler;
             set => MainMessageWithResponseHandler = value;
         }
@@ -79,7 +79,7 @@ namespace BlazorWith3d.Unity
 
         public static UnityBlazorApi Singleton { get; } = new UnityBlazorApi();
 
-        public ValueTask SendMessage(byte[] bytes)
+        public ValueTask SendMessage(IBufferWriterWithArraySegment<byte> bytes)
         {
 #if !(UNITY_WEBGL && !UNITY_EDITOR)
             if (Application.isEditor|| Application.platform != RuntimePlatform.WebGLPlayer)
@@ -87,18 +87,22 @@ namespace BlazorWith3d.Unity
                 throw new NotImplementedException();
             }
 #endif
-            _SendMessageFromUnity(bytes, bytes.Length);
+            var msg = bytes.WrittenArray;
+            _SendMessageFromUnity(msg.Array,msg.Offset, msg.Count);
+            bytes.Dispose();
             return new ValueTask();
         }
         
-        public async ValueTask<byte[]> SendMessageWithResponse(byte[] bytes)
+        public async ValueTask<ArraySegment<byte>> SendMessageWithResponse(IBufferWriterWithArraySegment<byte> bytes)
         {
             int id = _GetNextRequestId();
 
             var tcs = new AwaitableCompletionSource<byte[]>();
             s_responses[id] = tcs;
             
-            _SendMessageWithResponseFromUnity(id, bytes, bytes.Length);
+            var msg = bytes.WrittenArray;
+            _SendMessageWithResponseFromUnity(id, msg.Array, msg.Offset,msg.Count);
+            bytes.Dispose();
             var result=await tcs.Awaitable;
 
             s_responses.Remove(id);
@@ -150,7 +154,8 @@ namespace BlazorWith3d.Unity
 
             var response = await MainMessageWithResponseHandler.Invoke(bytes);
 
-            _SendResponseFromUnity(id, response, response.Length);
+            _SendResponseFromUnity(id, response.WrittenArray.Array,response.WrittenArray.Offset, response.WrittenArray.Count);
+            response.Dispose();
         }
 
         // optimization, so the array is created on Unity side, and exposed to emscripten JS interop code to fill in.
@@ -169,13 +174,13 @@ namespace BlazorWith3d.Unity
         private static extern int _GetNextRequestId();
 
         [DllImport("__Internal")]
-        private static extern void _SendMessageFromUnity(byte[] message, int size);
+        private static extern void _SendMessageFromUnity(byte[] message, int offset, int size);
 
         [DllImport("__Internal")]
-        private static extern void _SendMessageWithResponseFromUnity(int id, byte[] message, int size);
+        private static extern void _SendMessageWithResponseFromUnity(int id, byte[] message, int offset, int size);
 
         [DllImport("__Internal")]
-        private static extern void _SendResponseFromUnity(int id,byte[] message, int size);
+        private static extern void _SendResponseFromUnity(int id,byte[] message, int offset, int size);
 
         [DllImport("__Internal")]
         private static extern void _ReadBytesBuffer(int id, byte[] array);

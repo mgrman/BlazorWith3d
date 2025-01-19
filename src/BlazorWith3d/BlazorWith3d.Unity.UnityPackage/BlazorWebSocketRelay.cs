@@ -17,10 +17,10 @@ namespace BlazorWith3d.Unity
         private ClientWebSocket _ws;
 
         private readonly CancellationTokenSource _cts;
-        private readonly List<byte[]> _unsentMessages= new ();
+        private readonly List<IBufferWriterWithArraySegment<byte>> _unsentMessages= new ();
 
 
-        public Func<byte[], ValueTask>? MainMessageHandler { get; set; }
+        public Func<ArraySegment<byte>, ValueTask>? MainMessageHandler { get; set; }
         
         public bool IsConnected => _ws != null && _ws.State == WebSocketState.Open;
 
@@ -86,7 +86,8 @@ namespace BlazorWith3d.Unity
             foreach (var unsentMessage in _unsentMessages)
             {
                 
-                SendMessageInner(0,unsentMessage);
+                SendMessageInner(0,unsentMessage.WrittenArray);
+                unsentMessage.Dispose();
             }
             _unsentMessages.Clear();
         }
@@ -118,7 +119,7 @@ namespace BlazorWith3d.Unity
             }
         }
 
-        public ValueTask SendMessage(byte[] bytes)
+        public ValueTask SendMessage(IBufferWriterWithArraySegment<byte> bytes)
         {
             if (_ws?.State!= WebSocketState.Open)
             {
@@ -126,7 +127,10 @@ namespace BlazorWith3d.Unity
                 return new ValueTask();
             }
 
-            SendMessageInner(0,bytes);
+            SendMessageInner(0,bytes.WrittenArray);
+            
+            bytes.Dispose();
+            
             return new ValueTask();
         }
 
@@ -141,7 +145,7 @@ namespace BlazorWith3d.Unity
             return new ValueTask();
         }
 
-        private void SendMessageInner(byte prefix, byte[] bytes)
+        private void SendMessageInner(byte prefix, ArraySegment<byte> bytes)
         {
             _ws.SendAsync(new []{prefix}, WebSocketMessageType.Binary, false, _cts.Token);
             _ws.SendAsync(bytes, WebSocketMessageType.Binary, true, _cts.Token);

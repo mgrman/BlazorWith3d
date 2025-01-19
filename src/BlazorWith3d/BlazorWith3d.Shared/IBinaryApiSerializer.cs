@@ -7,6 +7,6 @@ namespace BlazorWith3d.Shared
     {
         void SerializeObject<T>(T obj, IBufferWriter<byte> writer);
 
-        T? DeserializeObject<T>(ReadOnlySpan<byte> bytes, out int readBytes);
+        T? DeserializeObject<T>(ArraySegment<byte> bytes, out int readBytes);
     }
 }

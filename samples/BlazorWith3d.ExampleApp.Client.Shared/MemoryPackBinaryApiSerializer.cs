@@ -28,7 +28,7 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
 
         }
 
-        public T? DeserializeObject<T>(ReadOnlySpan<byte> bytes, out int readBytes)
+        public T? DeserializeObject<T>(ArraySegment<byte> bytes, out int readBytes)
         {
             T? item=default;
 
