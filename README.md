@@ -123,6 +123,8 @@ benchmarks
         - might need to adjust generated memorypack code, to allow reading from buffers starting at non-zero position
     - could use extra args in interop with offset and count, to be able to slice the array on JS side
     - but as the MemoryPack reader is not respecting offsets, it should be adapted first
+    - could be done by accessing the private field 'offset' 
+    - but at least should do serializer concept in TS
 
 - switch debug relay back as normal renderer
     - maybe with long initialization while it waits for connection?
@@ -141,10 +143,12 @@ benchmarks
     - add option to live recompile changes
     - add debugging support to IDEs
     - switch to Vite as everybody's using it ( see https://doc.babylonjs.com/guidedLearning/usingVite/ )
-    - https://www.google.com/search?q=aspnet+%22razor+library%22+vite
-    - https://khalidabuhakmeh.com/running-vite-with-aspnet-core-web-applications
-    - https://github.com/techgems/Vite.NET/tree/master/dotnet-vite
-    - https://github.com/Eptagone/Vite.AspNetCore/tree/main
+      - https://www.google.com/search?q=aspnet+%22razor+library%22+vite
+      - https://khalidabuhakmeh.com/running-vite-with-aspnet-core-web-applications
+      - https://github.com/techgems/Vite.NET/tree/master/dotnet-vite
+      - https://github.com/Eptagone/Vite.AspNetCore/tree/main
+    - better JS isolation
+      - https://www.emekaemego.com/blog/blazor-component-js/
 
 - double check catching of exceptions as they happen in "native" code and do not always propagate properly
 
