@@ -22,7 +22,7 @@ namespace ExampleApp
 
         private readonly Dictionary<int, BlockController> _blocks = new();
         private readonly Dictionary<int, BlockController> _templates = new();
-        private IBlocksOnGrid3DController _appApi;
+        private BlocksOnGrid3DController_BinaryApiWithResponse _appApi;
         private GameObject _templateRoot;
 
         private List<IDisposable> _disposables=new List<IDisposable>();
@@ -83,6 +83,11 @@ namespace ExampleApp
             }
 #endif
             Console.WriteLine($"{Screen.width},{Screen.height}");
+
+            _appApi.OnMessageError += (o, e) =>
+            {
+                Debug.LogException(e);
+            };
             _appApi.SetRenderer(this);
             
             

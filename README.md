@@ -119,12 +119,9 @@ benchmarks
     - there should be better mapping with arraySegments now, potentially preventing memorycopy when creating array for normal JS interop
 
 - Optimize Typescript API
-    - remove memory copies during message handling
-        - might need to adjust generated memorypack code, to allow reading from buffers starting at non-zero position
     - could use extra args in interop with offset and count, to be able to slice the array on JS side
-    - but as the MemoryPack reader is not respecting offsets, it should be adapted first
-    - could be done by accessing the private field 'offset' 
-    - but at least should do serializer concept in TS
+      - benchmark somehow?
+    - add serializer concept in TS
 
 - switch debug relay back as normal renderer
     - maybe with long initialization while it waits for connection?

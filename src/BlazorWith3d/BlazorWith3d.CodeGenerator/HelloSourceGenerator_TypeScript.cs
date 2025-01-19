@@ -164,12 +164,12 @@ internal static class HelloSourceGenerator_TypeScript
                         }
                         sb.AppendLine($"const encodedMessage = writer.toArray();");
                         sb.AppendLine($"var responseMessage=await  this._binaryApi.sendMessageWithResponse(encodedMessage);");
-
-                        sb.AppendLine($"var dst = new ArrayBuffer(responseMessage.byteLength);");
-                        sb.AppendLine($"new Uint8Array(dst).set(responseMessage);");
-
-
-                        sb.AppendLine($"const reader=new MemoryPackReader(dst);");
+                        
+                        sb.AppendLine($"const reader=new MemoryPackReader(responseMessage.buffer);");
+                        sb.AppendLine($"const readerAny:any= reader;");
+                        sb.AppendLine($"readerAny.offset=responseMessage.byteOffset;");
+                        
+                        
                         sb.AppendLine($"let response: {TsType(m.returnType)} = {string.Format(options.GetTsType(m.returnType).deserializationFormat, "reader")};");
 
                         sb.AppendLine($"return response;");
@@ -178,17 +178,13 @@ internal static class HelloSourceGenerator_TypeScript
             }
 
 
-            sb.AppendLine($"private async ProcessMessages(msg: Uint8Array): Promise<void>");
+            sb.AppendLine($"private async ProcessMessages(_msg: Uint8Array): Promise<void>");
             using (sb.IndentWithCurlyBrackets())
             {
                 sb.AppendLine($"try");
                 using (sb.IndentWithCurlyBrackets())
                 {
-                    sb.AppendLine($"let buffer = msg.slice(1);");
-                    sb.AppendLine($"var dst = new ArrayBuffer(buffer.byteLength);");
-                    sb.AppendLine($"new Uint8Array(dst).set(buffer);");
-
-                    sb.AppendLine("switch (msg[0])");
+                    sb.AppendLine("switch (_msg[_msg.length-1])");
                     using (sb.IndentWithCurlyBrackets())
                     {
                         foreach (var (e, i) in info.events.EnumerateWithIndex())
@@ -201,7 +197,9 @@ internal static class HelloSourceGenerator_TypeScript
                             sb.AppendLine($"case {i}:");
                             using (sb.IndentWithCurlyBrackets())
                             {
-                                sb.AppendLine($"const reader=new MemoryPackReader(dst);");
+                                sb.AppendLine($"const reader=new MemoryPackReader(_msg.buffer);");
+                                sb.AppendLine($"const readerAny:any= reader;");
+                                sb.AppendLine($"readerAny.offset=_msg.byteOffset;");
 
                                 foreach(var a in e.arguments)
                                 {
@@ -221,17 +219,13 @@ internal static class HelloSourceGenerator_TypeScript
                     sb.AppendLine("throw e;");
                 }
             }
-            sb.AppendLine($"private async ProcessMessagesWithResponse(msg: Uint8Array): Promise<Uint8Array>");
+            sb.AppendLine($"private async ProcessMessagesWithResponse(_msg: Uint8Array): Promise<Uint8Array>");
             using (sb.IndentWithCurlyBrackets())
             {
                 sb.AppendLine($"try");
                 using (sb.IndentWithCurlyBrackets())
                 {
-                    sb.AppendLine($"let buffer = msg.slice(1);");
-                    sb.AppendLine($"var dst = new ArrayBuffer(buffer.byteLength);");
-                    sb.AppendLine($"new Uint8Array(dst).set(buffer);");
-
-                    sb.AppendLine("switch (msg[0])");
+                    sb.AppendLine("switch (_msg[_msg.length-1])");
                     using (sb.IndentWithCurlyBrackets())
                     {
                         foreach (var (e, i) in info.events.EnumerateWithIndex())
@@ -243,7 +237,10 @@ internal static class HelloSourceGenerator_TypeScript
                             sb.AppendLine($"case {i}:");
                             using (sb.IndentWithCurlyBrackets())
                             {
-                                sb.AppendLine($"const reader=new MemoryPackReader(dst);");
+                                sb.AppendLine($"const reader=new MemoryPackReader(_msg.buffer);");
+                                sb.AppendLine($"const readerAny:any= reader;");
+                                sb.AppendLine($"readerAny.offset=_msg.byteOffset;");
+                                
 
                                 foreach (var a in e.arguments)
                                 {

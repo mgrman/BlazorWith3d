@@ -114,13 +114,13 @@ internal static class HelloSourceGenerator_DotnetApis
                     using (sb.IndentWithCurlyBrackets())
                     {
                         sb.AppendLine("var writer=_writerFactory.Create();");
-                        sb.AppendLine("writer.Write(messageId);");
 
 
                         foreach (var argIndex in argIndices)
                         {
                             sb.AppendLine($"_serializer.SerializeObject(arg{argIndex}, writer);");
                         }
+                        sb.AppendLine("writer.Write(messageId);");
                         sb.AppendLine("return writer;");
 
                     }
@@ -142,11 +142,11 @@ internal static class HelloSourceGenerator_DotnetApis
                 {
                     var argIndices = Enumerable.Range(0, paramCount);
                     sb.AppendLine();
-                    sb.AppendLine($"protected {argIndices.Select(i => $"T{i}").JoinStringWithComma().WrapWithParenthesis(paramCount > 1)} DeserializeObjectWithoutHeader<{argIndices.Select(i => $"T{i}").JoinStringWithComma()}>(ArraySegment<byte> message, int headerLength)");
+                    sb.AppendLine($"protected {argIndices.Select(i => $"T{i}").JoinStringWithComma().WrapWithParenthesis(paramCount > 1)} DeserializeObject<{argIndices.Select(i => $"T{i}").JoinStringWithComma()}>(ArraySegment<byte> message)");
                     using (sb.IndentWithCurlyBrackets())
                     {
 
-                        sb.AppendLine($"var currentIndex=headerLength;");
+                        sb.AppendLine($"var currentIndex=0;");
 
                         sb.AppendLine($"int readCount;");
                         sb.AppendLine($"ArraySegment<byte> span;");
@@ -167,7 +167,7 @@ internal static class HelloSourceGenerator_DotnetApis
                     sb.AppendLine("try");
                     using (sb.IndentWithCurlyBrackets())
                     {
-                        sb.AppendLine("switch(message[0])");
+                        sb.AppendLine("switch(message[message.Count-1])");
                         using (sb.IndentWithCurlyBrackets())
                         {
                             foreach (var (e, i) in info.events.EnumerateWithIndex())
@@ -180,7 +180,7 @@ internal static class HelloSourceGenerator_DotnetApis
                                 sb.AppendLine($"case {i}:");
                                 using (sb.IndentWithCurlyBrackets())
                                 {
-                                    sb.AppendLine($"var {e.arguments.Select((a, i) => $"arg{i}").JoinStringWithComma().WrapWithParenthesis(e.arguments.Length > 1)} = DeserializeObjectWithoutHeader<{e.arguments.Select(a => a.argType.typeName).JoinStringWithComma()}>(message,1);");
+                                    sb.AppendLine($"var {e.arguments.Select((a, i) => $"arg{i}").JoinStringWithComma().WrapWithParenthesis(e.arguments.Length > 1)} = DeserializeObject<{e.arguments.Select(a => a.argType.typeName).JoinStringWithComma()}>(message.Slice(0,message.Count-1));");
                                     sb.AppendLine($"await _eventHandler.{e.name}({e.arguments.Select((a, i) => $"arg{i}").JoinStringWithComma()});");
                                     sb.AppendLine($"break;");
                                 }
@@ -202,7 +202,7 @@ internal static class HelloSourceGenerator_DotnetApis
                     sb.AppendLine("try");
                     using (sb.IndentWithCurlyBrackets())
                     {
-                        sb.AppendLine("switch(message[0])");
+                        sb.AppendLine("switch(message[message.Count-1])");
                         using (sb.IndentWithCurlyBrackets())
                         {
                             foreach (var (e, i) in info.events.EnumerateWithIndex())
@@ -215,7 +215,7 @@ internal static class HelloSourceGenerator_DotnetApis
                                 sb.AppendLine($"case {i}:");
                                 using (sb.IndentWithCurlyBrackets())
                                 {
-                                    sb.AppendLine($"var {e.arguments.Select((a, i) => $"arg{i}").JoinStringWithComma().WrapWithParenthesis(e.arguments.Length > 1)} = DeserializeObjectWithoutHeader<{e.arguments.Select(a => a.argType.typeName).JoinStringWithComma()}>(message,1);");
+                                    sb.AppendLine($"var {e.arguments.Select((a, i) => $"arg{i}").JoinStringWithComma().WrapWithParenthesis(e.arguments.Length > 1)} = DeserializeObject<{e.arguments.Select(a => a.argType.typeName).JoinStringWithComma()}>(message.Slice(0,message.Count-1));");
                                     sb.AppendLine($"var response = await _eventHandler.{e.name}({e.arguments.Select((a, i) => $"arg{i}").JoinStringWithComma()});");
                                     sb.AppendLine("var responseMessage = SerializeResponse(response);");
                                     sb.AppendLine($"return responseMessage;");
