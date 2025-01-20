@@ -121,14 +121,12 @@ benchmarks
 - Optimize Typescript API
     - could use extra args in interop with offset and count, to be able to slice the array on JS side
       - benchmark somehow?
-    - add serializer concept in TS
 
 - switch debug relay back as normal renderer
     - maybe with long initialization while it waits for connection?
+    - use null renderer while waiting
 
-- unity should refresh on new connection (e.g. backend was restarted)
-
-- add checks if no renderer
+- unity editor debug should refresh on new connection (e.g. backend was restarted)
 
 - better JS plugin via $ as in https://github.com/Made-For-Gamers/NEAR-Unity-WebGL-API/blob/main/Assets/WebGLSupport/WebGLInput/WebGLInput.jslib
 
@@ -192,6 +190,8 @@ benchmarks
 - with memory pack the Unity build got slower, investigate why exactly!
     - e.g. might be worth having a define or something to switch the serialization libraries (have one for faster compile time and one for faster runtime)
     - could be worth having a method to negotiate the serialization scheme (kinda send supported schemes when connecting to renderer and it picks one)
+
+- add serializer interface concept in TS
 
 ### Prio 3 (maybe but not really target of the project)
 

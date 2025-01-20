@@ -211,8 +211,7 @@
 
     private static (string name, string url )[] GltfAssets = [ ("BoomBox", "./_content/BlazorWith3d.ExampleApp.Client/gltf/BoomBox.glb")];
 
-    private SemaphoreSlim _initializeRendererSemaphoreSlim = new SemaphoreSlim(1);
-    private bool _isHandlingMouse;
+    private SemaphoreSlim _initializeRendererSemaphoreSlim = new (1);
 
 
     protected override async Task OnInitializedAsync()
@@ -402,62 +401,56 @@
         
         public float Y{ get; set; }
     }
-    
-    private async Task OnMouseDown( MouseEventArgs e)
+
+    private async Task OnMouseDown(MouseEventArgs e)
     {
-       // if (_isHandlingMouse)
-        // {
-        //     return;
-        // }
-        _isHandlingMouse = true;
-        try
+        if (_rendererApi == null)
         {
-            var offset = await module.InvokeAsync<JSVector2>("ConvertPageToOffset", _rendererContainerReference, e.ClientX, e.ClientY);
-
-            var screenToRayResponse = await _rendererApi.InvokeRequestScreenToWorldRay(new RequestScreenToWorldRay()
-            {
-                Screen = new Vector2(offset.X, offset.Y)
-            });
-
-
-            var raycastResponse = await _rendererApi.InvokeRequestRaycast(new RequestRaycast()
-            {
-                Ray = screenToRayResponse.Ray
-            });
-
-            //#error raycast is somehow not hitting anything in unity!!!
-
-            if (!raycastResponse.HitBlockId.HasValue)
-            {
-                return;
-            }
-
-            var instance = _instances.FirstOrDefault(o => o.BlockId == raycastResponse.HitBlockId);
-
-            var offsetX = raycastResponse.HitWorld.X - instance.Position.X;
-            var offsetY = raycastResponse.HitWorld.Y - instance.Position.Y;
-            _dragging = (instance, offsetX, offsetY, raycastResponse.HitWorld.Z);
-
-            _mouseEventsDispose = await module.InvokeAsync<IJSObjectReference>("InitializeGlobalMouseEvents", _rendererContainerReference, _jsProxyReference, nameof(JsProxy.OnMouseMove), nameof(JsProxy.OnMouseUp));
+            return;
         }
-        finally
+        
+        var offset = await module.InvokeAsync<JSVector2>("ConvertPageToOffset", _rendererContainerReference, e.ClientX, e.ClientY);
+
+        var screenToRayResponse = await _rendererApi.InvokeRequestScreenToWorldRay(new RequestScreenToWorldRay()
         {
-            _isHandlingMouse = false;
+            Screen = new Vector2(offset.X, offset.Y)
+        });
+
+
+        var raycastResponse = await _rendererApi.InvokeRequestRaycast(new RequestRaycast()
+        {
+            Ray = screenToRayResponse.Ray
+        });
+
+        //#error raycast is somehow not hitting anything in unity!!!
+
+        if (!raycastResponse.HitBlockId.HasValue)
+        {
+            return;
         }
+
+        var instance = _instances.FirstOrDefault(o => o.BlockId == raycastResponse.HitBlockId);
+
+        var offsetX = raycastResponse.HitWorld.X - instance.Position.X;
+        var offsetY = raycastResponse.HitWorld.Y - instance.Position.Y;
+        _dragging = (instance, offsetX, offsetY, raycastResponse.HitWorld.Z);
+
+        _mouseEventsDispose = await module.InvokeAsync<IJSObjectReference>("InitializeGlobalMouseEvents", _rendererContainerReference, _jsProxyReference, nameof(JsProxy.OnMouseMove), nameof(JsProxy.OnMouseUp));
     }
-    
+
     private async void OnMouseMove(float offsetX, float offsetY)
     {
         if (!_dragging.HasValue)
         {
             return;
         }
-        // if (_isHandlingMouse)
-        // {
-        //     return;
-        // }
-        _isHandlingMouse = true;
-        try{
+        if (_rendererApi == null)
+        {
+            // force end drag in case the renderer is set to null while dragging
+            OnMouseUp();
+            return;
+        }
+        
         var dragging = _dragging.Value;
         
         var screenToRayResponse=await _rendererApi.InvokeRequestScreenToWorldRay(new RequestScreenToWorldRay()
@@ -465,8 +458,6 @@
             Screen = new Vector2(offsetX,offsetY)
         });
 
-
-        
         // TODO make configurable
         var worldToPlane = Matrix4x4.Identity; // as this defines the drag plane
 
@@ -497,11 +488,7 @@
         
         _rendererApi.InvokeUpdateBlockInstance(dragging.instance.BlockId, new Vector2(newPositionX,newPositionY), dragging.instance.RotationZ);
         
-        }
-        finally
-        {
-            _isHandlingMouse = false;
-        }
+        
         StateHasChanged();
     }
     
@@ -544,6 +531,11 @@
 
     private async Task TriggerTestToBlazor()
     {
+        if (_rendererApi == null)
+        {
+            return;
+        }
+        
         await _rendererApi.InvokeTriggerTestToBlazor(new TriggerTestToBlazor());
     }
 
