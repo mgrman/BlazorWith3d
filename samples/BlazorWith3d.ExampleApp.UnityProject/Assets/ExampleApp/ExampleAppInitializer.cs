@@ -261,6 +261,7 @@ namespace ExampleApp
         private readonly CancellationTokenSource _cts;
         private readonly RenderTexture _renderTexture;
         private readonly Texture2D _screenshot;
+        private  float _nextScreenshotTime;
 
         public CameraImageStreamer(BlazorWebSocketRelay relay)
         {
@@ -269,6 +270,7 @@ namespace ExampleApp
             _renderTexture = new RenderTexture(Screen.width, Screen.height, 24);
             
             _screenshot = new Texture2D(Screen.width, Screen.height, TextureFormat.RGB24, false);
+            _nextScreenshotTime = 0;
             Stream();
 
         }
@@ -281,10 +283,18 @@ namespace ExampleApp
                 {
                     await Awaitable.NextFrameAsync();
 
+
                     if (!_relay.IsConnected)
                     {
                         continue;
                     }
+                    
+                    if (Time.time <= _nextScreenshotTime)
+                    {
+                        continue;
+                    }
+                    
+                    _nextScreenshotTime= Time.time + 1/30f;
 
                     var cam = Camera.main;
                     cam.targetTexture = _renderTexture;

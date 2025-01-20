@@ -82,13 +82,11 @@ internal static class HelloSourceGenerator_DotnetApis
                         {
                             sb.AppendLine($"var encodedMessage=SerializeMessage({i}, {string.Join(", ", m.arguments.Select(a => a.argName))});");
                             sb.AppendLine($"await _binaryApi.SendMessage(encodedMessage);");
-                            sb.AppendLine($"encodedMessage.Dispose();");
                         }
                         else
                         {
                             sb.AppendLine($"var encodedMessage=SerializeMessage({i}, {string.Join(", ", m.arguments.Select(a => a.argName))});");
                             sb.AppendLine($"var responseMessage=await _binaryApi.SendMessageWithResponse(encodedMessage);");
-                            sb.AppendLine($"encodedMessage.Dispose();");
                             sb.AppendLine($"var response=_serializer.DeserializeObject<{m.returnType.typeName}>(responseMessage, out var _);");
                             sb.AppendLine($"return response;");
                         }

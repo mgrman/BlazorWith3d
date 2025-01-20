@@ -5,10 +5,10 @@
 @inject ILogger<BlocksOnGridUnityDebugRelay> Logger
 @inject IJSRuntime JS
 @implements IDisposable
+@inject DebugRelayUnityApi DebugRelayUnityApi
 
-<img @ref="_image" style="width:100%; height: 100%; position: relative; pointer-events: none" 
-    />
-    <script>
+<img @ref="_image"  draggable="false" style="width:100%; height: 100%; position: relative; pointer-events: none;  user-select: none;"/>
+<script>
     window.setSource = async (element, stream, contentType, title) => {
         const arrayBuffer = await stream.arrayBuffer();
         let blobOptions = {};
@@ -25,38 +25,55 @@
     }
 </script>
     
-@code {
+    @code{
+
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (!firstRender)
+            {
+                await base.OnAfterRenderAsync(firstRender);
+                return;
+            }
+
+            DebugRelayUnityApi.ConnectedApi += DebugRelayUnityApiOnConnectedApi;
+        
+            await base.OnAfterRenderAsync(firstRender);
+        }
+
+        private void DebugRelayUnityApiOnConnectedApi(DebugRelayUnityApi.BinaryApiForSocket? obj)
+        {
+            InvokeAsync(async () =>
+            {
+                DebugRelayUnityApi.NewFrame -= UpdateFrame;
+                _rendererAssignment?.Dispose();
+                UpdateFrame([]);
+                StateHasChanged();
+                
+                if (obj != null)
+                {
+                    DebugRelayUnityApi.NewFrame += UpdateFrame;
+                    var mainThreadApi = new BinaryApiThreadWrapper(obj, async t => await InvokeAsync(async () => await t()));
+                    unityAppApi = new BlocksOnGrid3DRenderer_BinaryApiWithResponse(new BinaryApiWithResponseOverBinaryApi(mainThreadApi), new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory());
+                    unityAppApi.OnMessageError += (o, e) =>
+                    {
+                        Logger.LogError(e, $"error handling message {string.Join(",", o)}");
+                    };
+                    _rendererAssignment=await ParentApp.InitializeRenderer(unityAppApi,null);
+
+                }
+            });
+        }
+
     private BlocksOnGrid3DRenderer_BinaryApiWithResponse? unityAppApi;
     private IDisposable? _rendererAssignment;
 
     [CascadingParameter] 
     public required I3DAppController ParentApp { get; set; }
-    
-    [Parameter] 
-    public DebugRelayUnityApi.BinaryApiForSocket DebugApi { get; set; }
 
     private ElementReference _image;
 
     private bool _updatingImage;
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (!firstRender)
-        {
-            await base.OnAfterRenderAsync(firstRender);
-            return;
-        }
-        
-        var mainThreadApi = new BinaryApiThreadWrapper(DebugApi, async t => await InvokeAsync(async () => await t()));
-        unityAppApi = new BlocksOnGrid3DRenderer_BinaryApiWithResponse(new BinaryApiWithResponseOverBinaryApi(mainThreadApi), new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory());
-        unityAppApi.OnMessageError += (o, e) =>
-        {
-            Logger.LogError(e, $"error handling message {string.Join(",", o)}");
-        };
-        _rendererAssignment=await ParentApp.InitializeRenderer(unityAppApi,null);
-
-        DebugApi.NewFrame += UpdateFrame;
-    }
 
     private async void UpdateFrame(byte[] obj)
     {
@@ -72,12 +89,16 @@
             {
                 using var imageStream = new MemoryStream(obj);
                 var strRef = new DotNetStreamReference(imageStream);
-                
+
                 await JS.InvokeVoidAsync("setSource", _image, strRef, "image/jpg",
                     "frame");
 
                 StateHasChanged();
             });
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex,"Error setting image");
         }
         finally
         {
@@ -87,9 +108,10 @@
 
     public void Dispose()
     {
+        DebugRelayUnityApi.ConnectedApi -= DebugRelayUnityApiOnConnectedApi;
+        DebugRelayUnityApi.NewFrame -= UpdateFrame;
         unityAppApi?.Dispose();
         _rendererAssignment?.Dispose();
-        DebugApi.NewFrame -= UpdateFrame;
     }
 
 }

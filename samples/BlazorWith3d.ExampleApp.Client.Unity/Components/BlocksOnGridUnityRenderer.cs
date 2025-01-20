@@ -8,7 +8,7 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Components;
 
 public class BlocksOnGridUnityRenderer:BaseUnityRenderer, IDisposable
 {
-    private IBlocksOnGrid3DRenderer? _unityAppApi;
+    private BlocksOnGrid3DRenderer_BinaryApiWithResponse? _unityAppApi;
     private IDisposable? _rendererAssignment;
     
     [CascadingParameter] 
@@ -57,7 +57,7 @@ public class BlocksOnGridUnityRenderer:BaseUnityRenderer, IDisposable
 
     public void Dispose()
     {
-        (_unityAppApi as IDisposable)?.Dispose();
+        _unityAppApi?.Dispose();
         _rendererAssignment?.Dispose();
     }
 }

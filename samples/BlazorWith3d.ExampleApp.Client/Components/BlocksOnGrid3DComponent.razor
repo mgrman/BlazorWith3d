@@ -169,7 +169,7 @@
 }
 <button @onclick="TriggerTestToBlazor">TriggerTestToBlazor</button>
 
-<div @ref="_rendererContainerReference" @onmousedown="OnMouseDown"  style="width: 500px; height: 500px; position: relative; border: red 1px solid">
+<div @ref="_rendererContainerReference" @onmousedown="OnMouseDown" draggable="false" style="width: 500px; height: 500px; position: relative; border: red 1px solid; user-select: none">
 
     <CascadingValue Value="this" IsFixed="true">
         @ChildContent
@@ -254,15 +254,22 @@
     {
         throw new NotImplementedException();
     }
+
+    private int _rendererCounter;
+    private bool _isMouseMoveBeingHanlded;
+
     public async ValueTask<IDisposable> InitializeRenderer(IBlocksOnGrid3DRenderer rendererApi, Func<ValueTask>? afterEventHandlerIsSet)
     {
+        unchecked
+        {
+            _rendererCounter++;
+        }
+        var rendererCounter = _rendererCounter;
+        
         await _initializeRendererSemaphoreSlim.WaitAsync();
         try
         {
-            // if (_rendererApi != null)
-            // {
-            //     _rendererApi.SetEventHandler(null);
-            // }
+            
             _rendererApi = rendererApi;
             if (_rendererApi != null)
             {
@@ -284,7 +291,14 @@
             _initializeRendererSemaphoreSlim.Release();
         }
 
-        return new DisposableAction(() => rendererApi.SetController(null));
+        return new DisposableAction(() =>
+        {
+            if (rendererCounter == _rendererCounter)
+            {
+                _rendererApi = null;
+            }
+            rendererApi.SetController(null);
+        });
     }
 
     public async ValueTask OnUnityAppInitialized(UnityAppInitialized msg)
@@ -450,7 +464,13 @@
             OnMouseUp();
             return;
         }
-        
+
+        if (_isMouseMoveBeingHanlded)
+        {
+            return;
+        }
+
+        _isMouseMoveBeingHanlded = true;
         var dragging = _dragging.Value;
         
         var screenToRayResponse=await _rendererApi.InvokeRequestScreenToWorldRay(new RequestScreenToWorldRay()
@@ -490,6 +510,7 @@
         
         
         StateHasChanged();
+        _isMouseMoveBeingHanlded = false;
     }
     
     private void OnMouseUp()

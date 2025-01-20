@@ -122,11 +122,8 @@ benchmarks
     - could use extra args in interop with offset and count, to be able to slice the array on JS side
       - benchmark somehow?
 
-- switch debug relay back as normal renderer
-    - maybe with long initialization while it waits for connection?
-    - use null renderer while waiting
-
 - unity editor debug should refresh on new connection (e.g. backend was restarted)
+  - and should react if connection was made before the page was opened
 
 - better JS plugin via $ as in https://github.com/Made-For-Gamers/NEAR-Unity-WebGL-API/blob/main/Assets/WebGLSupport/WebGLInput/WebGLInput.jslib
 

@@ -19,6 +19,7 @@ namespace BlazorWith3d.Unity
         private readonly CancellationTokenSource _cts;
         private readonly List<IBufferWriterWithArraySegment<byte>> _unsentMessages= new ();
 
+        private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1,1);
 
         public Func<ArraySegment<byte>, ValueTask>? MainMessageHandler { get; set; }
         
@@ -86,7 +87,7 @@ namespace BlazorWith3d.Unity
             foreach (var unsentMessage in _unsentMessages)
             {
                 
-                SendMessageInner(0,unsentMessage.WrittenArray);
+              await  SendMessageInner(0,unsentMessage.WrittenArray);
                 unsentMessage.Dispose();
             }
             _unsentMessages.Clear();
@@ -107,7 +108,7 @@ namespace BlazorWith3d.Unity
                         throw new InvalidOperationException("Did not receive full message!");
                     }
 
-                    ResponseReceived(buffer.Slice(0, receiveResult.Count).ToArray());
+                    await ResponseReceived(buffer.Slice(0, receiveResult.Count).ToArray());
                 }
             }
             catch (TaskCanceledException)
@@ -119,44 +120,52 @@ namespace BlazorWith3d.Unity
             }
         }
 
-        public ValueTask SendMessage(IBufferWriterWithArraySegment<byte> bytes)
+        public async ValueTask SendMessage(IBufferWriterWithArraySegment<byte> bytes)
         {
             if (_ws?.State!= WebSocketState.Open)
             {
                 _unsentMessages.Add(bytes);
-                return new ValueTask();
+                return ;
             }
 
-            SendMessageInner(0,bytes.WrittenArray);
+            
+            Debug.Log($"SendMessage at {Time.realtimeSinceStartup}");
+            
+            await SendMessageInner(0,bytes.WrittenArray);
             
             bytes.Dispose();
             
-            return new ValueTask();
+            return ;
         }
 
-        public ValueTask UpdateScreen(byte[] bytes)
+        public async ValueTask UpdateScreen(byte[] bytes)
         {
             if (_ws?.State!= WebSocketState.Open)
             {
-                return new ValueTask();
+                return ;
             }
+            
+            Debug.LogWarning($"UpdateScreen at {Time.realtimeSinceStartup}");
 
-            SendMessageInner(1,bytes);
-            return new ValueTask();
+            await SendMessageInner(1,bytes);
+            return ;
         }
 
-        private void SendMessageInner(byte prefix, ArraySegment<byte> bytes)
+        private async Task SendMessageInner(byte prefix, ArraySegment<byte> bytes)
         {
-            _ws.SendAsync(new []{prefix}, WebSocketMessageType.Binary, false, _cts.Token);
-            _ws.SendAsync(bytes, WebSocketMessageType.Binary, true, _cts.Token);
+            await _semaphore.WaitAsync();
+           await _ws.SendAsync(new []{prefix}, WebSocketMessageType.Binary, false, _cts.Token);
+           await _ws.SendAsync(bytes, WebSocketMessageType.Binary, true, _cts.Token);
+           _semaphore.Release();
         }
 
-        private async void ResponseReceived(byte[] data)
+        private async ValueTask ResponseReceived(byte[] data)
         {
             await Awaitable.MainThreadAsync();
             try
             {
-                MainMessageHandler?.Invoke(data);
+                Debug.LogError($"MessageReceived at {Time.realtimeSinceStartup}");
+                await (MainMessageHandler?.Invoke(data) ?? new ValueTask());
             }
             catch (Exception ex)
             {

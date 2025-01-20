@@ -2,7 +2,7 @@
 @using BlazorWith3d.ExampleApp.Client.Components
 @using BlazorWith3d.ExampleApp.Client.Unity.Components
 @using BlazorWith3d.ExampleApp.Client.HTML
-
+@inject IFlagProvider  FlagProvider
 
 <PageTitle>WebGL instance</PageTitle>
 
@@ -42,6 +42,10 @@
             <BlazorWith3d.ExampleApp.Client.ThreeJS.BlocksOnGridThreeJSDirectRenderer></BlazorWith3d.ExampleApp.Client.ThreeJS.BlocksOnGridThreeJSDirectRenderer>
             // uses generated interop code 
             break;
+        case "Unity Editor Debug Relay":
+            <BlocksOnGridUnityDebugRelay ></BlocksOnGridUnityDebugRelay>
+            // uses generated interop code 
+            break;
             default:
             <text> Unsupported renderer type @_renderer</text>
             break;
@@ -52,7 +56,17 @@
 
 @code{
 
-    List<string> _renderers = ["None","Unity WebGL","Unity WebGL (withResponse)", "Html", "Babylon", "ThreeJS", "ThreeJS.Interop"];
+    List<string> _renderers ;
+
+    protected override void OnInitialized()
+    {
+        _renderers = ["None", "Unity WebGL", "Unity WebGL (withResponse)", "Html", "Babylon", "ThreeJS", "ThreeJS.Interop"];
+        if (FlagProvider.IsUnityRelayEnabled)
+        {
+            _renderers.Add("Unity Editor Debug Relay");
+        }
+        base.OnInitialized();
+    }
 
     string _renderer = "None";
 

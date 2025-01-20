@@ -12,6 +12,8 @@ public class DebugRelayUnityApi
 
     public event Action<BinaryApiForSocket?> ConnectedApi;
     
+    public event Action<byte[]> NewFrame;
+
     public DebugRelayUnityApi(ILogger<DebugRelayUnityApi> logger)
     {
         _logger = logger;
@@ -43,10 +45,10 @@ public class DebugRelayUnityApi
                     switch (msgType)
                     {
                         case 0:
-                            api.MainMessageHandler.Invoke(msg);
+                            await (api.MainMessageHandler?.Invoke(msg) ?? ValueTask.CompletedTask);
                             break;
                         case 1:
-                            api.OnNewFrame(msg);
+                            NewFrame?.Invoke(msg);
                             break;
                         default:
                             throw new InvalidOperationException();
@@ -58,6 +60,10 @@ public class DebugRelayUnityApi
             {
                 ConnectedApi?.Invoke(null);
                 _logger.LogWarning(ex,"HandleWebSocket OnMessageFromUnity error");
+                if (ex.InnerException != null)
+                {
+                    _logger.LogWarning(ex.InnerException, "HandleWebSocket InnerException");
+                }
             }
             catch (Exception ex)
             {
@@ -78,28 +84,21 @@ public class DebugRelayUnityApi
         }
 
         public Func<ArraySegment<byte>,ValueTask>? MainMessageHandler { get; set; }
-        public event Action<byte[]> NewFrame;
 
-        public void OnNewFrame(byte[] image)
-        {
-            NewFrame?.Invoke(image);
-        }
-
-        public  ValueTask SendMessage(IBufferWriterWithArraySegment<byte> bytes)
+        public async ValueTask SendMessage(IBufferWriterWithArraySegment<byte> bytes)
         {
             if (_webSocket.State != WebSocketState.Open)
             {
                 throw new InvalidOperationException();
             }
 
-            _webSocket.SendAsync(bytes.WrittenArray,
+           await _webSocket.SendAsync(bytes.WrittenArray,
                 WebSocketMessageType.Binary,
                 true,
                 CancellationToken.None);
             
             bytes.Dispose();
             
-            return ValueTask.CompletedTask;
         }
     }
 }
