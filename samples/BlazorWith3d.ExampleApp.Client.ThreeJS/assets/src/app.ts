@@ -36,10 +36,13 @@ export function InitializeApp_BinaryApi(canvas: HTMLCanvasElement, dotnetObject:
     blazorApp.SetRenderer(app);
 
     let appAsAny: any = app;
-    appAsAny.ProcessMessage = msg => {
+    appAsAny.ProcessMessage = (msg: Uint8Array, offset: number, count:number) => {
+
+        msg=msg.subarray(offset,count);
         return binaryApi.mainMessageHandler(msg);
     }
-    appAsAny.ProcessMessageWithResponse = msg => {
+    appAsAny.ProcessMessageWithResponse = (msg: Uint8Array, offset: number, count:number) => {
+        msg=msg.subarray(offset,count);
         return binaryApi.mainMessageWithResponseHandler(msg);
     }
     return appAsAny;

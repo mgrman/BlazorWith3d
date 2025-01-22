@@ -118,10 +118,6 @@ benchmarks
     - https://learn.microsoft.com/en-us/aspnet/core/client-side/dotnet-interop/?view=aspnetcore-9.0#type-mappings
     - there should be better mapping with arraySegments now, potentially preventing memorycopy when creating array for normal JS interop
 
-- Optimize Typescript API
-    - could use extra args in interop with offset and count, to be able to slice the array on JS side
-      - benchmark somehow?
-
 - unity editor debug should refresh on new connection (e.g. backend was restarted)
   - and should react if connection was made before the page was opened
 

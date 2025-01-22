@@ -25,6 +25,10 @@ public class BaseJsBinaryApiRenderer:BaseJsRenderer, IBinaryApi
 
     private DotNetObjectReference<BinaryApiJsMessageReceiverProxy>? _messageReceiverProxyReference;
 
+
+    [Parameter] 
+    public bool CopyArrays { get; set; } = true;
+
     protected override async Task<IJSObjectReference?> InitializeJsApp(IJSObjectReference module)
     { 
         _messageReceiverProxyReference = DotNetObjectReference.Create(new BinaryApiJsMessageReceiverProxy(OnMessageBytesReceived));
@@ -48,7 +52,18 @@ public class BaseJsBinaryApiRenderer:BaseJsRenderer, IBinaryApi
         try
         {
             await _semaphore.WaitAsync();
-            await _typescriptApp.InvokeVoidAsync("ProcessMessage", messageBytes.WrittenArray.ToArray());// ToArray() as JS interop only has fast path for byte[] type
+
+            (byte[] array, int offset) data;
+            if (CopyArrays)
+            {
+                data = (messageBytes.WrittenArray.ToArray(), 0);
+            }
+            else
+            {
+                data = (messageBytes.WrittenArray.Array!, messageBytes.WrittenArray.Offset);
+            }
+            
+            await _typescriptApp.InvokeVoidAsync("ProcessMessage", data.array, data.offset);// ToArray() as JS interop only has fast path for byte[] type
         }
         catch (Exception ex)
         {

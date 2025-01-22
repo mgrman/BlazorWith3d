@@ -38,6 +38,10 @@
             <BlazorWith3d.ExampleApp.Client.ThreeJS.BlocksOnGridThreeJSRenderer></BlazorWith3d.ExampleApp.Client.ThreeJS.BlocksOnGridThreeJSRenderer>
             // uses binary TS interface with response
             break;
+        case "ThreeJS (no copy)":
+            <BlazorWith3d.ExampleApp.Client.ThreeJS.BlocksOnGridThreeJSRenderer CopyArrays="false"></BlazorWith3d.ExampleApp.Client.ThreeJS.BlocksOnGridThreeJSRenderer>
+            // uses binary TS interface with response
+            break;
         case "ThreeJS.Interop":
             <BlazorWith3d.ExampleApp.Client.ThreeJS.BlocksOnGridThreeJSDirectRenderer></BlazorWith3d.ExampleApp.Client.ThreeJS.BlocksOnGridThreeJSDirectRenderer>
             // uses generated interop code 
@@ -60,7 +64,7 @@
 
     protected override void OnInitialized()
     {
-        _renderers = ["None", "Unity WebGL", "Unity WebGL (withResponse)", "Html", "Babylon", "ThreeJS", "ThreeJS.Interop"];
+        _renderers = ["None", "Unity WebGL", "Unity WebGL (withResponse)", "Html", "Babylon", "ThreeJS", "ThreeJS.Interop","ThreeJS (no copy)"];
         if (FlagProvider.IsUnityRelayEnabled)
         {
             _renderers.Add("Unity Editor Debug Relay");

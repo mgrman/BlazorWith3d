@@ -16,6 +16,8 @@ public class BaseJsBinaryApiWithResponseRenderer:BaseJsRenderer, IBinaryApiWithR
     [Inject]
     public required  IJSRuntime JsRuntime{ get; set; }
         
+    [Parameter] 
+    public bool CopyArrays { get; set; } = true;
         
     public override string JsAppPath => "";
 
@@ -59,7 +61,17 @@ public class BaseJsBinaryApiWithResponseRenderer:BaseJsRenderer, IBinaryApiWithR
         try
         {
             await _semaphore.WaitAsync();
-            await _typescriptApp.InvokeVoidAsync("ProcessMessage", messageBytes.WrittenArray.ToArray()); // ToArray() as JS interop only has fast path for byte[] type
+            
+            (byte[] array, int offset, int count) data;
+            if (CopyArrays)
+            {
+                data = (messageBytes.WrittenArray.ToArray(), 0, messageBytes.WrittenArray.Count);
+            }
+            else
+            {
+                data = (messageBytes.WrittenArray.Array!, messageBytes.WrittenArray.Offset, messageBytes.WrittenArray.Count);
+            }
+            await _typescriptApp.InvokeVoidAsync("ProcessMessage",data.array, data.offset, data.count); // ToArray() as JS interop only has fast path for byte[] type
             messageBytes.Dispose();
         }
         catch (Exception ex)
@@ -72,7 +84,7 @@ public class BaseJsBinaryApiWithResponseRenderer:BaseJsRenderer, IBinaryApiWithR
         }
     }
 
-    public async ValueTask<ArraySegment<byte>> SendMessageWithResponse(IBufferWriterWithArraySegment<byte> bytes)
+    public async ValueTask<ArraySegment<byte>> SendMessageWithResponse(IBufferWriterWithArraySegment<byte> messageBytes)
     {
         if (_typescriptApp == null)
         {
@@ -82,8 +94,17 @@ public class BaseJsBinaryApiWithResponseRenderer:BaseJsRenderer, IBinaryApiWithR
         try
         {
             await _semaphore.WaitAsync();
-            var response = await _typescriptApp.InvokeAsync<byte[]>("ProcessMessageWithResponse", bytes.WrittenArray.ToArray());// ToArray() as JS interop only has fast path for byte[] type
-            bytes.Dispose();
+            (byte[] array, int offset, int count) data;
+            if (CopyArrays)
+            {
+                data = (messageBytes.WrittenArray.ToArray(), 0, messageBytes.WrittenArray.Count);
+            }
+            else
+            {
+                data = (messageBytes.WrittenArray.Array!, messageBytes.WrittenArray.Offset, messageBytes.WrittenArray.Count);
+            }
+            var response = await _typescriptApp.InvokeAsync<byte[]>("ProcessMessageWithResponse", data.array, data.offset, data.count);// ToArray() as JS interop only has fast path for byte[] type
+            messageBytes.Dispose();
             return response;
         }
         catch (Exception ex)
