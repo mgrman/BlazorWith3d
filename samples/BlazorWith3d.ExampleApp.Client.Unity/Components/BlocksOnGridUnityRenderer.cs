@@ -27,24 +27,22 @@ public class BlocksOnGridUnityRenderer:BaseUnityRenderer, IDisposable
             return;
         }
 
+        IBinaryApiWithResponse binaryAPi;
         if (IsWithResponse)
         {
-            var unityAppApi = new BlocksOnGrid3DRenderer_BinaryApiWithResponse(this, new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory());
-            unityAppApi.OnMessageError += (bytes, exception) =>
-            {
-                Logger.LogError($"Error deserializing message {bytes}", exception);
-            };
-            _unityAppApi=unityAppApi;
+            binaryAPi = this;
         }
         else
         {
-            var unityAppApi = new BlocksOnGrid3DRenderer_BinaryApiWithResponse(new BinaryApiWithResponseOverBinaryApi(this), new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory());
-            unityAppApi.OnMessageError += (bytes, exception) =>
-            {
-                Logger.LogError($"Error deserializing message {bytes}", exception);
-            };
-            _unityAppApi=unityAppApi;
+            binaryAPi = new BinaryApiWithResponseOverBinaryApi(this);
         }
+
+        var unityAppApi = new BlocksOnGrid3DRenderer_BinaryApiWithResponse(binaryAPi, new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory());
+        unityAppApi.OnMessageError += (bytes, exception) =>
+        {
+            Logger.LogError($"Error deserializing message {bytes}", exception);
+        };
+        _unityAppApi=unityAppApi;
 
 
         _rendererAssignment = await ParentApp.InitializeRenderer(_unityAppApi, async () =>

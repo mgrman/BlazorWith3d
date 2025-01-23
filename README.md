@@ -114,6 +114,8 @@ benchmarks
 
 ### Prio 0 (what to do next)
 
+- switch the base classes to composition, so it is easier to mix and match the renderer with api
+
 - switch to nicer ways to share memory in WASM special case
     - https://learn.microsoft.com/en-us/aspnet/core/client-side/dotnet-interop/?view=aspnetcore-9.0#type-mappings
     - there should be better mapping with arraySegments now, potentially preventing memorycopy when creating array for normal JS interop
@@ -137,8 +139,6 @@ benchmarks
       - https://github.com/Eptagone/Vite.AspNetCore/tree/main
     - better JS isolation
       - https://www.emekaemego.com/blog/blazor-component-js/
-
-- double check catching of exceptions as they happen in "native" code and do not always propagate properly
 
 - cleanup, refactor generator, too many things seemingly hardcoded and edge cases not handled (e.g. namespaces of messages, or if multiple apps are defined)
 

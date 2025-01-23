@@ -45,8 +45,8 @@ namespace ExampleApp
             _templateRoot = new GameObject("BlockTemplateRoot");
             _templateRoot.SetActive(false);
             _templateRoot.transform.parent = transform;
-            
 
+            IBinaryApiWithResponse binaryApiWithResponse;
 #if UNITY_EDITOR
 
             if (string.IsNullOrEmpty(_backendWebsocketUrl))
@@ -63,7 +63,7 @@ namespace ExampleApp
                 
                 _asyncDisposables.Add(relay);
                 var blazorApi = relay;
-                _appApi = new BlocksOnGrid3DController_BinaryApiWithResponse(new BinaryApiWithResponseOverBinaryApi(blazorApi), new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory());
+                binaryApiWithResponse = new BinaryApiWithResponseOverBinaryApi(blazorApi);
                 
                 var uriBuilder = new UriBuilder(_backendWebsocketUrl);
                 uriBuilder.Scheme="http";
@@ -74,16 +74,17 @@ namespace ExampleApp
             HostUrl = new Uri(Application.absoluteURL);
             var blazorApi = UnityBlazorApi.Singleton;
 
-            if(Environment.GetCommandLineArgs().Contains("BinaryApiWithResponse", StringComparer.OrdinalIgnoreCase)){
-                _appApi = new BlocksOnGrid3DController_BinaryApiWithResponse(blazorApi, new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory());
+            if(Environment.GetCommandLineArgs().Contains("BinaryApiWithResponse", StringComparer.OrdinalIgnoreCase))
+            {
+                binaryApiWithResponse = blazorApi;
             }
-            else{
-                _appApi = new BlocksOnGrid3DController_BinaryApiWithResponse(new BinaryApiWithResponseOverBinaryApi(blazorApi), new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory());
-
+            else
+            {
+                binaryApiWithResponse = new BinaryApiWithResponseOverBinaryApi(blazorApi);
             }
 #endif
             Console.WriteLine($"{Screen.width},{Screen.height}");
-
+            _appApi = new BlocksOnGrid3DController_BinaryApiWithResponse(binaryApiWithResponse, new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory());
             _appApi.OnMessageError += (o, e) =>
             {
                 Debug.LogException(e);

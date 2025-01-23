@@ -17,6 +17,7 @@ public class BlocksOnGridBabylonRenderer:BaseJsBinaryApiWithResponseRenderer, ID
     public override string JsAppPath => Assets["./_content/BlazorWith3d.ExampleApp.Client.Babylon/clientassets/blazorwith3d-exampleapp-client-babylon-bundle.js"];
 
     protected override string InitializeMethodName => "InitializeApp_BinaryApi";
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender)
@@ -24,15 +25,17 @@ public class BlocksOnGridBabylonRenderer:BaseJsBinaryApiWithResponseRenderer, ID
             await base.OnAfterRenderAsync(firstRender);
             return;
         }
+
         await base.OnAfterRenderAsync(firstRender);
 
-        _unityAppApi = new BlocksOnGrid3DRenderer_BinaryApiWithResponse(this, new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory());
+        _unityAppApi = new BlocksOnGrid3DRenderer_BinaryApiWithResponse(this, new MemoryPackBinaryApiSerializer(),
+            new PoolingArrayBufferWriterFactory());
         _unityAppApi.OnMessageError += (bytes, exception) =>
         {
             Logger.LogError($"Error deserializing message {bytes}", exception);
         };
-        
-        _rendererAssignment=await ParentApp.InitializeRenderer(_unityAppApi, async () =>
+
+        _rendererAssignment = await ParentApp.InitializeRenderer(_unityAppApi, async () =>
         {
             await InitializeTypeScriptApp();
         });
