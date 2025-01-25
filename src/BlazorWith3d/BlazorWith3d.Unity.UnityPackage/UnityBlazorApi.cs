@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace BlazorWith3d.Unity
 {
-    public class UnityBlazorApi : IBinaryApiWithResponse
+    public class UnityBlazorApi : IBinaryApi
     {
         private static Dictionary<int, AwaitableCompletionSource<byte[]>> s_responses=new ();
         
@@ -67,7 +67,7 @@ namespace BlazorWith3d.Unity
             set => MainMessageHandler = value;
         }
 
-        Func<ArraySegment<byte>, ValueTask<IBufferWriterWithArraySegment<byte>>>? IBinaryApiWithResponse.MainMessageWithResponseHandler { 
+        Func<ArraySegment<byte>, ValueTask<IBufferWriterWithArraySegment<byte>>>? IBinaryApi.MainMessageWithResponseHandler { 
             get => MainMessageWithResponseHandler;
             set => MainMessageWithResponseHandler = value;
         }

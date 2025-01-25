@@ -35,17 +35,17 @@ internal static class HelloSourceGenerator_DotnetApis
 
 
             sb.AppendLine();
-            sb.AppendLine($"public partial class {info.app.TypeNameWithoutIPrefix}_BinaryApiWithResponse: {info.app.typeName}, IDisposable");
+            sb.AppendLine($"public partial class {info.app.TypeNameWithoutIPrefix}OverBinaryApi: {info.app.typeName}, IDisposable");
             using (sb.IndentWithCurlyBrackets())
             {
                 sb.AppendLine();
                 sb.AppendLine($"private readonly IBinaryApiSerializer _serializer;");
-                sb.AppendLine($"private readonly IBinaryApiWithResponse _binaryApi;");
+                sb.AppendLine($"private readonly IBinaryApi _binaryApi;");
                 sb.AppendLine($"private {info.eventHandler.typeName}? _eventHandler;");
                 sb.AppendLine($"private readonly IBufferWriterFactory<byte> _writerFactory;");
 
                 sb.AppendLine();
-                sb.AppendLine($"public {info.app.TypeNameWithoutIPrefix}_BinaryApiWithResponse(IBinaryApiWithResponse binaryApi, IBinaryApiSerializer serializer, IBufferWriterFactory<byte> writerFactory)");
+                sb.AppendLine($"public {info.app.TypeNameWithoutIPrefix}OverBinaryApi(IBinaryApi binaryApi, IBinaryApiSerializer serializer, IBufferWriterFactory<byte> writerFactory)");
                 using (sb.IndentWithCurlyBrackets())
                 {
                     sb.AppendLine("_binaryApi = binaryApi;");

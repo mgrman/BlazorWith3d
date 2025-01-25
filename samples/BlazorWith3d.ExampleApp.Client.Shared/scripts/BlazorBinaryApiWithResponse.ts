@@ -1,6 +1,6 @@
-import {IBinaryApiWithResponse} from "./IBinaryApiWithResponse";
+import {IBinaryApi} from "./IBinaryApi";
 
-export class BlazorBinaryApiWithResponse implements IBinaryApiWithResponse {
+export class BlazorBinaryApiWithResponse implements IBinaryApi {
     private _sendMessage: (msgBytes: Uint8Array) => Promise<void>;
     private _sendMessageWithResponse: (msgBytes: Uint8Array) => Promise<Uint8Array>;
 

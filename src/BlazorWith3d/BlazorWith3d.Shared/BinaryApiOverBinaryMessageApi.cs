@@ -1,33 +1,18 @@
 ﻿using System;
-using System.Buffers;
 using System.Collections.Generic;
-using System.Linq;
-using System.Net.Mime;
 using System.Threading.Tasks;
 
 namespace BlazorWith3d.Shared
 {
-    public interface IBinaryApi
+    public class BinaryApiOverBinaryMessageApi : IBinaryApi
     {
-        Func<ArraySegment<byte>,ValueTask>? MainMessageHandler { get; set; }
-        ValueTask SendMessage(IBufferWriterWithArraySegment<byte> bytes);
-    }
-    
-    public interface IBinaryApiWithResponse : IBinaryApi
-    {
-        Func<ArraySegment<byte>,ValueTask<IBufferWriterWithArraySegment<byte>>>? MainMessageWithResponseHandler { get; set; }
-        ValueTask<ArraySegment<byte>> SendMessageWithResponse(IBufferWriterWithArraySegment<byte> bytes);
-    }
-    
-    public class BinaryApiWithResponseOverBinaryApi : IBinaryApiWithResponse
-    {
-        private readonly IBinaryApi _binaryApi;
+        private readonly IBinaryMessageApi _binaryApi;
 
         private byte _requestResponseIdCounter=0;
         private Dictionary<byte,TaskCompletionSource<ArraySegment<byte>>> _responsesTcs = new();
 
 
-        public BinaryApiWithResponseOverBinaryApi(IBinaryApi binaryApi)
+        public BinaryApiOverBinaryMessageApi(IBinaryMessageApi binaryApi)
         {
             _binaryApi = binaryApi;
             
@@ -80,7 +65,7 @@ namespace BlazorWith3d.Shared
         public async ValueTask SendMessage(IBufferWriterWithArraySegment<byte> bytes)
         {
             bytes.Write(0);
-           await _binaryApi.SendMessage(bytes );
+            await _binaryApi.SendMessage(bytes );
         }
 
         public Func<ArraySegment<byte>, ValueTask<IBufferWriterWithArraySegment<byte>>>? MainMessageWithResponseHandler
@@ -111,4 +96,3 @@ namespace BlazorWith3d.Shared
         }
     }
 }
-

@@ -10,15 +10,12 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Components;
 
 public class BlocksOnGridUnityRenderer:BaseUnityRenderer, IDisposable
 {
-    private BlocksOnGrid3DRenderer_BinaryApiWithResponse? _unityAppApi;
+    private BlocksOnGrid3DRendererOverBinaryApi? _unityAppApi;
     private IDisposable? _rendererAssignment;
-    private IInitializableJsBinaryApi? _binaryApi;
+    private IJsBinaryApi? _binaryApi;
     
     [CascadingParameter] 
     public required I3DAppController ParentApp { get; set; }
-    
-    [Parameter]
-    public bool IsWithResponse { get; set; }
     
     [Inject]
     protected IJSRuntime _jsRuntime { get; set; }
@@ -35,25 +32,10 @@ public class BlocksOnGridUnityRenderer:BaseUnityRenderer, IDisposable
             await base.OnAfterRenderAsync(firstRender);
             return;
         }
+        
+        _binaryApi=new JsBinaryApiWithResponseRenderer(_jsRuntime,_logger);
 
-        IBinaryApiWithResponse binaryApi;
-        IInitializableJsBinaryApi initializableBinaryApi;
-        if (!IsWithResponse)
-        {
-            var jsBinaryApi=new JsBinaryApiRenderer(_jsRuntime,_logger);
-            binaryApi=new BinaryApiWithResponseOverBinaryApi(jsBinaryApi);
-            initializableBinaryApi=jsBinaryApi;
-            _binaryApi=jsBinaryApi;
-        }
-        else
-        {
-            var jsBinaryApi=new JsBinaryApiWithResponseRenderer(_jsRuntime,_logger);
-            binaryApi=jsBinaryApi;
-            initializableBinaryApi=jsBinaryApi;
-            _binaryApi=jsBinaryApi;
-        }
-
-        var unityAppApi = new BlocksOnGrid3DRenderer_BinaryApiWithResponse(binaryApi, new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory());
+        var unityAppApi = new BlocksOnGrid3DRendererOverBinaryApi(_binaryApi, new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory());
         unityAppApi.OnMessageError += (bytes, exception) =>
         {
             _logger.LogError($"Error deserializing message {bytes}", exception);
@@ -63,7 +45,7 @@ public class BlocksOnGridUnityRenderer:BaseUnityRenderer, IDisposable
 
         _rendererAssignment = await ParentApp.InitializeRenderer(_unityAppApi, async () =>
         {
-            await initializableBinaryApi.InitializeJsApp(this._unityInitializationJsPath, _containerElementReference,"showUnity", GetExtraArg(UnityBuildFilesRootPath, IsWithResponse));
+            await _binaryApi.InitializeJsApp(this._unityInitializationJsPath, _containerElementReference,"showUnity", GetExtraArg(UnityBuildFilesRootPath, false));
         });
 
         await base.OnAfterRenderAsync(firstRender);
@@ -72,6 +54,7 @@ public class BlocksOnGridUnityRenderer:BaseUnityRenderer, IDisposable
     public void Dispose()
     {
         _unityAppApi?.Dispose();
+        _binaryApi?.TryDisposeAsync();
         _rendererAssignment?.Dispose();
     }
 }

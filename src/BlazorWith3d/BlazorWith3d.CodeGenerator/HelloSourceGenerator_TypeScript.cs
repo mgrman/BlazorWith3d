@@ -35,7 +35,6 @@ internal static class HelloSourceGenerator_TypeScript
 
 
         sb.AppendLine($"import {{IBinaryApi}} from \"../IBinaryApi\";");
-        sb.AppendLine($"import {{IBinaryApiWithResponse}} from \"../IBinaryApiWithResponse\";");
         sb.AppendLine($"import {{MemoryPackWriter}} from \"./MemoryPackWriter\";");
         sb.AppendLine($"import {{MemoryPackReader}} from \"./MemoryPackReader\";");
 
@@ -82,7 +81,7 @@ internal static class HelloSourceGenerator_TypeScript
             }
         }
 
-        sb.AppendLine($"export class {info.app.TypeNameWithoutIPrefix}_DirectInterop implements {info.app.typeName}");
+        sb.AppendLine($"export class {info.app.TypeNameWithoutIPrefix}OverDirectInterop implements {info.app.typeName}");
         using (sb.IndentWithCurlyBrackets())
         {
             sb.AppendLine($"private _dotnetObject: any;");
@@ -108,15 +107,15 @@ internal static class HelloSourceGenerator_TypeScript
             }
         }
 
-        sb.AppendLine($"export class {info.app.TypeNameWithoutIPrefix}_BinaryApiWithResponse implements {info.app.typeName}");
+        sb.AppendLine($"export class {info.app.TypeNameWithoutIPrefix}OverBinaryApi implements {info.app.typeName}");
         using (sb.IndentWithCurlyBrackets())
         {
-            sb.AppendLine($"private _binaryApi: IBinaryApiWithResponse;");
+            sb.AppendLine($"private _binaryApi: IBinaryApi;");
             sb.AppendLine($"private _eventHandler: {info.eventHandler.typeName};");
             sb.AppendLine($"private _messageHandler:(bytes: Uint8Array) => Promise<void>;");
             sb.AppendLine($"private _messageWithResponseHandler:(bytes: Uint8Array) => Promise<Uint8Array>;");
 
-            sb.AppendLine($"constructor( binaryApi: IBinaryApiWithResponse)");
+            sb.AppendLine($"constructor( binaryApi: IBinaryApi)");
             using (sb.IndentWithCurlyBrackets())
             {
                 sb.AppendLine($"this._binaryApi = binaryApi;");

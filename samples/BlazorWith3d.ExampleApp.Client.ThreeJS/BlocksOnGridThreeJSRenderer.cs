@@ -9,7 +9,7 @@ namespace BlazorWith3d.ExampleApp.Client.ThreeJS;
 
 public class BlocksOnGridThreeJSRenderer: BaseJsRenderer, IAsyncDisposable
 {
-    private BlocksOnGrid3DRenderer_BinaryApiWithResponse? _unityAppApi;
+    private BlocksOnGrid3DRendererOverBinaryApi? _unityAppApi;
     private IDisposable? _rendererAssignment;
     private JsBinaryApiWithResponseRenderer _binaryApi;
 
@@ -22,6 +22,9 @@ public class BlocksOnGridThreeJSRenderer: BaseJsRenderer, IAsyncDisposable
     [Inject] 
     protected ILogger<BlocksOnGridThreeJSRenderer> _logger { get; set; }
     
+    [Parameter]
+    public bool CopyArrays { get; set; } = true;
+    
     private string JsAppPath => Assets["./_content/BlazorWith3d.ExampleApp.Client.ThreeJS/clientassets/blazorwith3d-exampleapp-client-threejs-bundle.js"];
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -32,9 +35,16 @@ public class BlocksOnGridThreeJSRenderer: BaseJsRenderer, IAsyncDisposable
             return;
         }
 
-        _binaryApi=new JsBinaryApiWithResponseRenderer(_jsRuntime,_logger);
+        if (CopyArrays)
+        {
+            _binaryApi = new JsBinaryApiWithResponseRenderer(_jsRuntime, _logger);
+        }
+        else
+        {
+            _binaryApi = new JsBinaryApiWithResponseRendererWithoutCopy(_jsRuntime, _logger);
+        }
 
-        _unityAppApi = new BlocksOnGrid3DRenderer_BinaryApiWithResponse(_binaryApi, new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory());
+        _unityAppApi = new BlocksOnGrid3DRendererOverBinaryApi(_binaryApi, new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory());
         _unityAppApi.OnMessageError += (bytes, exception) =>
         {
             _logger.LogError($"Error deserializing message {bytes}", exception);
@@ -46,6 +56,7 @@ public class BlocksOnGridThreeJSRenderer: BaseJsRenderer, IAsyncDisposable
             await _binaryApi.InitializeJsApp(JsAppPath, _containerElementReference);
         });
     }
+
 
 
     public async ValueTask DisposeAsync()

@@ -10,7 +10,7 @@ using UnityEngine;
 
 namespace BlazorWith3d.Unity
 {
-    public class BlazorWebSocketRelay : IAsyncDisposable, IBinaryApi
+    public class BlazorWebSocketRelay : IAsyncDisposable, IBinaryMessageApi
     {
         private readonly string _url;
 

@@ -9,9 +9,9 @@ namespace BlazorWith3d.ExampleApp.Client.Babylon;
 
 public class BlocksOnGridBabylonRenderer:BaseJsRenderer, IAsyncDisposable
 {
-    private BlocksOnGrid3DRenderer_BinaryApiWithResponse? _unityAppApi;
+    private BlocksOnGrid3DRendererOverBinaryApi? _unityAppApi;
     private IDisposable? _rendererAssignment;
-    private JsBinaryApiWithResponseRenderer? _binaryApi;
+    private IJsBinaryApi? _binaryApi;
 
     [CascadingParameter] 
     public required I3DAppController ParentApp { get; set; }
@@ -37,7 +37,7 @@ public class BlocksOnGridBabylonRenderer:BaseJsRenderer, IAsyncDisposable
 
         _binaryApi=new JsBinaryApiWithResponseRenderer(_jsRuntime,_logger);
         
-        _unityAppApi = new BlocksOnGrid3DRenderer_BinaryApiWithResponse(_binaryApi, new MemoryPackBinaryApiSerializer(),
+        _unityAppApi = new BlocksOnGrid3DRendererOverBinaryApi(_binaryApi, new MemoryPackBinaryApiSerializer(),
             new PoolingArrayBufferWriterFactory());
         _unityAppApi.OnMessageError += (bytes, exception) =>
         {

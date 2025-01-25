@@ -6,7 +6,7 @@ using Microsoft.JSInterop;
 
 namespace BlazorWith3d.JsApp;
 
-public class JsBinaryApiWithResponseRenderer: IBinaryApiWithResponse,IInitializableJsBinaryApi
+public class JsBinaryApiWithResponseRenderer: IJsBinaryApi
 {
     private readonly SemaphoreSlim _semaphore = new (1, 1);
 

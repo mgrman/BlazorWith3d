@@ -10,8 +10,8 @@ import {RemoveBlockInstance} from "com.blazorwith3d.exampleapp.client.shared/mem
 import {RemoveBlockTemplate} from "com.blazorwith3d.exampleapp.client.shared/memorypack/RemoveBlockTemplate";
 import { UnityAppInitialized } from "com.blazorwith3d.exampleapp.client.shared/memorypack/UnityAppInitialized";
 import {
-    BlocksOnGrid3DController_DirectInterop,
-    BlocksOnGrid3DController_BinaryApiWithResponse, IBlocksOnGrid3DController, IBlocksOnGrid3DRenderer
+    BlocksOnGrid3DControllerOverDirectInterop,
+    BlocksOnGrid3DControllerOverBinaryApi, IBlocksOnGrid3DController, IBlocksOnGrid3DRenderer
 } from "com.blazorwith3d.exampleapp.client.shared/memorypack/IBlocksOnGrid3DController";
 import {BlazorBinaryApiWithResponse} from "com.blazorwith3d.exampleapp.client.shared/BlazorBinaryApiWithResponse";
 import { RequestRaycast } from "com.blazorwith3d.exampleapp.client.shared/memorypack/RequestRaycast";
@@ -29,7 +29,7 @@ export function InitializeApp(canvas: HTMLCanvasElement,_:any,  dotnetObject: an
 
 
     let binaryApi = new BlazorBinaryApiWithResponse(sendMessageCallback, sendMessageWithResponseCallback);
-    let blazorApp = new BlocksOnGrid3DController_BinaryApiWithResponse(binaryApi);
+    let blazorApp = new BlocksOnGrid3DControllerOverBinaryApi(binaryApi);
 
     let app = new DebugApp(canvas, blazorApp);
 
@@ -49,7 +49,7 @@ export function InitializeApp(canvas: HTMLCanvasElement,_:any,  dotnetObject: an
 }
 
 export function InitializeApp_DirectInterop(canvas: HTMLCanvasElement, dotnetObject: any) {
-    var blazorApp=new BlocksOnGrid3DController_DirectInterop(dotnetObject);
+    var blazorApp=new BlocksOnGrid3DControllerOverDirectInterop(dotnetObject);
     
     let app= new DebugApp(canvas,blazorApp);
     blazorApp.SetRenderer(app);

@@ -61,7 +61,6 @@ export function InitializeUnityApi(unityInstance, onMessageReceivedCallback, onM
 export function showUnity(container,args, dotnetObject, onMessageReceivedMethodName, onMessageWithResponseReceivedMethodName) {
 
     var buildUrl=args.buildUrl;
-    var withResponse=args.withResponse;
     
     var canvas = container.querySelector("#unity-canvas");
     canvas.style.width = "100%";
@@ -99,7 +98,7 @@ export function showUnity(container,args, dotnetObject, onMessageReceivedMethodN
     //var buildUrl = "./_content/BlazorWith3d.Unity";
     var loaderUrl = buildUrl + "/Build.loader.js";
     var config = {
-        arguments: [(withResponse?"BinaryApiWithResponse":"BinaryApi")],
+        arguments: [],
         dataUrl: buildUrl + "/Build.data",
         frameworkUrl: buildUrl + "/Build.framework.js",
         workerUrl: buildUrl + "/Build.worker.js",

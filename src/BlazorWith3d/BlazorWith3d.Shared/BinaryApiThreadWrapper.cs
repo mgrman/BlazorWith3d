@@ -6,13 +6,13 @@ namespace BlazorWith3d.Shared
 {
 
 
-    public class BinaryApiThreadWrapper : IBinaryApi
+    public class BinaryApiThreadWrapper : IBinaryMessageApi
     {
-        private readonly IBinaryApi _binaryApi;
+        private readonly IBinaryMessageApi _binaryApi;
         private Func<ArraySegment<byte>, ValueTask>? _originalMainMessageHandlerReference;
         private readonly Func<Func<ValueTask>, ValueTask> _threadHandler;
 
-        public BinaryApiThreadWrapper(IBinaryApi binaryApi, Func<Func<ValueTask>, ValueTask> threadHandler)
+        public BinaryApiThreadWrapper(IBinaryMessageApi binaryApi, Func<Func<ValueTask>, ValueTask> threadHandler)
         {
             _binaryApi = binaryApi;
             _threadHandler = threadHandler;

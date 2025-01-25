@@ -74,7 +74,7 @@ public class DebugRelayUnityApi
     }
 
 
-    public class BinaryApiForSocket : IBinaryApi
+    public class BinaryApiForSocket : IBinaryMessageApi
     {
         private readonly WebSocket _webSocket;
 
