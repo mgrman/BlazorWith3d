@@ -3,7 +3,6 @@
 @inject IJSRuntime JsRuntime
 @inject ILogger<BaseJsRenderer> Logger
 @using Microsoft.Extensions.Logging
-@implements IAsyncDisposable
 
 <canvas @ref="_containerElementReference" class="my-component"   style="width: 100%; height: 100%; position: relative;"  tabindex="-1">
     This component will be controlled by component inheriting from this one
@@ -13,42 +12,6 @@
 @code{
 
     protected ElementReference _containerElementReference;
-    private IJSObjectReference? module;
-    protected IJSObjectReference? _typescriptApp;
-    
-    public virtual string JsAppPath => "";
-    
-    public virtual async ValueTask DisposeAsync()
-    {
-        if (_typescriptApp != null)
-        {
-            await _typescriptApp.InvokeVoidAsync("Quit");
-            await _typescriptApp.DisposeAsync();
-            _typescriptApp = null;
-        }
-    }
-
-    protected async Task InitializeTypeScriptApp()
-    {
-        if (string.IsNullOrEmpty(JsAppPath))
-        {
-            throw new InvalidOperationException($"{nameof(JsAppPath)} is not overriden!");
-        }
-
-        var moduleTask = new Lazy<Task<IJSObjectReference>>(() => JsRuntime.InvokeAsync
-            <IJSObjectReference>
-            ("import", JsAppPath).AsTask());
-        
-        module = await moduleTask.Value;
-        
-        
-        _typescriptApp = await InitializeJsApp(module);
-    }
-
-    protected virtual async Task<IJSObjectReference?> InitializeJsApp(IJSObjectReference module)
-    {
-        throw new InvalidOperationException();
-    }
 }
 
            

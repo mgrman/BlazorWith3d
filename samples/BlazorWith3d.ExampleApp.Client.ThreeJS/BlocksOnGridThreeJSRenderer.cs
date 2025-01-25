@@ -3,20 +3,26 @@ using BlazorWith3d.JsApp;
 
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
+using Microsoft.JSInterop;
 
 namespace BlazorWith3d.ExampleApp.Client.ThreeJS;
 
-public class BlocksOnGridThreeJSRenderer: BaseJsBinaryApiWithResponseRenderer, IDisposable
+public class BlocksOnGridThreeJSRenderer: BaseJsRenderer, IAsyncDisposable
 {
-    private BlocksOnGrid3DRenderer_BinaryApiWithResponse? unityAppApi;
+    private BlocksOnGrid3DRenderer_BinaryApiWithResponse? _unityAppApi;
+    private IDisposable? _rendererAssignment;
+    private JsBinaryApiWithResponseRenderer _binaryApi;
 
     [CascadingParameter] 
     public required I3DAppController ParentApp { get; set; }
-    private IDisposable? _rendererAssignment;
     
-    public override string JsAppPath => Assets["./_content/BlazorWith3d.ExampleApp.Client.ThreeJS/clientassets/blazorwith3d-exampleapp-client-threejs-bundle.js"];
+    [Inject]
+    protected IJSRuntime _jsRuntime { get; set; }
 
-    protected override string InitializeMethodName => "InitializeApp_BinaryApi";
+    [Inject] 
+    protected ILogger<BlocksOnGridThreeJSRenderer> _logger { get; set; }
+    
+    private string JsAppPath => Assets["./_content/BlazorWith3d.ExampleApp.Client.ThreeJS/clientassets/blazorwith3d-exampleapp-client-threejs-bundle.js"];
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -26,23 +32,26 @@ public class BlocksOnGridThreeJSRenderer: BaseJsBinaryApiWithResponseRenderer, I
             return;
         }
 
+        _binaryApi=new JsBinaryApiWithResponseRenderer(_jsRuntime,_logger);
 
-        unityAppApi = new BlocksOnGrid3DRenderer_BinaryApiWithResponse(this, new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory());
-        unityAppApi.OnMessageError += (bytes, exception) =>
+        _unityAppApi = new BlocksOnGrid3DRenderer_BinaryApiWithResponse(_binaryApi, new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory());
+        _unityAppApi.OnMessageError += (bytes, exception) =>
         {
-            Logger.LogError($"Error deserializing message {bytes}", exception);
+            _logger.LogError($"Error deserializing message {bytes}", exception);
         };
 
         await base.OnAfterRenderAsync(firstRender);
-        _rendererAssignment = await ParentApp.InitializeRenderer(unityAppApi, async () =>
+        _rendererAssignment = await ParentApp.InitializeRenderer(_unityAppApi, async () =>
         {
-            await InitializeTypeScriptApp();
+            await _binaryApi.InitializeJsApp(JsAppPath, _containerElementReference);
         });
     }
 
-    public void Dispose()
+
+    public async ValueTask DisposeAsync()
     {
-        unityAppApi?.Dispose();
+        _unityAppApi?.Dispose();
         _rendererAssignment?.Dispose();
+        await _binaryApi.TryDisposeAsync();
     }
 }

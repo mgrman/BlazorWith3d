@@ -31,7 +31,7 @@ export function InitializeUnityApi(unityInstance, onMessageReceivedCallback, onM
         }
     }
 
-    unityApi.SendMessage = async function (msgBytes) {
+    unityApi.ProcessMessage = async function (msgBytes) {
         // void BlazorApi_SendMessageToUnity(byte[] message)
         try {
             return unityInstance.Module["BlazorApi_SendMessageToUnity"](msgBytes);
@@ -40,7 +40,7 @@ export function InitializeUnityApi(unityInstance, onMessageReceivedCallback, onM
         }
     };
 
-    unityApi.SendMessageWithResponse = async function (msgBytes) {
+    unityApi.ProcessMessageWithResponse = async function (msgBytes) {
         // void BlazorApi_SendMessageToUnity(byte[] message)
         try {
             return  unityInstance.Module["BlazorApi_SendMessageWithResponseToUnity"](msgBytes);
@@ -58,8 +58,11 @@ export function InitializeUnityApi(unityInstance, onMessageReceivedCallback, onM
 }
 
 
-export function showUnity(buildUrl, container, dotnetObject, onMessageReceivedMethodName, onMessageWithResponseReceivedMethodName,withResponse) {
+export function showUnity(container,args, dotnetObject, onMessageReceivedMethodName, onMessageWithResponseReceivedMethodName) {
 
+    var buildUrl=args.buildUrl;
+    var withResponse=args.withResponse;
+    
     var canvas = container.querySelector("#unity-canvas");
     canvas.style.width = "100%";
     canvas.style.height = "100%";

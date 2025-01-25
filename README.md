@@ -116,6 +116,9 @@ benchmarks
 
 - switch the base classes to composition, so it is easier to mix and match the renderer with api
 
+
+- remove the old non-WithResponse API, as it is always slower, and only needed for WebSocket Unity Debugging
+
 - switch to nicer ways to share memory in WASM special case
     - https://learn.microsoft.com/en-us/aspnet/core/client-side/dotnet-interop/?view=aspnetcore-9.0#type-mappings
     - there should be better mapping with arraySegments now, potentially preventing memorycopy when creating array for normal JS interop

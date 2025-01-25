@@ -3,40 +3,35 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
-using Microsoft.AspNetCore.Components.Web;
 
 namespace BlazorWith3d.JsApp;
 
-public class BaseJsBinaryApiWithResponseRenderer:BaseJsRenderer, IBinaryApiWithResponse
+public class JsBinaryApiWithResponseRenderer: IBinaryApiWithResponse,IInitializableJsBinaryApi
 {
-    
-    [Inject]
-    public required ILogger<BaseJsBinaryApiWithResponseRenderer> Logger { get; set; }
-    
-    [Inject]
-    public required  IJSRuntime JsRuntime{ get; set; }
-        
-    [Parameter] 
-    public bool CopyArrays { get; set; } = true;
-        
-    public override string JsAppPath => "";
-
-    protected virtual string InitializeMethodName => "InitializeApp";
-    
-    private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
+    private readonly SemaphoreSlim _semaphore = new (1, 1);
 
     private DotNetObjectReference<BinaryApiJsMessageReceiverProxy>? _messageReceiverProxyReference;
+    private readonly IJSRuntime _jsRuntime;
+    private readonly ILogger _logger;
+    private IJSObjectReference? _typescriptApp;
 
+    public JsBinaryApiWithResponseRenderer(IJSRuntime jsRuntime, ILogger logger)
+     {
+         _jsRuntime = jsRuntime;
+         _logger = logger;
+     }
 
-    protected override async Task<IJSObjectReference?> InitializeJsApp(IJSObjectReference module)
+    public  async Task InitializeJsApp(string jsPath, ElementReference container, string initMethod="InitializeApp", object? extraArg=null )
     { 
+        var module= await _jsRuntime.LoadModuleAsync(jsPath);
+        
         _messageReceiverProxyReference = DotNetObjectReference.Create(new BinaryApiJsMessageReceiverProxy(OnMessageBytesReceived,OnMessageBytesWithResponseReceived));
-        return await module.InvokeAsync<IJSObjectReference>(InitializeMethodName, _containerElementReference,_messageReceiverProxyReference,nameof(BinaryApiJsMessageReceiverProxy.OnMessageBytesReceived),nameof(BinaryApiJsMessageReceiverProxy.OnMessageBytesWithResponse) );
+        _typescriptApp=   await module.InvokeAsync<IJSObjectReference>(initMethod, container,extraArg,_messageReceiverProxyReference,nameof(BinaryApiJsMessageReceiverProxy.OnMessageBytesReceived),nameof(BinaryApiJsMessageReceiverProxy.OnMessageBytesWithResponse) );
     }
 
     public Func<ArraySegment<byte>, ValueTask>? MainMessageHandler { get; set; }
+    
     public Func<ArraySegment<byte>, ValueTask<IBufferWriterWithArraySegment<byte>>>? MainMessageWithResponseHandler { get; set; }
-
 
     private void OnMessageBytesReceived(byte[] messageBytes)
     {
@@ -62,26 +57,23 @@ public class BaseJsBinaryApiWithResponseRenderer:BaseJsRenderer, IBinaryApiWithR
         {
             await _semaphore.WaitAsync();
             
-            (byte[] array, int offset, int count) data;
-            if (CopyArrays)
-            {
-                data = (messageBytes.WrittenArray.ToArray(), 0, messageBytes.WrittenArray.Count);
-            }
-            else
-            {
-                data = (messageBytes.WrittenArray.Array!, messageBytes.WrittenArray.Offset, messageBytes.WrittenArray.Count);
-            }
+            (byte[] array, int offset, int count) data = GetArraysForInterop(messageBytes);
             await _typescriptApp.InvokeVoidAsync("ProcessMessage",data.array, data.offset, data.count); // ToArray() as JS interop only has fast path for byte[] type
             messageBytes.Dispose();
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error sending message");
+            _logger.LogError(ex, "Error sending message");
         }
         finally
         {
             _semaphore.Release();
         }
+    }
+
+    protected virtual (byte[] array, int offset, int count) GetArraysForInterop(IBufferWriterWithArraySegment<byte> messageBytes)
+    {
+        return (messageBytes.WrittenArray.ToArray(), 0, messageBytes.WrittenArray.Count);
     }
 
     public async ValueTask<ArraySegment<byte>> SendMessageWithResponse(IBufferWriterWithArraySegment<byte> messageBytes)
@@ -94,22 +86,14 @@ public class BaseJsBinaryApiWithResponseRenderer:BaseJsRenderer, IBinaryApiWithR
         try
         {
             await _semaphore.WaitAsync();
-            (byte[] array, int offset, int count) data;
-            if (CopyArrays)
-            {
-                data = (messageBytes.WrittenArray.ToArray(), 0, messageBytes.WrittenArray.Count);
-            }
-            else
-            {
-                data = (messageBytes.WrittenArray.Array!, messageBytes.WrittenArray.Offset, messageBytes.WrittenArray.Count);
-            }
+            (byte[] array, int offset, int count) data= GetArraysForInterop(messageBytes);
             var response = await _typescriptApp.InvokeAsync<byte[]>("ProcessMessageWithResponse", data.array, data.offset, data.count);// ToArray() as JS interop only has fast path for byte[] type
             messageBytes.Dispose();
             return response;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error sending message");
+            _logger.LogError(ex, "Error sending message");
             throw;
         }
         finally
@@ -118,10 +102,13 @@ public class BaseJsBinaryApiWithResponseRenderer:BaseJsRenderer, IBinaryApiWithR
         }
     }
 
-    public override ValueTask DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         _messageReceiverProxyReference?.Dispose();
-        return base.DisposeAsync();
+        _messageReceiverProxyReference = null;
+        await _typescriptApp.TryInvokeVoidAsync(_logger, "Quit");
+        await _typescriptApp.TryDisposeAsync();
+        _typescriptApp = null;
     }
 
     protected class BinaryApiJsMessageReceiverProxy(Action<byte[]> onMessageBytesReceived,Func<byte[], ValueTask<byte[]>> onMessageBytesWithResponseReceived)

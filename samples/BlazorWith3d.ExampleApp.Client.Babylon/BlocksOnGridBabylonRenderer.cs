@@ -3,20 +3,27 @@ using BlazorWith3d.JsApp;
 
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
+using Microsoft.JSInterop;
 
 namespace BlazorWith3d.ExampleApp.Client.Babylon;
 
-public class BlocksOnGridBabylonRenderer:BaseJsBinaryApiWithResponseRenderer, IDisposable
+public class BlocksOnGridBabylonRenderer:BaseJsRenderer, IAsyncDisposable
 {
     private BlocksOnGrid3DRenderer_BinaryApiWithResponse? _unityAppApi;
     private IDisposable? _rendererAssignment;
+    private JsBinaryApiWithResponseRenderer? _binaryApi;
 
     [CascadingParameter] 
     public required I3DAppController ParentApp { get; set; }
+    
+    
+    [Inject]
+    protected IJSRuntime _jsRuntime { get; set; }
 
-    public override string JsAppPath => Assets["./_content/BlazorWith3d.ExampleApp.Client.Babylon/clientassets/blazorwith3d-exampleapp-client-babylon-bundle.js"];
+    [Inject] 
+    protected ILogger<BlocksOnGridBabylonRenderer> _logger { get; set; }
 
-    protected override string InitializeMethodName => "InitializeApp_BinaryApi";
+    private string JsAppPath => Assets["./_content/BlazorWith3d.ExampleApp.Client.Babylon/clientassets/blazorwith3d-exampleapp-client-babylon-bundle.js"];
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -28,22 +35,25 @@ public class BlocksOnGridBabylonRenderer:BaseJsBinaryApiWithResponseRenderer, ID
 
         await base.OnAfterRenderAsync(firstRender);
 
-        _unityAppApi = new BlocksOnGrid3DRenderer_BinaryApiWithResponse(this, new MemoryPackBinaryApiSerializer(),
+        _binaryApi=new JsBinaryApiWithResponseRenderer(_jsRuntime,_logger);
+        
+        _unityAppApi = new BlocksOnGrid3DRenderer_BinaryApiWithResponse(_binaryApi, new MemoryPackBinaryApiSerializer(),
             new PoolingArrayBufferWriterFactory());
         _unityAppApi.OnMessageError += (bytes, exception) =>
         {
-            Logger.LogError($"Error deserializing message {bytes}", exception);
+            _logger.LogError($"Error deserializing message {bytes}", exception);
         };
 
         _rendererAssignment = await ParentApp.InitializeRenderer(_unityAppApi, async () =>
         {
-            await InitializeTypeScriptApp();
+           await _binaryApi.InitializeJsApp(JsAppPath, _containerElementReference);
         });
     }
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
         _unityAppApi?.Dispose();
         _rendererAssignment?.Dispose();
+        await _binaryApi.TryDisposeAsync();
     }
 }
