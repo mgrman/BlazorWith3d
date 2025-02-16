@@ -114,21 +114,14 @@ benchmarks
 
 ### Prio 0 (what to do next)
 
-- switch to nicer ways to share memory in WASM special case
-    - https://learn.microsoft.com/en-us/aspnet/core/client-side/dotnet-interop/?view=aspnetcore-9.0#type-mappings
-    - there should be better mapping with arraySegments now, potentially preventing memorycopy when creating array for normal JS interop
-    - Not sure if with TS interop it is worth it, as the IMemoryView either way does not expose the internal array, so a copy would be necessary (or touching private method of a type???)
-    - But for Unity interop it could be worth it, as the memory could be then set directly into Unity heap
-    - https://github.com/dotnet/runtime/blob/main/src/mono/browser/runtime/marshal.ts#L558
-
 - unity editor debug should refresh on new connection (e.g. backend was restarted)
   - and should react if connection was made before the page was opened
+
+### Prio 1 (core tasks of the repo)
 
 - better JS plugin via $ as in https://github.com/Made-For-Gamers/NEAR-Unity-WebGL-API/blob/main/Assets/WebGLSupport/WebGLInput/WebGLInput.jslib
 
 - cleanup, refactor generator, too many things seemingly hardcoded and edge cases not handled (e.g. namespaces of messages, or if multiple apps are defined)
-
-### Prio 1 (core tasks of the repo)
 
 - Incremental source gen 
 
@@ -183,7 +176,16 @@ benchmarks
     - e.g. might be worth having a define or something to switch the serialization libraries (have one for faster compile time and one for faster runtime)
     - could be worth having a method to negotiate the serialization scheme (kinda send supported schemes when connecting to renderer and it picks one)
 
-- add serializer interface concept in TS
+- switch to nicer ways to share memory in WASM special case
+    - https://learn.microsoft.com/en-us/aspnet/core/client-side/dotnet-interop/?view=aspnetcore-9.0#type-mappings
+    - there should be better mapping with arraySegments now, potentially preventing memorycopy when creating array for normal JS interop
+    - Not sure if with TS interop it is worth it, as the IMemoryView either way does not expose the internal array, so a copy would be necessary (or touching private method of a type???)
+    - But for Unity interop it could be worth it, as the memory could be then set directly into Unity heap
+    - https://github.com/dotnet/runtime/blob/main/src/mono/browser/runtime/marshal.ts#L558
+    - // RESOLUTION
+        - this does not interop all types, so method returning Task<ArraySegment<byte>> has to be split into 2 calls retuning Task and ArraySegment<byte>
+        - the interop is staticky, ie you do not have instances to interop with, meaning you need to pass around an ID of the instance (if you want to handle case where you have multiple renders at the same time)
+        - NOT worth it for now
 
 ### Prio 3 (maybe but not really target of the project)
 
