@@ -117,26 +117,14 @@ benchmarks
 - switch to nicer ways to share memory in WASM special case
     - https://learn.microsoft.com/en-us/aspnet/core/client-side/dotnet-interop/?view=aspnetcore-9.0#type-mappings
     - there should be better mapping with arraySegments now, potentially preventing memorycopy when creating array for normal JS interop
+    - Not sure if with TS interop it is worth it, as the IMemoryView either way does not expose the internal array, so a copy would be necessary (or touching private method of a type???)
+    - But for Unity interop it could be worth it, as the memory could be then set directly into Unity heap
+    - https://github.com/dotnet/runtime/blob/main/src/mono/browser/runtime/marshal.ts#L558
 
 - unity editor debug should refresh on new connection (e.g. backend was restarted)
   - and should react if connection was made before the page was opened
 
 - better JS plugin via $ as in https://github.com/Made-For-Gamers/NEAR-Unity-WebGL-API/blob/main/Assets/WebGLSupport/WebGLInput/WebGLInput.jslib
-
-- Investigate and optimize render modes and stream rendering and better handling of Maui limitations for render mode
-  https://learn.microsoft.com/en-us/aspnet/core/blazor/components/render-modes?view=aspnetcore-9.0
-  https://learn.microsoft.com/en-us/aspnet/core/blazor/components/rendering?view=aspnetcore-9.0#streaming-rendering
-
-- Optimize Typescript dev experience
-    - add option to live recompile changes
-    - add debugging support to IDEs
-    - switch to Vite as everybody's using it ( see https://doc.babylonjs.com/guidedLearning/usingVite/ )
-      - https://www.google.com/search?q=aspnet+%22razor+library%22+vite
-      - https://khalidabuhakmeh.com/running-vite-with-aspnet-core-web-applications
-      - https://github.com/techgems/Vite.NET/tree/master/dotnet-vite
-      - https://github.com/Eptagone/Vite.AspNetCore/tree/main
-    - better JS isolation
-      - https://www.emekaemego.com/blog/blazor-component-js/
 
 - cleanup, refactor generator, too many things seemingly hardcoded and edge cases not handled (e.g. namespaces of messages, or if multiple apps are defined)
 
@@ -144,13 +132,26 @@ benchmarks
 
 - Incremental source gen 
 
-- consider special WASM only interop, as that might be faster
-  - also it opens to support of span or arraySegment types to reduce copying of memory
-  - e.g. new binaryAPIWithResponse with types mapping to memoryView could be nice, as then the rest works as before
-
 - add explicit serializer interface for Typescript (to be able to override and mainly expose new types serialization)
  
 ### Prio 2 (make it nicer)
+
+- Optimize Typescript dev experience
+    - add option to live recompile changes
+    - add debugging support to IDEs
+    - switch to Vite as everybody's using it ( see https://doc.babylonjs.com/guidedLearning/usingVite/ )
+        - https://www.google.com/search?q=aspnet+%22razor+library%22+vite
+        - https://khalidabuhakmeh.com/running-vite-with-aspnet-core-web-applications
+        - https://github.com/techgems/Vite.NET/tree/master/dotnet-vite
+        - https://github.com/Eptagone/Vite.AspNetCore/tree/main
+    - better JS isolation
+        - https://www.emekaemego.com/blog/blazor-component-js/
+
+
+- Investigate and optimize render modes and stream rendering and better handling of Maui limitations for render mode
+  https://learn.microsoft.com/en-us/aspnet/core/blazor/components/render-modes?view=aspnetcore-9.0
+  https://learn.microsoft.com/en-us/aspnet/core/blazor/components/rendering?view=aspnetcore-9.0#streaming-rendering
+
 
 - Unify visuals of all renderers
     - add camera transform setting (and getting, as to have a request to set but I can get the real one)
