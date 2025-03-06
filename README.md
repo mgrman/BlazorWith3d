@@ -112,22 +112,7 @@ benchmarks
   - Interop (avg 0.50 ms)  // slower but works with more types than memorypack, so you could get rid of that dependency (the slowdown is worse when the larger the messages are)
   - MemoryPack (avg 0.33 ms)
 
-### Prio 0 (what to do next)
-
-- unity editor debug should refresh on new connection (e.g. backend was restarted)
-  - and should react if connection was made before the page was opened
-
-### Prio 1 (core tasks of the repo)
-
-- better JS plugin via $ as in https://github.com/Made-For-Gamers/NEAR-Unity-WebGL-API/blob/main/Assets/WebGLSupport/WebGLInput/WebGLInput.jslib
-
-- cleanup, refactor generator, too many things seemingly hardcoded and edge cases not handled (e.g. namespaces of messages, or if multiple apps are defined)
-
-- Incremental source gen 
-
-- add explicit serializer interface for Typescript (to be able to override and mainly expose new types serialization)
- 
-### Prio 2 (make it nicer)
+### Prio 0 (improve generic packages)
 
 - Optimize Typescript dev experience
     - add option to live recompile changes
@@ -140,17 +125,39 @@ benchmarks
     - better JS isolation
         - https://www.emekaemego.com/blog/blazor-component-js/
 
+- Incremental source gen
 
-- Investigate and optimize render modes and stream rendering and better handling of Maui limitations for render mode
-  https://learn.microsoft.com/en-us/aspnet/core/blazor/components/render-modes?view=aspnetcore-9.0
-  https://learn.microsoft.com/en-us/aspnet/core/blazor/components/rendering?view=aspnetcore-9.0#streaming-rendering
+- better JS plugin via $ as in https://github.com/Made-For-Gamers/NEAR-Unity-WebGL-API/blob/main/Assets/WebGLSupport/WebGLInput/WebGLInput.jslib
 
+- add explicit serializer interface for Typescript (to be able to override and mainly expose new types serialization)
+
+### Prio 1 (improve sample app)
+
+- And drag and drop trigger to add blocks from HTML
+- 
+- Add context menu to delete block instance
 
 - Unify visuals of all renderers
     - add camera transform setting (and getting, as to have a request to set but I can get the real one)
     - unify different coordinate systems
     - add setting of background color
     - even background plane should be just a mesh to load
+
+- add Visuals Transform setting so it can be customized and reused
+
+- implement GLB loading for babylon
+
+- check if current GLTF instancing in Unity is working
+
+### Prio 2 (backlog)
+
+- Unity debug socket is logging a lot of errors, handle the disconnect cases more explicitly
+
+- cleanup, refactor generator, too many things seemingly hardcoded and edge cases not handled (e.g. namespaces of messages, or if multiple apps are defined)
+
+- Investigate and optimize render modes and stream rendering and better handling of Maui limitations for render mode
+  https://learn.microsoft.com/en-us/aspnet/core/blazor/components/render-modes?view=aspnetcore-9.0
+  https://learn.microsoft.com/en-us/aspnet/core/blazor/components/rendering?view=aspnetcore-9.0#streaming-rendering
 
 - try again to get matrix for screen to world as that would reduce the need for extra interop call
     - even basic raycast can be then doable in .NET
@@ -162,11 +169,6 @@ benchmarks
     - should use pre-rendered images
     - mainly as otherwise it is hard to render depth
     - add top down thumbnail image of model (for HTML)
-
-- add Visuals Transform setting so it can be customized and reused
-
-- implement GLB loading for babylon
-- check if current GLTF instancing in Unity is working
 
 - split packages/libraries by abstraction level (raw message, then typed message, then generated API)
 
@@ -187,7 +189,7 @@ benchmarks
         - the interop is staticky, ie you do not have instances to interop with, meaning you need to pass around an ID of the instance (if you want to handle case where you have multiple renders at the same time)
         - NOT worth it for now
 
-### Prio 3 (maybe but not really target of the project)
+### Prio 3 (future ideas)
 
 - consider support for union types to handle collider definition etc (lower prio as this goes a bit into serialization libraries support)
 
@@ -199,11 +201,9 @@ benchmarks
     - Unity in Maui is not officially supported. There are ways but more focused on mobile
     - Maui windows does not allow unity exe direct yet. There is a feature request for this
 
-
 - Winforms app with Blazor and Unity 
   - https://docs.unity3d.com/6000.1/Documentation/Manual/UnityasaLibrary-Windows.html
   - https://learn.microsoft.com/en-us/aspnet/core/blazor/hybrid/tutorials/windows-forms?view=aspnetcore-9.0
-
 
 - Evergine 
   - has MAUI support (not tested)
@@ -215,16 +215,12 @@ benchmarks
 - Urho https://github.com/Urho-Net/Urho.Net
 - https://monogame.net/
 
-
-  
 - add support for negotiation of serialization modes
     - so unity can do DEBUG build with JSON only serializaion, e.g. for debug builds with embedded WebGL template as using memory pack is cumbersome there
 
 - consider some generic reactive dictionary or patch requests on object support
     - e.g. that both sides can instantiate kind of reactive dictionry and through generic messages they both can be kept automatically in sync, with changes always propagating to the other side
     - kinda like flux https://facebookarchive.github.io/flux/docs/in-depth-overview/
-
-
 
 ### Not gonna do for now
 
@@ -240,7 +236,6 @@ benchmarks
 - Add ThreeJS version of 3d renderer using Blazor bindings project
   - https://github.com/HomagGroup/Blazor3D-Core
     - RESOLUTION not going to do it as the library is not exactly production ready (e.g. Orbit controls cannot be disabled)
-
 
 - consider memorypack fork with Typescript struct support // see memorypack-fork branch
     - maybe different serialization library for interop with Typescript would be better, as structs would help and prevent a lot of type conversions

@@ -57,7 +57,12 @@ namespace ExampleApp
             else
             {
                 var relay = new BlazorWebSocketRelay(_backendWebsocketUrl);
-
+                relay.OnDisconnected += async () =>
+                {
+                    await Awaitable.MainThreadAsync();
+                    Reset();
+                };
+                
                 var imageCapturer = new CameraImageStreamer(relay);
                 _disposables.Add(imageCapturer);
                 
@@ -90,22 +95,8 @@ namespace ExampleApp
             await _appApi.OnUnityAppInitialized(new UnityAppInitialized());
         }
 
-        private async Awaitable OnDestroy()
+        private void Reset()
         {
-            foreach (var disposable in _disposables)
-            {
-                disposable.Dispose();
-            }
-
-            foreach (var disposable in _asyncDisposables)
-            {
-                await disposable.DisposeAsync();
-            }
-        }
-
-        public async ValueTask InvokeBlazorControllerInitialized(BlazorControllerInitialized _)
-        {
-            Debug.Log($"BlazorControllerInitialized: ");
             foreach (var block in _templates.Values)
             {
                 GameObject.Destroy(block.gameObject);
@@ -121,8 +112,28 @@ namespace ExampleApp
             _blocks.Clear();
         }
 
+        private async Awaitable OnDestroy()
+        {
+            foreach (var disposable in _disposables)
+            {
+                disposable.Dispose();
+            }
 
-        public async ValueTask InvokeAddBlockTemplate(AddBlockTemplate msg)
+            foreach (var disposable in _asyncDisposables)
+            {
+                await disposable.DisposeAsync();
+            }
+        }
+
+        public ValueTask InvokeBlazorControllerInitialized(BlazorControllerInitialized _)
+        {
+            Debug.Log($"BlazorControllerInitialized: ");
+            Reset();
+            return new ValueTask();
+        }
+
+
+        public ValueTask InvokeAddBlockTemplate(AddBlockTemplate msg)
         {
             Debug.Log($"Adding block template: {JsonUtility.ToJson(msg)}");
 
@@ -134,9 +145,10 @@ namespace ExampleApp
             _templates.Add(msg.TemplateId, meshGo);
 
             Debug.Log($"Added block template: {JsonUtility.ToJson(msg)}");
+            return new ValueTask();
         }
 
-        public async ValueTask  InvokeRemoveBlockTemplate(RemoveBlockTemplate msg)
+        public ValueTask  InvokeRemoveBlockTemplate(RemoveBlockTemplate msg)
         {
             Debug.Log($"Removing block template: {JsonUtility.ToJson(msg)}");
             
@@ -144,9 +156,10 @@ namespace ExampleApp
             _templates.Remove(msg.TemplateId);
             
             Debug.Log($"Removed block template: {JsonUtility.ToJson(msg)}");
+            return new ValueTask();
         }
 
-        public async ValueTask  InvokeAddBlockInstance(AddBlockInstance msg)
+        public ValueTask  InvokeAddBlockInstance(AddBlockInstance msg)
         {
             Debug.Log($"Adding block : {JsonUtility.ToJson(msg)}");
             var template = _templates[msg.TemplateId];
@@ -155,25 +168,28 @@ namespace ExampleApp
             var instance = template.CreateInstance(msg);
             _blocks.Add(msg.BlockId, instance);
             Debug.Log($"Added block : {JsonUtility.ToJson(msg)}");
+            return new ValueTask();
         }
 
-        public async ValueTask  InvokeRemoveBlockInstance(RemoveBlockInstance msg)
+        public ValueTask  InvokeRemoveBlockInstance(RemoveBlockInstance msg)
         {
             Debug.Log($"Removing block: {JsonUtility.ToJson(msg)}");
             Destroy( _blocks[msg.BlockId].gameObject);
             _blocks.Remove(msg.BlockId);
 
             Debug.Log($"Removed block: {JsonUtility.ToJson(msg)}");
+            return new ValueTask();
         }
 
-        public async ValueTask InvokeUpdateBlockInstance(int? blockId, PackableVector2 position, float rotationZ)
+        public ValueTask InvokeUpdateBlockInstance(int? blockId, PackableVector2 position, float rotationZ)
         {
             if (blockId == null || !_blocks.TryGetValue(blockId.Value, out var block))
             {
-                return;
+                return new ValueTask();
             }
 
             block.UpdatePose(position, rotationZ);
+            return new ValueTask();
         }
 
         public async ValueTask InvokeTriggerTestToBlazor(TriggerTestToBlazor msg)
@@ -190,12 +206,12 @@ namespace ExampleApp
             Debug.Log("TriggerTestToBlazor is done");
         }
 
-        public async ValueTask<PerfCheck> InvokePerfCheck(PerfCheck msg)
+        public ValueTask<PerfCheck> InvokePerfCheck(PerfCheck msg)
         {
-            return msg;
+            return new ValueTask<PerfCheck>(msg);
         }
 
-        public async ValueTask<ScreenToWorldRayResponse>  InvokeRequestScreenToWorldRay(RequestScreenToWorldRay obj)
+        public ValueTask<ScreenToWorldRayResponse>  InvokeRequestScreenToWorldRay(RequestScreenToWorldRay obj)
         {
             // convert to Unity screen coordinates
             var unityScreenPoint = new Vector3(obj.Screen.X, Screen.height - obj.Screen.Y, 0);
@@ -206,10 +222,10 @@ namespace ExampleApp
             ray = new UnityEngine.Ray(transform.worldToLocalMatrix.MultiplyPoint(ray.origin),
                 transform.worldToLocalMatrix.MultiplyVector(ray.direction));
 
-            return new ScreenToWorldRayResponse()
+            return new ValueTask<ScreenToWorldRayResponse>(new ScreenToWorldRayResponse()
             {
                 Ray = ray.ToNumerics()
-            };
+            });
         }
 
         public void SetController(IBlocksOnGrid3DController controller)
@@ -217,7 +233,7 @@ namespace ExampleApp
             throw new NotImplementedException();
         }
 
-        public async ValueTask<RaycastResponse> InvokeRequestRaycast(RequestRaycast obj)
+        public ValueTask<RaycastResponse> InvokeRequestRaycast(RequestRaycast obj)
         {
             var ray = obj.Ray.ToUnity();
 
@@ -230,18 +246,18 @@ namespace ExampleApp
                 : null;
             if (hitController==null)
             {
-              return  new RaycastResponse()
+              return new ValueTask<RaycastResponse> ( new RaycastResponse()
                 {
                     HitBlockId = null, HitWorld = obj.Ray.Origin
-                };
+                });
             }
             
-            return new RaycastResponse()
+            return new ValueTask<RaycastResponse> (  new RaycastResponse()
             {
                 HitBlockId = hitController.BlockId, 
                 // convert result to blazor world coordinate system
                 HitWorld =  transform.worldToLocalMatrix.MultiplyPoint(hit.point).ToNumerics()
-            };
+            });
         }
     }
 
@@ -255,6 +271,8 @@ namespace ExampleApp
         private readonly Texture2D _screenshot;
         private  float _nextScreenshotTime;
 
+        private readonly Awaitable _streamTask;
+
         public CameraImageStreamer(BlazorWebSocketRelay relay)
         {
             _relay = relay;
@@ -263,8 +281,7 @@ namespace ExampleApp
             
             _screenshot = new Texture2D(Screen.width, Screen.height, TextureFormat.RGB24, false);
             _nextScreenshotTime = 0;
-            Stream();
-
+            _streamTask = Stream();
         }
 
         private async Awaitable Stream()
@@ -306,7 +323,7 @@ namespace ExampleApp
                 catch (Exception e)
                 {
                     Debug.LogException(e);
-                    return;
+                    continue;
                 }
             }
         }
@@ -314,6 +331,7 @@ namespace ExampleApp
         public void Dispose()
         {
             _cts.Cancel();
+            _streamTask.Cancel();
         }
     }
 #endif

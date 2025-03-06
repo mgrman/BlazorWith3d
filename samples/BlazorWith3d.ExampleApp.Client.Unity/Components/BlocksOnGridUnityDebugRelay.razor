@@ -35,7 +35,7 @@
                 return;
             }
 
-            DebugRelayUnityApi.ConnectedApi += DebugRelayUnityApiOnConnectedApi;
+            DebugRelayUnityApi.ConnectedApi = DebugRelayUnityApiOnConnectedApi;
         
             await base.OnAfterRenderAsync(firstRender);
         }
@@ -108,7 +108,7 @@
 
     public void Dispose()
     {
-        DebugRelayUnityApi.ConnectedApi -= DebugRelayUnityApiOnConnectedApi;
+        DebugRelayUnityApi.ConnectedApi = null;
         DebugRelayUnityApi.NewFrame -= UpdateFrame;
         unityAppApi?.Dispose();
         _rendererAssignment?.Dispose();

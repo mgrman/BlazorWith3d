@@ -26,6 +26,8 @@ namespace BlazorWith3d.Unity
         public bool IsConnected => _ws != null && _ws.State == WebSocketState.Open;
 
 
+        public event Action OnDisconnected;
+
         public BlazorWebSocketRelay(string url)
         {
             _url = url;
@@ -116,6 +118,7 @@ namespace BlazorWith3d.Unity
             }
             catch (Exception ex)
             {
+                OnDisconnected?.Invoke();
                 Debug.LogException(ex);
             }
         }
@@ -145,7 +148,7 @@ namespace BlazorWith3d.Unity
                 return ;
             }
             
-            Debug.LogWarning($"UpdateScreen at {Time.realtimeSinceStartup}");
+            //Debug.LogWarning($"UpdateScreen at {Time.realtimeSinceStartup}");
 
             await SendMessageInner(1,bytes);
             return ;
@@ -154,8 +157,11 @@ namespace BlazorWith3d.Unity
         private async Task SendMessageInner(byte prefix, ArraySegment<byte> bytes)
         {
             await _semaphore.WaitAsync();
-           await _ws.SendAsync(new []{prefix}, WebSocketMessageType.Binary, false, _cts.Token);
-           await _ws.SendAsync(bytes, WebSocketMessageType.Binary, true, _cts.Token);
+            if (_ws.State == WebSocketState.Open)
+            {
+                await _ws.SendAsync(new []{prefix}, WebSocketMessageType.Binary, false, _cts.Token);
+                await _ws.SendAsync(bytes, WebSocketMessageType.Binary, true, _cts.Token);
+            }
            _semaphore.Release();
         }
 
@@ -164,7 +170,7 @@ namespace BlazorWith3d.Unity
             await Awaitable.MainThreadAsync();
             try
             {
-                Debug.LogError($"MessageReceived at {Time.realtimeSinceStartup}");
+                //Debug.LogError($"MessageReceived at {Time.realtimeSinceStartup}");
                 await (MainMessageHandler?.Invoke(data) ?? new ValueTask());
             }
             catch (Exception ex)

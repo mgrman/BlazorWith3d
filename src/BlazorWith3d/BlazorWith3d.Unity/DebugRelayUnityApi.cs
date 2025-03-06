@@ -8,9 +8,29 @@ namespace BlazorWith3d.Unity;
 public class DebugRelayUnityApi
 {
     private readonly ILogger<DebugRelayUnityApi> _logger;
-    private WebSocket? _webSocket;
 
-    public event Action<BinaryApiForSocket?> ConnectedApi;
+    public Action<BinaryApiForSocket?>? ConnectedApi
+    {
+        get;
+        set
+        {
+            _connectedApiCts?.Cancel();
+            _connectedApiCts = null;
+
+            if (value !=null && field != null)
+            {
+                throw new InvalidOperationException("Already connected");
+            }
+
+            field = value;
+            if (value != null)
+            {
+                _connectedApiCts = new CancellationTokenSource();
+            }
+        }
+    }
+
+    private CancellationTokenSource? _connectedApiCts;
     
     public event Action<byte[]> NewFrame;
 
@@ -21,11 +41,21 @@ public class DebugRelayUnityApi
     
     public async Task HandleWebSocket(WebSocket webSocket)
     {
-        _webSocket = webSocket;
+        if (_connectedApiCts == null)
+        {
+            //nobody is listening
+            return;
+        }
+        var token=_connectedApiCts.Token;
+        var apiEvent = ConnectedApi;
+        if (apiEvent == null)
+        {
+            _logger.LogError("Event is null but Cts is not!");
+            return;
+        }
 
         var api = new BinaryApiForSocket(webSocket);
-        ConnectedApi?.Invoke(api);
-
+        apiEvent.Invoke(api);
 
         int bufferIndex = 0;
         var buffer =new ArraySegment<byte>( new byte[1024 *1024 * 4]);
@@ -34,13 +64,13 @@ public class DebugRelayUnityApi
             try
             {
                 var bufferToFill = buffer.Slice(bufferIndex);
-                var receiveResult = await webSocket.ReceiveAsync(bufferToFill, CancellationToken.None);
-                bufferIndex+=receiveResult.Count;
+                var receiveResult = await webSocket.ReceiveAsync(bufferToFill, token);
+                bufferIndex += receiveResult.Count;
 
                 if (receiveResult.EndOfMessage)
                 {
                     var msgType = buffer[0];
-                    var msg = buffer.Slice(1, bufferIndex-1).ToArray();
+                    var msg = buffer.Slice(1, bufferIndex - 1).ToArray();
                     bufferIndex = 0;
                     switch (msgType)
                     {
@@ -56,9 +86,13 @@ public class DebugRelayUnityApi
                     }
                 }
             }
+            catch (OperationCanceledException ex)
+            {
+                apiEvent.Invoke(null);
+            }
             catch (WebSocketException ex)
             {
-                ConnectedApi?.Invoke(null);
+                apiEvent.Invoke(null);
                 _logger.LogWarning(ex,"HandleWebSocket OnMessageFromUnity error");
                 if (ex.InnerException != null)
                 {
@@ -67,7 +101,7 @@ public class DebugRelayUnityApi
             }
             catch (Exception ex)
             {
-                ConnectedApi?.Invoke(null);
+                apiEvent.Invoke(null);
                 _logger.LogError(ex,"HandleWebSocket OnMessageFromUnity error");
             }
         }
