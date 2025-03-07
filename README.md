@@ -134,7 +134,7 @@ benchmarks
 ### Prio 1 (improve sample app)
 
 - And drag and drop trigger to add blocks from HTML
-- 
+
 - Add context menu to delete block instance
 
 - Unify visuals of all renderers
