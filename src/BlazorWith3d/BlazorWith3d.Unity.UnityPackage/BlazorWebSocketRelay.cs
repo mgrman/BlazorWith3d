@@ -14,7 +14,7 @@ namespace BlazorWith3d.Unity
     {
         private readonly string _url;
 
-        private ClientWebSocket _ws;
+        private ClientWebSocket? _ws;
 
         private readonly CancellationTokenSource _cts;
         private readonly List<IBufferWriterWithArraySegment<byte>> _unsentMessages= new ();
@@ -23,10 +23,10 @@ namespace BlazorWith3d.Unity
 
         public Func<ArraySegment<byte>, ValueTask>? MainMessageHandler { get; set; }
         
-        public bool IsConnected => _ws != null && _ws.State == WebSocketState.Open;
+        public bool IsConnected => _ws is { State: WebSocketState.Open };
 
 
-        public event Action OnDisconnected;
+        public event Action? OnDisconnected;
 
         public BlazorWebSocketRelay(string url)
         {
@@ -54,6 +54,8 @@ namespace BlazorWith3d.Unity
                 {
                     _ws.Dispose();
                 }
+
+                _ws = null;
             }
             Debug.Log($"Connecting to {_url}");
 
@@ -69,11 +71,11 @@ namespace BlazorWith3d.Unity
                 await _ws.ConnectAsync(new Uri(_url), _cts.Token);
                 Debug.Log($"Connected to {_url}");
             }
-            catch (ObjectDisposedException ex)
+            catch (ObjectDisposedException)
             {
                 return;
             }
-            catch (WebSocketException ex)
+            catch (WebSocketException)
             {
                 return;
             }
@@ -104,7 +106,7 @@ namespace BlazorWith3d.Unity
             {
                 while (!loopToken.IsCancellationRequested)
                 {
-                    var receiveResult = await _ws.ReceiveAsync(buffer, _cts.Token);
+                    var receiveResult = await _ws!.ReceiveAsync(buffer, _cts.Token);
                     if (!receiveResult.EndOfMessage)
                     {
                         throw new InvalidOperationException("Did not receive full message!");
@@ -157,12 +159,12 @@ namespace BlazorWith3d.Unity
         private async Task SendMessageInner(byte prefix, ArraySegment<byte> bytes)
         {
             await _semaphore.WaitAsync();
-            if (_ws.State == WebSocketState.Open)
+            if (_ws?.State == WebSocketState.Open)
             {
                 await _ws.SendAsync(new []{prefix}, WebSocketMessageType.Binary, false, _cts.Token);
                 await _ws.SendAsync(bytes, WebSocketMessageType.Binary, true, _cts.Token);
             }
-           _semaphore.Release();
+            _semaphore.Release();
         }
 
         private async ValueTask ResponseReceived(byte[] data)

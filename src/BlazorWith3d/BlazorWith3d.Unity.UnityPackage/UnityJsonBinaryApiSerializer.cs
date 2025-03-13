@@ -54,7 +54,7 @@ namespace BlazorWith3d.Unity
         [Serializable]
         private class ValueWrapper<T>
         {
-            public T value;
+            public T value = default!;
         }
     }
 }

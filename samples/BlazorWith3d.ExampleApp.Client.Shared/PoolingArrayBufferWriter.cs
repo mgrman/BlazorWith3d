@@ -202,18 +202,18 @@ public abstract class BufferWriter<T> : IDisposable, IBufferWriter<T>
 /// <param name="pool">The array pool.</param>
 public sealed class PoolingArrayBufferWriter<T> : BufferWriter<T>, IBufferWriterWithArraySegment<T>
 {
-    private readonly ArrayPool<T> pool;
-    private T[] buffer = new T[0];
+    private readonly ArrayPool<T> _pool;
+    private T[] _buffer = Array.Empty<T>();
 
     public PoolingArrayBufferWriter(ArrayPool<T>? pool = null)
     {
-        this.pool = pool ?? ArrayPool<T>.Shared;
+        this._pool = pool ?? ArrayPool<T>.Shared;
     }
 
-    public PoolingArrayBufferWriter(int capacity, ArrayPool<T> pool = null)
+    public PoolingArrayBufferWriter(int capacity, ArrayPool<T>? pool = null)
         :this(pool)
     {
-        buffer = this.pool.Rent(capacity);
+        _buffer = this._pool.Rent(capacity);
     }
     
 
@@ -221,7 +221,7 @@ public sealed class PoolingArrayBufferWriter<T> : BufferWriter<T>, IBufferWriter
     /// <inheritdoc />
     public override int Capacity
     {
-        get => buffer.Length;
+        get => _buffer.Length;
     }
 
     /// <summary>
@@ -232,7 +232,7 @@ public sealed class PoolingArrayBufferWriter<T> : BufferWriter<T>, IBufferWriter
     {
         get
         {
-            return new(buffer, 0, position);
+            return new(_buffer, 0, position);
         }
     }
 
@@ -244,13 +244,13 @@ public sealed class PoolingArrayBufferWriter<T> : BufferWriter<T>, IBufferWriter
     {
         get
         {
-            return new(buffer, 0, position);
+            return new(_buffer, 0, position);
         }
     }
 
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void ReturnBuffer() => pool.Return(buffer, RuntimeHelpers.IsReferenceOrContainsReferences<T>());
+    private void ReturnBuffer() => _pool.Return(_buffer, RuntimeHelpers.IsReferenceOrContainsReferences<T>());
 
     /// <summary>
     /// Clears the data written to the underlying memory.
@@ -259,18 +259,18 @@ public sealed class PoolingArrayBufferWriter<T> : BufferWriter<T>, IBufferWriter
     /// <exception cref="ObjectDisposedException">This writer has been disposed.</exception>
     public override void Clear(bool reuseBuffer = false)
     {
-        if (buffer.Length is 0)
+        if (_buffer.Length is 0)
         {
             // nothing to do
         }
         else if (!reuseBuffer)
         {
             ReturnBuffer();
-            buffer = Array.Empty<T>();
+            _buffer = Array.Empty<T>();
         }
         else if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
         {
-            Array.Clear(buffer, 0, position);
+            Array.Clear(_buffer, 0, position);
         }
 
         position = 0;
@@ -279,7 +279,7 @@ public sealed class PoolingArrayBufferWriter<T> : BufferWriter<T>, IBufferWriter
     private T[] GetRawArray(int sizeHint)
     {
         CheckAndResizeBuffer(sizeHint);
-        return buffer;
+        return _buffer;
     }
 
     /// <summary>
@@ -322,23 +322,23 @@ public sealed class PoolingArrayBufferWriter<T> : BufferWriter<T>, IBufferWriter
     /// <inheritdoc/>
     private protected override void Resize(int newSize)
     {
-        var newBuffer = pool.Rent(newSize);
-        if (buffer.Length > 0U)
+        var newBuffer = _pool.Rent(newSize);
+        if (_buffer.Length > 0U)
         {
-            CopyFast(buffer, newBuffer, position);
+            CopyFast(_buffer, newBuffer, position);
             ReturnBuffer();
         }
 
-        buffer = newBuffer;
+        _buffer = newBuffer;
     }
 
     /// <inheritdoc />
     public override void Dispose()
     {
-        if (buffer.Length > 0U)
+        if (_buffer.Length > 0U)
         {
             ReturnBuffer();
-            buffer = Array.Empty<T>();
+            _buffer = Array.Empty<T>();
         }
         base.Dispose();
     }

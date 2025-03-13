@@ -154,6 +154,11 @@ namespace BlazorWith3d.Unity
 
             var response = await MainMessageWithResponseHandler.Invoke(bytes);
 
+            if (response.WrittenArray.Array == null)
+            {
+                throw new InvalidOperationException("response.WrittenArray.Array cannot be null!");
+            }
+            
             _SendResponseFromUnity(id, response.WrittenArray.Array,response.WrittenArray.Offset, response.WrittenArray.Count);
             response.Dispose();
         }
@@ -186,6 +191,6 @@ namespace BlazorWith3d.Unity
         private static extern void _ReadBytesBuffer(int id, byte[] array);
 
         [DllImport("__Internal")]
-        private static extern string _InitializeApi(Action<int, int> readMessageCallback,Action<int, int> readMessageWithResponseCallback,Action<int, int> readResponseCallback);
+        private static extern string _InitializeApi(Action<int, int> readMessageCallback,Action<int, int>? readMessageWithResponseCallback,Action<int, int>? readResponseCallback);
     }
 }

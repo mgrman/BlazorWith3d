@@ -114,22 +114,18 @@ benchmarks
 
 ### Prio 0 (improve generic packages)
 
-- Optimize Typescript dev experience
-    - add option to live recompile changes
-    - add debugging support to IDEs
-    - switch to Vite as everybody's using it ( see https://doc.babylonjs.com/guidedLearning/usingVite/ )
-        - https://www.google.com/search?q=aspnet+%22razor+library%22+vite
-        - https://khalidabuhakmeh.com/running-vite-with-aspnet-core-web-applications
-        - https://github.com/techgems/Vite.NET/tree/master/dotnet-vite
-        - https://github.com/Eptagone/Vite.AspNetCore/tree/main
-    - better JS isolation
-        - https://www.emekaemego.com/blog/blazor-component-js/
-
-- Incremental source gen
-
-- better JS plugin via $ as in https://github.com/Made-For-Gamers/NEAR-Unity-WebGL-API/blob/main/Assets/WebGLSupport/WebGLInput/WebGLInput.jslib
-
-- add explicit serializer interface for Typescript (to be able to override and mainly expose new types serialization)
+Generate REST API and client using interface to fullfill
+- would be nice to have a method only version for REST calls 
+- or with events using signalr
+- Others
+  - https://github.com/reactiveui/refit offers generation of clients based on interface (but not for controllers)
+    - maybe could be extended?
+  - https://github.com/bpawluk/EasyApi similar, but is more one type per request
+    - verbose as it creates a type per request
+  - GRPC https://knowledge-base.havit.eu/2023/05/24/grpc-code-first-for-blazor-webassembly-front-end/ or extend and publish https://github.com/mgrman/BDMT/tree/master/src/ServiceGuardGenerator
+    - would work, but does not create normal REST API
+  - use NSWAG https://learn.microsoft.com/en-us/aspnet/core/tutorials/getting-started-with-nswag?view=aspnetcore-8.0&tabs=visual-studio to generate client based on OpenAPI
+    - but needs to run build twice kinda, ie first build the backend then get OpenAPI spec, and then create clients into WASM project, and then build the WASM back into backend (unless it gets set up as standalone)
 
 ### Prio 1 (improve sample app)
 
@@ -150,6 +146,24 @@ benchmarks
 - check if current GLTF instancing in Unity is working
 
 ### Prio 2 (backlog)
+
+- Optimize Typescript dev experience
+    - add option to live recompile changes
+    - add debugging support to IDEs
+    - switch to Vite as everybody's using it ( see https://doc.babylonjs.com/guidedLearning/usingVite/ )
+        - https://www.google.com/search?q=aspnet+%22razor+library%22+vite
+        - https://khalidabuhakmeh.com/running-vite-with-aspnet-core-web-applications
+        - https://github.com/techgems/Vite.NET/tree/master/dotnet-vite
+        - https://github.com/Eptagone/Vite.AspNetCore/tree/main
+    - better JS isolation
+        - https://www.emekaemego.com/blog/blazor-component-js/
+
+- Incremental source gen
+
+- better JS plugin via $ as in https://github.com/Made-For-Gamers/NEAR-Unity-WebGL-API/blob/main/Assets/WebGLSupport/WebGLInput/WebGLInput.jslib
+
+- add explicit serializer interface for Typescript (to be able to override and mainly expose new types serialization)
+
 
 - Unity debug socket is logging a lot of errors, handle the disconnect cases more explicitly
 
