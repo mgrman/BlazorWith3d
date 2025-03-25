@@ -1,9 +1,6 @@
 import * as THREE from 'three';
 import {GLTF, GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {AddBlockInstance} from "com.blazorwith3d.exampleapp.client.shared/memorypack/AddBlockInstance";
-import {
-    BlazorControllerInitialized
-} from "com.blazorwith3d.exampleapp.client.shared/memorypack/BlazorControllerInitialized";
 import {PerfCheck} from "com.blazorwith3d.exampleapp.client.shared/memorypack/PerfCheck";
 import {AddBlockTemplate} from "com.blazorwith3d.exampleapp.client.shared/memorypack/AddBlockTemplate";
 import {RemoveBlockInstance} from "com.blazorwith3d.exampleapp.client.shared/memorypack/RemoveBlockInstance";
@@ -312,11 +309,4 @@ export class DebugApp implements IBlocksOnGrid3DRenderer {
     {
        return  obj;
     }
-
-    public async InvokeBlazorControllerInitialized(obj: BlazorControllerInitialized) :Promise<void> {
-
-        console.log("OnBlazorControllerInitialized", obj);
-
-    }
-
 }

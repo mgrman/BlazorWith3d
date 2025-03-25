@@ -17,9 +17,6 @@ import {
     Quaternion
 } from "@babylonjs/core";
 import {AddBlockInstance} from "com.blazorwith3d.exampleapp.client.shared/memorypack/AddBlockInstance";
-import {
-    BlazorControllerInitialized
-} from "com.blazorwith3d.exampleapp.client.shared/memorypack/BlazorControllerInitialized";
 import {PerfCheck} from "com.blazorwith3d.exampleapp.client.shared/memorypack/PerfCheck";
 import {AddBlockTemplate} from "com.blazorwith3d.exampleapp.client.shared/memorypack/AddBlockTemplate";
 import {RemoveBlockInstance} from "com.blazorwith3d.exampleapp.client.shared/memorypack/RemoveBlockInstance";
@@ -250,12 +247,6 @@ export class DebugApp implements IBlocksOnGrid3DRenderer {
     public async InvokePerfCheck(obj: PerfCheck) :Promise<PerfCheck>
     {
         return  obj;
-    }
-
-    public async InvokeBlazorControllerInitialized(obj: BlazorControllerInitialized) :Promise<void> {
-
-        console.log("OnBlazorControllerInitialized", obj);
-
     }
 
 }
