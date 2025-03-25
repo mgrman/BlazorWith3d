@@ -30,6 +30,15 @@ namespace ExampleApp
             return pm;
         }
 
+        public static Color ToUnity(this PackableColor m)
+        {
+            var pm = new Color();
+            pm.r = m.R;
+            pm.g = m.G;
+            pm.b = m.B;
+            return pm;
+        }
+
         public static Ray ToUnity(this PackableRay m)
         {
             var pm = new Ray(m.Origin.ToUnity(), m.Direction.ToUnity());

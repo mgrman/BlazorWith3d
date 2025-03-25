@@ -9,7 +9,7 @@
 @inject ILogger<BlocksOnGridHTMLComponent> Logger
 @inject IJSRuntime JsRuntime
 
-<div @ref=_rendererContainerReference class="my-component" style="width:100%; height: 100%; position: relative">
+<div @ref=_rendererContainerReference class="my-component" style="width:100%; height: 100%; position: relative; background-color: @(_backgroundColor.ToCss())">
 
     @if (_instances.Count > 0)
     {
@@ -17,12 +17,15 @@
         var maxHeight = _templates.Values.Select(o => o.Size.Z).Max();
         var heightRange = maxHeight - minHeight;
 
+        var minColor = Color.FromArgb(60,60,60);
+        var maxColor = Color.FromArgb(180,180,180);
+
         foreach(var(instance, template) in _instances.Select(instance => (instance, template: _templates[instance.TemplateId])))
         {
-            var brightness = (byte)(((template.Size.Z - minHeight) / heightRange) * 255);
-            var color = ColorTranslator.ToHtml(Color.FromArgb(brightness, 0, 255-brightness));
+            var brightness = (template.Size.Z - minHeight) / heightRange ;
+            var color = ColorUtils.Lerp(minColor, maxColor, brightness);
             <div class="my-component" 
-            style="user-select: none; position: absolute; width: @ToStringCSS((template.Size.X)*scale)px; height: @ToStringCSS((template.Size.Y)*scale)px; background-color: @color; left: @ToStringCSS((instance.Position.X-template.Size.X/2+offsetX)*scale)px; bottom: @ToStringCSS((instance.Position.Y-template.Size.Y/2+offsetY)*scale)px; rotate: @ToStringCSS(instance.RotationZ)deg;"
+            style="user-select: none; position: absolute; width: @ToStringCSS((template.Size.X)*scale)px; height: @ToStringCSS((template.Size.Y)*scale)px; background-color: @color.ToCss(); left: @ToStringCSS((instance.Position.X-template.Size.X/2+offsetX)*scale)px; bottom: @ToStringCSS((instance.Position.Y-template.Size.Y/2+offsetY)*scale)px; rotate: @ToStringCSS(instance.RotationZ)deg;"
             >
                 @instance.BlockId
             </div>
@@ -49,6 +52,7 @@
     private IJSObjectReference jsInteropModule;
     private IBlocksOnGrid3DController? _eventHandler;
     private IDisposable? _rendererAssignment;
+    private Color _backgroundColor = Color.Azure;
 
     [CascadingParameter] 
     public required I3DAppController ParentApp { get; set; }
@@ -95,10 +99,13 @@ public void Dispose()
 
     public event Action<byte[], Exception>? OnMessageError;
 
-    public ValueTask InvokeBlazorControllerInitialized(BlazorControllerInitialized msg)
+
+    public async ValueTask InitializeRenderer(RendererInitializationInfo msg)
     {
-        Logger.LogInformation("BlazorControllerInitialized");
-        return ValueTask.CompletedTask;
+        Logger.LogInformation("InitializeRenderer");
+
+        _backgroundColor = msg.BackgroundColor.ToColor();
+        StateHasChanged();
     }
 
     public async ValueTask<PerfCheck> InvokePerfCheck(PerfCheck msg)

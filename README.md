@@ -114,6 +114,8 @@ benchmarks
 
 ### Prio 0 (improve generic packages)
 
+SetController method seems to be needed in Unity?
+
 Rest API using memory pack/ json
  - using an interface create a rest api
    - using auth and from* attributes and respecting them
@@ -126,9 +128,8 @@ Rest API using memory pack/ json
   - generate wire connecting the instances
   - and generate cube under the gltf mesh
 
-- add visuals control for the renderes
-  - background color
-  - request camera position 
+- add more visuals control for the renderes
+  - request light position and direction
   - show/hide background mesh
 
 - ensure the generator has fully optional dependence on memory pack, even for js direct interop use case

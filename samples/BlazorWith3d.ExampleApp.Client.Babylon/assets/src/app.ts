@@ -35,8 +35,9 @@ import { ScreenToWorldRayResponse } from "com.blazorwith3d.exampleapp.client.sha
 import { RaycastResponse } from "com.blazorwith3d.exampleapp.client.shared/memorypack/RaycastResponse";
 import { TriggerTestToBlazor } from "com.blazorwith3d.exampleapp.client.shared/memorypack/TriggerTestToBlazor";
 import { PackableVector2 } from "com.blazorwith3d.exampleapp.client.shared/memorypack/PackableVector2";
+import { RendererInitializationInfo } from "com.blazorwith3d.exampleapp.client.shared/memorypack/RendererInitializationInfo";
 
-export function InitializeApp(canvas: HTMLCanvasElement, _:any,  dotnetObject: any, onMessageReceivedMethodName: string, onMessageReceivedWithResponseMethodName: string) {
+export function InitializeApp(canvas: HTMLCanvasElement, _: any, dotnetObject: any, onMessageReceivedMethodName: string, onMessageReceivedWithResponseMethodName: string) {
     let sendMessageCallback: (msgBytes: Uint8Array) => Promise<any> = msgBytes => dotnetObject.invokeMethodAsync(onMessageReceivedMethodName, msgBytes);
     let sendMessageWithResponseCallback: (msgBytes: Uint8Array) => Promise<Uint8Array> = msgBytes => dotnetObject.invokeMethodAsync(onMessageReceivedWithResponseMethodName, msgBytes);
 
@@ -58,7 +59,7 @@ export function InitializeApp(canvas: HTMLCanvasElement, _:any,  dotnetObject: a
     return appAsAny;
 }
 
-export class DebugApp implements IBlocksOnGrid3DRenderer{
+export class DebugApp implements IBlocksOnGrid3DRenderer {
     private templates: Array<AddBlockTemplate> = new Array<AddBlockTemplate>();
     private instances: Array<[instance: AddBlockInstance, mesh: Mesh]> = new Array<[instance: AddBlockInstance, mesh: Mesh]>();
 
@@ -69,7 +70,7 @@ export class DebugApp implements IBlocksOnGrid3DRenderer{
 
     constructor(canvas: HTMLCanvasElement, methodInvoker: IBlocksOnGrid3DController) {
 
-        this.canvas=canvas;
+        this.canvas = canvas;
         this._methodInvoker = methodInvoker;
         canvas.style.width = "100%";
         canvas.style.height = "100%";
@@ -93,9 +94,9 @@ export class DebugApp implements IBlocksOnGrid3DRenderer{
         // camera.rotation.x = Tools.ToRadians(0);
         // camera.rotation.y = Tools.ToRadians(180);
         // camera.rotation.y = Tools.ToRadians(90);
-    
+
         camera.parent = this.plane;
-        
+
         camera.target = new Vector3(0, 0, 0)
         camera.upVector = new Vector3(0, 1, 0)
 
@@ -122,6 +123,10 @@ export class DebugApp implements IBlocksOnGrid3DRenderer{
         });
 
         this._methodInvoker.OnUnityAppInitialized(new UnityAppInitialized()).then(_ => console.log("UnityAppInitialized invoked"));
+    }
+
+    public async InitializeRenderer(_: RendererInitializationInfo): Promise<void> {
+        console.log("Quit called");
     }
 
     public Quit(): void {

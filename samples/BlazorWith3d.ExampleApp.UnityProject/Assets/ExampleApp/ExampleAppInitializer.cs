@@ -28,6 +28,8 @@ namespace ExampleApp
         private List<IDisposable> _disposables=new List<IDisposable>();
         private List<IAsyncDisposable> _asyncDisposables=new List<IAsyncDisposable>();
 
+        [SerializeField]
+        private Camera _camera;
 
         [Tooltip("If none is set, will use simulator")] 
         [SerializeField]
@@ -125,13 +127,23 @@ namespace ExampleApp
             }
         }
 
-        public ValueTask InvokeBlazorControllerInitialized(BlazorControllerInitialized _)
+        public void SetController(IBlocksOnGrid3DController controller)
         {
-            Debug.Log($"BlazorControllerInitialized: ");
-            Reset();
-            return new ValueTask();
+            throw new NotImplementedException();
         }
 
+        public ValueTask InitializeRenderer(RendererInitializationInfo msg)
+        {
+            Debug.Log($"BlazorControllerInitialized: ");
+            _camera.transform.position = new Vector3(msg.RequestedCameraPosition.X, msg.RequestedCameraPosition.Y, -msg.RequestedCameraPosition.Z);
+            _camera.transform.localRotation = Quaternion.Euler(msg.RequestedCameraRotation.ToUnity());
+            
+            
+            _camera.backgroundColor = msg.BackgroundColor.ToUnity();
+            _camera.fieldOfView = msg.RequestedCameraFoV;
+            return new ValueTask();
+        }
+        
 
         public ValueTask InvokeAddBlockTemplate(AddBlockTemplate msg)
         {
@@ -228,10 +240,6 @@ namespace ExampleApp
             });
         }
 
-        public void SetController(IBlocksOnGrid3DController controller)
-        {
-            throw new NotImplementedException();
-        }
 
         public ValueTask<RaycastResponse> InvokeRequestRaycast(RequestRaycast obj)
         {

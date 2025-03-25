@@ -21,9 +21,10 @@ import { RaycastResponse } from "com.blazorwith3d.exampleapp.client.shared/memor
 import { TriggerTestToBlazor } from 'com.blazorwith3d.exampleapp.client.shared/memorypack/TriggerTestToBlazor';
 import { TestToBlazor } from 'com.blazorwith3d.exampleapp.client.shared/memorypack/TestToBlazor';
 import { PackableVector2 } from 'com.blazorwith3d.exampleapp.client.shared/memorypack/PackableVector2';
+import { RendererInitializationInfo } from 'com.blazorwith3d.exampleapp.client.shared/memorypack/RendererInitializationInfo';
 
 
-export function InitializeApp(canvas: HTMLCanvasElement,_:any,  dotnetObject: any, onMessageReceivedMethodName: string, onMessageReceivedWithResponseMethodName: string) {
+export function InitializeApp(canvas: HTMLCanvasElement, _: any, dotnetObject: any, onMessageReceivedMethodName: string, onMessageReceivedWithResponseMethodName: string) {
     let sendMessageCallback: (msgBytes: Uint8Array) => Promise<any> = msgBytes => dotnetObject.invokeMethodAsync(onMessageReceivedMethodName, msgBytes);
     let sendMessageWithResponseCallback: (msgBytes: Uint8Array) => Promise<Uint8Array> = msgBytes => dotnetObject.invokeMethodAsync(onMessageReceivedWithResponseMethodName, msgBytes);
 
@@ -36,24 +37,24 @@ export function InitializeApp(canvas: HTMLCanvasElement,_:any,  dotnetObject: an
     blazorApp.SetRenderer(app);
 
     let appAsAny: any = app;
-    appAsAny.ProcessMessage = (msg: Uint8Array, offset: number, count:number) => {
+    appAsAny.ProcessMessage = (msg: Uint8Array, offset: number, count: number) => {
 
-        msg=msg.subarray(offset,count);
+        msg = msg.subarray(offset, count);
         return binaryApi.mainMessageHandler(msg);
     }
-    appAsAny.ProcessMessageWithResponse = (msg: Uint8Array, offset: number, count:number) => {
-        msg=msg.subarray(offset,count);
+    appAsAny.ProcessMessageWithResponse = (msg: Uint8Array, offset: number, count: number) => {
+        msg = msg.subarray(offset, count);
         return binaryApi.mainMessageWithResponseHandler(msg);
     }
     return appAsAny;
 }
 
 export function InitializeApp_DirectInterop(canvas: HTMLCanvasElement, dotnetObject: any) {
-    var blazorApp=new BlocksOnGrid3DControllerOverDirectInterop(dotnetObject);
-    
-    let app= new DebugApp(canvas,blazorApp);
+    var blazorApp = new BlocksOnGrid3DControllerOverDirectInterop(dotnetObject);
+
+    let app = new DebugApp(canvas, blazorApp);
     blazorApp.SetRenderer(app);
-    
+
     return app;
 }
 
@@ -108,8 +109,15 @@ export class DebugApp implements IBlocksOnGrid3DRenderer {
         this._methodInvoker.OnUnityAppInitialized(new UnityAppInitialized()).then(_ => console.log("UnityAppInitialized invoked"));
     }
 
-    SetController(_: IBlocksOnGrid3DController): void {
-        throw new Error('Method not implemented.');
+    public async InitializeRenderer(msg: RendererInitializationInfo): Promise<void> {
+
+        this.scene.background= new THREE.Color(msg.backgroundColor.r, msg.backgroundColor.g, msg.backgroundColor.b);
+        
+        this.camera.position.x = msg.requestedCameraPosition.x;
+        this.camera.position.y = msg.requestedCameraPosition.y;
+        this.camera.position.z = msg.requestedCameraPosition.z;
+        // the camera in ThreeJS is looking down negativeZ direciton, so no need to rotate
+        this.camera.setRotationFromEuler(new THREE.Euler(THREE.MathUtils.degToRad(msg.requestedCameraRotation.x), THREE.MathUtils.degToRad(msg.requestedCameraRotation.y), THREE.MathUtils.degToRad(msg.requestedCameraRotation.z)));
     }
 
     public async InvokeTriggerTestToBlazor(_: TriggerTestToBlazor): Promise<void> {

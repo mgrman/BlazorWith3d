@@ -1,5 +1,6 @@
 ﻿@using System.Diagnostics
 @using System.Diagnostics.CodeAnalysis
+@using System.Drawing
 @using System.Numerics
 @using Blazored.LocalStorage
 @using BlazorWith3d.ExampleApp.Client.Shared
@@ -281,7 +282,13 @@
                     await afterEventHandlerIsSet();
                 }
 
-                await _rendererApi.InvokeBlazorControllerInitialized(new BlazorControllerInitialized());
+                await _rendererApi.InitializeRenderer(new RendererInitializationInfo()
+                {
+                    BackgroundColor = Color.DarkSlateGray,
+                    RequestedCameraPosition = new Vector3(0,0,10),
+                    RequestedCameraRotation = new Vector3(0,0,0),
+                    RequestedCameraFoV = 60
+                });
             }
 
             await ReplayState();

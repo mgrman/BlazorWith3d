@@ -1,8 +1,6 @@
-﻿using System.Numerics;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
+﻿using System.Drawing;
+using System.Numerics;
 using System.Threading.Tasks;
-using System.Xml;
 
 using BlazorWith3d.Shared;
 using MemoryPack;
@@ -13,7 +11,7 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
     [Blazor3DRenderer(typeof(IBlocksOnGrid3DController))]
     public partial interface IBlocksOnGrid3DRenderer
     {
-        ValueTask InvokeBlazorControllerInitialized(BlazorControllerInitialized msg);
+        ValueTask InitializeRenderer(RendererInitializationInfo msg);
         ValueTask<RaycastResponse> InvokeRequestRaycast(RequestRaycast msg);
         ValueTask InvokeAddBlockTemplate(AddBlockTemplate msg);
         ValueTask InvokeAddBlockInstance(AddBlockInstance msg);
@@ -34,8 +32,16 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
     
     [MemoryPackable]
     [GenerateTypeScript]
-    public partial class BlazorControllerInitialized 
+    public partial class RendererInitializationInfo 
     {
+        public PackableColor BackgroundColor { get; set; }
+        public PackableVector3 RequestedCameraPosition { get; set; }
+        
+        /// <summary>
+        /// Euler angles in degrees
+        /// </summary>
+        public PackableVector3 RequestedCameraRotation { get; set; }
+        public float RequestedCameraFoV { get; set; }
     }
 
     [MemoryPackable]
@@ -248,6 +254,29 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
                 this.X,
                 this.Y
             );
+        }
+    }
+
+    [MemoryPackable]
+    [GenerateTypeScript]
+    public partial struct PackableColor
+    {
+        public float R { get; set; }
+        public float G { get; set; }
+        public float B { get; set; }
+
+        public static implicit operator PackableColor(Color vec)
+        {
+            var @this = new PackableColor();
+            @this.R = vec.R / 255f;
+            @this.G = vec.G / 255f;
+            @this.B = vec.B / 255f;
+            return @this;
+        }
+
+        public Color ToColor()
+        {
+            return Color.FromArgb((int)(this.R * 255), (int)(this.G * 255), (int)(this.B * 255));
         }
     }
 
