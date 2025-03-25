@@ -114,18 +114,27 @@ benchmarks
 
 ### Prio 0 (improve generic packages)
 
-Generate REST API and client using interface to fullfill
-- would be nice to have a method only version for REST calls 
-- or with events using signalr
-- Others
-  - https://github.com/reactiveui/refit offers generation of clients based on interface (but not for controllers)
-    - maybe could be extended?
-  - https://github.com/bpawluk/EasyApi similar, but is more one type per request
-    - verbose as it creates a type per request
-  - GRPC https://knowledge-base.havit.eu/2023/05/24/grpc-code-first-for-blazor-webassembly-front-end/ or extend and publish https://github.com/mgrman/BDMT/tree/master/src/ServiceGuardGenerator
-    - would work, but does not create normal REST API
-  - use NSWAG https://learn.microsoft.com/en-us/aspnet/core/tutorials/getting-started-with-nswag?view=aspnetcore-8.0&tabs=visual-studio to generate client based on OpenAPI
-    - but needs to run build twice kinda, ie first build the backend then get OpenAPI spec, and then create clients into WASM project, and then build the WASM back into backend (unless it gets set up as standalone)
+Rest API using memory pack/ json
+ - using an interface create a rest api
+   - using auth and from* attributes and respecting them
+ - also create a wrapper for the service that checks the attributes when in wasm context
+
+- if turned on via csproj config, generate typescript types intended for direct interop
+ - ie using asp.net interop types 
+
+- showcase that there does not have to be direct mapping
+  - generate wire connecting the instances
+  - and generate cube under the gltf mesh
+
+- add visuals control for the renderes
+  - background color
+  - request camera position 
+  - show/hide background mesh
+
+- ensure the generator has fully optional dependence on memory pack, even for js direct interop use case
+
+- publish generator and supporting libraries as nuget
+
 
 ### Prio 1 (improve sample app)
 
@@ -133,13 +142,7 @@ Generate REST API and client using interface to fullfill
 
 - Add context menu to delete block instance
 
-- Unify visuals of all renderers
-    - add camera transform setting (and getting, as to have a request to set but I can get the real one)
-    - unify different coordinate systems
-    - add setting of background color
-    - even background plane should be just a mesh to load
-
-- add Visuals Transform setting so it can be customized and reused
+- add Visuals Transform setting so it can be customized and reused 
 
 - implement GLB loading for babylon
 

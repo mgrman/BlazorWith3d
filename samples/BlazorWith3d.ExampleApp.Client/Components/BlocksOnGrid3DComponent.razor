@@ -158,7 +158,8 @@
     </tr>
 </table>
 
-<button @onclick="PerfCheck">Perf Check</button>
+<button @onclick="@(() => PerfCheck(true))">Perf Check Large</button>
+<button @onclick="@(() => PerfCheck(false))">Perf Check Small</button>
 
 <InputNumber @bind-Value="_perfTestCount"></InputNumber>
 @if (!string.IsNullOrEmpty(_perfResponse))
@@ -378,7 +379,7 @@
         }
     }
 
-    private async Task PerfCheck()
+    private async Task PerfCheck(bool isLarge)
     {
         if (_rendererApi == null)
         {
@@ -387,7 +388,7 @@
         } 
         var testCount = _perfTestCount;
 
-        var testString = string.Join(",", Enumerable.Range(0, 1000));
+        var testString =isLarge? string.Join(",", Enumerable.Range(0, 1000)) : string.Empty;
         
         var avgStopwatch = new Stopwatch();
 
