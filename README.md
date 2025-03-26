@@ -67,7 +67,7 @@ But for DirectInterop any other or custom TS type generator from C# types could 
     - Rotation order Y, X, Z (when going local to world)
   - ThreeJS
     - RightHanded
-    - Screen (0,0) in center (positive in direction of top right)
+    - Screen (0,0) in center (positive in direction of top right) range: -1;1
     - World X:right, Y: up, Z : toCamera
     - camera looks in NegativeZ
     - Rotation order X, Y, Z (when going local to world) but can be chosen

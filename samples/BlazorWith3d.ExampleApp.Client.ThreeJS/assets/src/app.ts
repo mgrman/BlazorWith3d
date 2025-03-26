@@ -16,7 +16,6 @@ import { RequestScreenToWorldRay } from "com.blazorwith3d.exampleapp.client.shar
 import { ScreenToWorldRayResponse } from "com.blazorwith3d.exampleapp.client.shared/memorypack/ScreenToWorldRayResponse";
 import { RaycastResponse } from "com.blazorwith3d.exampleapp.client.shared/memorypack/RaycastResponse";
 import { TriggerTestToBlazor } from 'com.blazorwith3d.exampleapp.client.shared/memorypack/TriggerTestToBlazor';
-import { TestToBlazor } from 'com.blazorwith3d.exampleapp.client.shared/memorypack/TestToBlazor';
 import { PackableVector2 } from 'com.blazorwith3d.exampleapp.client.shared/memorypack/PackableVector2';
 import { RendererInitializationInfo } from 'com.blazorwith3d.exampleapp.client.shared/memorypack/RendererInitializationInfo';
 
@@ -65,17 +64,18 @@ export class DebugApp implements IBlocksOnGrid3DRenderer {
     private raycaster: THREE.Raycaster;
     private canvas: HTMLCanvasElement;
     private _methodInvoker: IBlocksOnGrid3DController;
+    resizeEvent: (_: any) => void;
 
     constructor(canvas: HTMLCanvasElement, methodInvoker: IBlocksOnGrid3DController) {
 
         this.canvas = canvas;
         this._methodInvoker = methodInvoker;
-        canvas.style.width = "100%";
-        canvas.style.height = "100%";
-        canvas.width = canvas.offsetWidth;
-        canvas.height = canvas.offsetHeight;
+        this.canvas.style.width = "100%";
+        this.canvas.style.height = "100%";
+        this.canvas.width = this.canvas.offsetWidth;
+        this.canvas.height = this.canvas.offsetHeight;
 
-        this.camera = new THREE.PerspectiveCamera(60, canvas.width / canvas.height, 0.1, 100);
+        this.camera = new THREE.PerspectiveCamera(60, this.canvas.width / this.canvas.height, 0.1, 100);
         this.camera.position.z = 10;
         // the camera in ThreeJS is looking down negativeZ direciton, so no need to rotate
         this.camera.setRotationFromEuler(new THREE.Euler(THREE.MathUtils.degToRad(0), 0, 0));
@@ -90,22 +90,41 @@ export class DebugApp implements IBlocksOnGrid3DRenderer {
         this.scene.add(directionalLight);
         this.scene.add(directionalLight.target);
 
-        this.renderer = new THREE.WebGLRenderer({antialias: true, canvas: canvas});
+        this.renderer = new THREE.WebGLRenderer({antialias: true, canvas: this.canvas});
+        this.renderer.setSize(this.canvas.width, this.canvas.height);
         this.renderer.setPixelRatio(window.devicePixelRatio);
-        this.renderer.setSize(canvas.width, canvas.height);
-
+        
         this.renderer.setAnimationLoop(() => {
 
             this.renderer.render(this.scene, this.camera);
 
         });
-
+        
+        this.resizeEvent = (_) => this.HandleResize();
+        window.addEventListener('resize',this.resizeEvent );
 
         this.raycaster = new THREE.Raycaster();
 
         this._methodInvoker.OnUnityAppInitialized(new UnityAppInitialized()).then(_ => console.log("UnityAppInitialized invoked"));
     }
 
+    private HandleResize():void {
+
+        this.canvas.style.width = "100%";
+        this.canvas.style.height = "100%";
+        this.canvas.width = this.canvas.offsetWidth;
+        this.canvas.height = this.canvas.offsetHeight;
+        
+        // Update camera
+        this.camera.aspect = this.canvas.width / this.canvas.height
+        this.camera.updateProjectionMatrix()
+
+        // Update renderer
+        this.renderer.setSize(this.canvas.width, this.canvas.height);
+        this.renderer.setPixelRatio(window.devicePixelRatio);
+
+    }
+    
     public async InitializeRenderer(msg: RendererInitializationInfo): Promise<void> {
 
         this.scene.background= new THREE.Color(msg.backgroundColor.r, msg.backgroundColor.g, msg.backgroundColor.b);
@@ -133,6 +152,8 @@ export class DebugApp implements IBlocksOnGrid3DRenderer {
 
     public Quit(): void {
         console.log("Quit called");
+
+        window.removeEventListener('resize',this.resizeEvent );
     }
 
     public async InvokeUpdateBlockInstance(blockId: number| null, position: PackableVector2, rotationZ: number) : Promise<any> {
@@ -203,18 +224,14 @@ export class DebugApp implements IBlocksOnGrid3DRenderer {
     }
 
     public async InvokeRequestScreenToWorldRay(msg: RequestScreenToWorldRay): Promise<ScreenToWorldRayResponse> {
-
-        var a=msg;
-
-
         const pointer = new THREE.Vector2();
 
         // convert to ThreeJS screen coordinates
-        pointer.x = ( msg.screen.x / this.canvas.width ) * 2 - 1;
-        pointer.y = - ( msg.screen.y / this.canvas.height ) * 2 + 1;
-
-
-
+        const virtualPixelWidth=this.canvas.width/this.renderer.getPixelRatio();
+        const virtualPixelHeight=this.canvas.height/this.renderer.getPixelRatio();
+        pointer.x = ( msg.screen.x / virtualPixelWidth ) * 2 - 1;
+        pointer.y = - ( msg.screen.y /virtualPixelHeight) * 2 + 1;
+        
         this.raycaster.setFromCamera( pointer, this.camera );
         const ray=this.raycaster.ray;
 
