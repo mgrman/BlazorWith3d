@@ -22,7 +22,7 @@
 
         foreach(var(instance, template) in _instances.Select(instance => (instance, template: _templates[instance.TemplateId])))
         {
-            var brightness = (template.Size.Z - minHeight) / heightRange ;
+            var brightness = heightRange==0?1f: (template.Size.Z - minHeight) / heightRange ;
             var color = ColorUtils.Lerp(minColor, maxColor, brightness);
             <div class="my-component" 
             style="user-select: none; position: absolute; width: @ToStringCSS((template.Size.X)*scale)px; height: @ToStringCSS((template.Size.Y)*scale)px; background-color: @color.ToCss(); left: @ToStringCSS((instance.Position.X-template.Size.X/2+offsetX)*scale)px; bottom: @ToStringCSS((instance.Position.Y-template.Size.Y/2+offsetY)*scale)px; rotate: @ToStringCSS(instance.RotationZ)deg;"
