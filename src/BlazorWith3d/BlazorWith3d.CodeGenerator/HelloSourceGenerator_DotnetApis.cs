@@ -36,8 +36,8 @@ internal static class HelloSourceGenerator_DotnetApis
 
             sb.AppendLine($"public partial interface {info.app.typeName}");
             using (sb.IndentWithCurlyBrackets())
-            {
-                sb.AppendLine($"void Set{info.eventHandlerConceptName}({info.eventHandler.typeName}? {info.eventHandlerConceptName.ToCamelCase()});");
+            { 
+                sb.AppendLine($"ValueTask Set{info.eventHandlerConceptName}({info.eventHandler.typeName}{(info.eventHandlerNullable?"?":"")} {info.eventHandlerConceptName.ToCamelCase()});");
             }
 
 
@@ -50,30 +50,46 @@ internal static class HelloSourceGenerator_DotnetApis
                 sb.AppendLine($"private readonly IBinaryApi _binaryApi;");
                 sb.AppendLine($"private {info.eventHandler.typeName}? _eventHandler;");
                 sb.AppendLine($"private readonly IBufferWriterFactory<byte> _writerFactory;");
+                sb.AppendLine($"private readonly Func<ValueTask>? _onAfterSet{info.eventHandlerConceptName};");
+                sb.AppendLine($"private bool _setMainMessageHandler;");
+                sb.AppendLine($"private bool _disposed;");
 
                 sb.AppendLine();
-                sb.AppendLine($"public {info.app.TypeNameWithoutIPrefix}OverBinaryApi(IBinaryApi binaryApi, IBinaryApiSerializer serializer, IBufferWriterFactory<byte> writerFactory)");
+                sb.AppendLine($"public {info.app.TypeNameWithoutIPrefix}OverBinaryApi(IBinaryApi binaryApi, IBinaryApiSerializer serializer, IBufferWriterFactory<byte> writerFactory, Func<ValueTask>? onAfterSet{info.eventHandlerConceptName})");
                 using (sb.IndentWithCurlyBrackets())
                 {
                     sb.AppendLine("_binaryApi = binaryApi;");
                     sb.AppendLine($"_serializer = serializer;");
                     sb.AppendLine($"_writerFactory = writerFactory;");
+                    sb.AppendLine($"_onAfterSet{info.eventHandlerConceptName} = onAfterSet{info.eventHandlerConceptName};");
                 }
                 sb.AppendLine($"public bool IsProcessingMessages => _binaryApi.MainMessageHandler == ProcessMessages;");
 
-                sb.AppendLine($"public void Set{info.eventHandlerConceptName}({info.eventHandler.typeName}? {eventHandlerVarName})");
+                sb.AppendLine($"public async ValueTask Set{info.eventHandlerConceptName}({info.eventHandler.typeName}{(info.eventHandlerNullable?"?":"")} {eventHandlerVarName})");
                 using (sb.IndentWithCurlyBrackets())
                 {
-                    sb.AppendLine(
-                        "if(_binaryApi.MainMessageHandler != null && _binaryApi.MainMessageHandler != ProcessMessages)");
+                    sb.AppendLine("if(_disposed)");
+                    using (sb.IndentWithCurlyBrackets())
+                    {
+                        sb.AppendLine($"throw new ObjectDisposedException(\"{info.app.TypeNameWithoutIPrefix}OverBinaryApi\");");
+                    }
+                    
+                    sb.AppendLine("if(_eventHandler!=null)");
+                    using (sb.IndentWithCurlyBrackets())
+                    {
+                        sb.AppendLine($"throw new InvalidOperationException(\"Set{info.eventHandlerConceptName} can only be called once!\");");
+                    }
+                    sb.AppendLine("if(_binaryApi.MainMessageHandler != null && _binaryApi.MainMessageHandler != ProcessMessages)");
                     using (sb.IndentWithCurlyBrackets())
                     {
                         sb.AppendLine("throw new InvalidOperationException(\"Somebody else is handling messages!\");");
                     }
 
                     sb.AppendLine($"_eventHandler={eventHandlerVarName};");
-                    sb.AppendLine($"_binaryApi.MainMessageHandler = {eventHandlerVarName}==null?null: ProcessMessages;");
-                    sb.AppendLine($"_binaryApi.MainMessageWithResponseHandler = {eventHandlerVarName}==null?null: ProcessMessagesWithResponse;");
+                    sb.AppendLine($"_setMainMessageHandler=true;");
+                    sb.AppendLine($"_binaryApi.MainMessageHandler = ProcessMessages;");
+                    sb.AppendLine($"_binaryApi.MainMessageWithResponseHandler = ProcessMessagesWithResponse;");
+                    sb.AppendLine($"await (_onAfterSet{info.eventHandlerConceptName}?.Invoke() ?? new ValueTask());");
                 }
 
                 sb.AppendLine($"public event Action<ArraySegment<byte>, Exception> OnMessageError;");
@@ -85,6 +101,11 @@ internal static class HelloSourceGenerator_DotnetApis
 
                     using (sb.IndentWithCurlyBrackets())
                     {
+                        sb.AppendLine("if(_disposed)");
+                        using (sb.IndentWithCurlyBrackets())
+                        {
+                            sb.AppendLine($"throw new ObjectDisposedException(\"{info.app.TypeNameWithoutIPrefix}OverBinaryApi\");");
+                        }
                         if (m.returnType == null)
                         {
                             sb.AppendLine($"var encodedMessage=SerializeMessage({i}, {string.Join(", ", m.arguments.Select(a => a.argName))});");
@@ -104,11 +125,17 @@ internal static class HelloSourceGenerator_DotnetApis
                 sb.AppendLine($"public void Dispose()");
                 using (sb.IndentWithCurlyBrackets())
                 {
-                    sb.AppendLine($"Set{info.eventHandlerConceptName}(null);");
+                    
+                    sb.AppendLine($"_disposed=true;");
+                    
+                    
+                    sb.AppendLine($"if(_setMainMessageHandler)");
+                    using (sb.IndentWithCurlyBrackets())
+                    {
+                        sb.AppendLine($"_binaryApi.MainMessageHandler = null;");
+                        sb.AppendLine($"_binaryApi.MainMessageWithResponseHandler = null;");
+                    }
                 }
-
-
-
 
                 var methodParamCounts = info.methods.Select(m =>  m.arguments.Length).Distinct().OrderBy(o => o);
                 foreach (var paramCount in methodParamCounts)

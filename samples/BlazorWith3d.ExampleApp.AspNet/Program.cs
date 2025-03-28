@@ -60,8 +60,12 @@ if (app.Environment.IsDevelopment())
             {
                 var debugRelay = context.RequestServices.GetRequiredService<DebugRelayUnityApi>();
 
-                using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-                await debugRelay.HandleWebSocket(webSocket);
+                if (debugRelay.CanHandleWebSocket())
+                {
+
+                    using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
+                    await debugRelay.HandleWebSocket(webSocket);
+                }
             }
             else
             {

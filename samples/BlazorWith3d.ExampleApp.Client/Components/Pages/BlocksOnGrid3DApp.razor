@@ -6,15 +6,15 @@
 
 <PageTitle>WebGL instance</PageTitle>
 
-<InputSelect id="scent" @bind-Value="_renderer">
+<InputSelect id="scent" @bind-Value="ChosenRenderer">
     @foreach (var renderer in _renderers)
     {
         <option value="@renderer">@renderer</option>
     }
 </InputSelect>
 
-<BlocksOnGrid3DComponent >
-    @switch (_renderer)
+<BlocksOnGrid3DComponent @ref="app">
+    @switch (ChosenRenderer)
     {
         case "None":
             break;
@@ -47,7 +47,7 @@
             // uses generated interop code 
             break;
             default:
-            <text> Unsupported renderer type @_renderer</text>
+            <text> Unsupported renderer type @ChosenRenderer</text>
             break;
     }
     
@@ -57,7 +57,9 @@
 @code{
 
     List<string> _renderers ;
+    private string _renderer ="None";
 
+    BlocksOnGrid3DComponent app;
     protected override void OnInitialized()
     {
         _renderers = ["None", "Unity WebGL", "Html", "Babylon", "ThreeJS", "ThreeJS.Interop","ThreeJS (no copy)"];
@@ -68,6 +70,19 @@
         base.OnInitialized();
     }
 
-    string _renderer = "None";
+    string ChosenRenderer
+    {
+        get => _renderer;
+        set
+        {
+            if (value == _renderer)
+            {
+                return;
+            }
+
+            app.SetRenderer(null);
+            _renderer = value;
+        }
+    }
 
 }

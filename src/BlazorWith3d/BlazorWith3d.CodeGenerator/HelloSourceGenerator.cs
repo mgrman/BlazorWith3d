@@ -61,7 +61,7 @@ public class HelloSourceGenerator : ISourceGenerator
                 .Where(m => m != null)
                 .ToList();
 
-            return new AppInfo(controllerType, "Renderer", rendererType, methods, events);
+            return new AppInfo(controllerType, "Renderer", true, rendererType, methods, events);
         });
 
 
@@ -89,7 +89,7 @@ public class HelloSourceGenerator : ISourceGenerator
                 .Where(m=>m!=null)
                 .ToList();
 
-            return new AppInfo(rendererType, "Controller", controllerType, methods, events);
+            return new AppInfo(rendererType, "Controller", false, controllerType, methods, events);
 
         });
 
@@ -158,7 +158,7 @@ public class HelloSourceGenerator : ISourceGenerator
                 .Where(m => m != null)
                 .ToList();
 
-            var text = HelloSourceGenerator_BlazorBinding.GenerateBindingClass(bindingType, new AppInfo(GetTypeInfo(rendererInterface, context.Compilation), "Controller", GetTypeInfo(controllerInterface, context.Compilation), methods, events));
+            var text = HelloSourceGenerator_BlazorBinding.GenerateBindingClass(bindingType, new AppInfo(GetTypeInfo(rendererInterface, context.Compilation), "Controller", false, GetTypeInfo(controllerInterface, context.Compilation), methods, events));
 
             context.AddSource($"{bindingType.typeName}.g.cs", text);
 

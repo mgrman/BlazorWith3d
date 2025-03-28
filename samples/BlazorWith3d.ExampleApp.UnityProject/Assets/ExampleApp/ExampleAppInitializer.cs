@@ -1,40 +1,36 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 using BlazorWith3d.ExampleApp.Client.Shared;
 using BlazorWith3d.Shared;
 using BlazorWith3d.Unity;
-using UnityEngine;
 
-using Random = UnityEngine.Random;
+using JetBrains.Annotations;
+
+using UnityEngine;
 
 
 namespace ExampleApp
 {
-    public class ExampleAppInitializer : MonoBehaviour, IBlocksOnGrid3DRenderer
+    public class ExampleAppInitializer : MonoBehaviour
     {
-        public static Uri HostUrl = null;
+        private readonly DisposableContainer _scriptDisposable=new ();
         
-        [SerializeField] private BlockController _templatePrefab;
+        [CanBeNull]
+        private DisposableContainer _rendererDisposable;
 
-        private readonly Dictionary<int, BlockController> _blocks = new();
-        private readonly Dictionary<int, BlockController> _templates = new();
-        private BlocksOnGrid3DControllerOverBinaryApi _appApi;
-        private GameObject _templateRoot;
+        public static Uri HostUrl = null;
 
-        private List<IDisposable> _disposables=new List<IDisposable>();
-        private List<IAsyncDisposable> _asyncDisposables=new List<IAsyncDisposable>();
-
-        [SerializeField]
-        private Camera _camera;
+        [SerializeField] private UnityRenderer _appPrefab;
+        
 
         [Tooltip("If none is set, will use simulator")] 
         [SerializeField]
         private string _backendWebsocketUrl = "ws://localhost:5292/debug-relay-unity-ws";
 
+        private readonly SemaphoreSlim _semaphore= new SemaphoreSlim(1);
 
         public async void Start()
         {
@@ -43,12 +39,6 @@ namespace ExampleApp
             #endif
             Debug.Log($"cmdArgs: {string.Join(" ",Environment.GetCommandLineArgs())}");
             
-            
-            _templateRoot = new GameObject("BlockTemplateRoot");
-            _templateRoot.SetActive(false);
-            _templateRoot.transform.parent = transform;
-
-            IBinaryApi binaryApi;
 #if UNITY_EDITOR
 
             if (string.IsNullOrEmpty(_backendWebsocketUrl))
@@ -58,222 +48,88 @@ namespace ExampleApp
             }
             else
             {
-                var relay = new BlazorWebSocketRelay(_backendWebsocketUrl);
-                relay.OnDisconnected += async () =>
+                var relay = new BlazorWebSocketRelay(_backendWebsocketUrl, async api =>
                 {
-                    await Awaitable.MainThreadAsync();
-                    Reset();
-                };
+                    await _semaphore.WaitAsync();
+                    try
+                    {
+
+                        await Awaitable.MainThreadAsync();
+
+                        if (_rendererDisposable != null)
+                        {
+                            await _rendererDisposable.DisposeAsync();
+                            _rendererDisposable = null;
+                        }
+
+                        if (api != null)
+                        {
+                            var binaryApi = new BinaryApiOverBinaryMessageApi(api);
+                            await CreateControllerAndRenderer(binaryApi);
+
+
+                            var imageCapturer = new CameraImageStreamer(api);
+                            _rendererDisposable.TrackDisposable(imageCapturer);
+
+                        }
+                    }
+                    finally
+                    {
+                        _semaphore.Release();
+                    }
+                });
                 
-                var imageCapturer = new CameraImageStreamer(relay);
-                _disposables.Add(imageCapturer);
                 
-                _asyncDisposables.Add(relay);
-                var blazorApi = relay;
-                binaryApi = new BinaryApiOverBinaryMessageApi(blazorApi);
+                _scriptDisposable.TrackDisposable(relay);
                 
                 var uriBuilder = new UriBuilder(_backendWebsocketUrl);
                 uriBuilder.Scheme="http";
                 uriBuilder.Path = "";
                 HostUrl = uriBuilder.Uri;
             }
-#else
+#elif UNITY_WEBGL
+
             HostUrl = new Uri(Application.absoluteURL);
-            binaryApi = UnityBlazorApi.Singleton;
+            var binaryApi = UnityBlazorApi.Singleton;
+            await CreateControllerAndRenderer(binaryApi);
+            UnityBlazorApi.InitializeWebGLInterop();
 #endif
+        }
+
+        private async ValueTask CreateControllerAndRenderer(IBinaryApi binaryApi)
+        {
+            var activeRenderer = Instantiate(_appPrefab);
+
             Console.WriteLine($"{Screen.width},{Screen.height}");
-            _appApi = new BlocksOnGrid3DControllerOverBinaryApi(binaryApi, new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory());
-            _appApi.OnMessageError += (o, e) =>
+            var controller = new BlocksOnGrid3DControllerOverBinaryApi(binaryApi, new MemoryPackBinaryApiSerializer(),
+                new PoolingArrayBufferWriterFactory(),null);
+            controller.OnMessageError += (o, e) =>
             {
                 Debug.LogException(e);
             };
-            _appApi.SetRenderer(this);
+            
+            await controller.SetRenderer(activeRenderer);
+            await activeRenderer.SetController(controller);
             
             
-                
-#if !UNITY_EDITOR
-            UnityBlazorApi.InitializeWebGLInterop();
-#endif
-            await _appApi.OnUnityAppInitialized(new UnityAppInitialized());
-        }
-
-        private void Reset()
-        {
-            foreach (var block in _templates.Values)
-            {
-                GameObject.Destroy(block.gameObject);
-            }
-
-            _templates.Clear();
+            _rendererDisposable = new DisposableContainer();
             
-            foreach (var block in _blocks.Values)
-            {
-                GameObject.Destroy(block.gameObject);
-            }
-
-            _blocks.Clear();
+            _rendererDisposable.TrackDisposable(controller);
+            _rendererDisposable.TrackDestroy(activeRenderer.gameObject);
         }
 
         private async Awaitable OnDestroy()
         {
-            foreach (var disposable in _disposables)
-            {
-                disposable.Dispose();
-            }
-
-            foreach (var disposable in _asyncDisposables)
-            {
-                await disposable.DisposeAsync();
-            }
-        }
-
-        public void SetController(IBlocksOnGrid3DController controller)
-        {
-            throw new NotImplementedException();
-        }
-
-        public ValueTask InitializeRenderer(RendererInitializationInfo msg)
-        {
-            Debug.Log($"BlazorControllerInitialized: ");
-            _camera.transform.position = new Vector3(msg.RequestedCameraPosition.X, msg.RequestedCameraPosition.Y, -msg.RequestedCameraPosition.Z);
-            _camera.transform.localRotation = Quaternion.Euler(msg.RequestedCameraRotation.ToUnity());
-            
-            
-            _camera.backgroundColor = msg.BackgroundColor.ToUnity();
-            _camera.fieldOfView = msg.RequestedCameraFoV;
-            return new ValueTask();
-        }
-        
-
-        public ValueTask InvokeAddBlockTemplate(AddBlockTemplate msg)
-        {
-            Debug.Log($"Adding block template: {JsonUtility.ToJson(msg)}");
-
-
-            var meshGo = Instantiate(_templatePrefab, _templateRoot.transform);
-
-            meshGo.Initialize(msg);
-
-            _templates.Add(msg.TemplateId, meshGo);
-
-            Debug.Log($"Added block template: {JsonUtility.ToJson(msg)}");
-            return new ValueTask();
-        }
-
-        public ValueTask  InvokeRemoveBlockTemplate(RemoveBlockTemplate msg)
-        {
-            Debug.Log($"Removing block template: {JsonUtility.ToJson(msg)}");
-            
-            GameObject.Destroy(_templates[msg.TemplateId].gameObject);
-            _templates.Remove(msg.TemplateId);
-            
-            Debug.Log($"Removed block template: {JsonUtility.ToJson(msg)}");
-            return new ValueTask();
-        }
-
-        public ValueTask  InvokeAddBlockInstance(AddBlockInstance msg)
-        {
-            Debug.Log($"Adding block : {JsonUtility.ToJson(msg)}");
-            var template = _templates[msg.TemplateId];
-
-
-            var instance = template.CreateInstance(msg);
-            _blocks.Add(msg.BlockId, instance);
-            Debug.Log($"Added block : {JsonUtility.ToJson(msg)}");
-            return new ValueTask();
-        }
-
-        public ValueTask  InvokeRemoveBlockInstance(RemoveBlockInstance msg)
-        {
-            Debug.Log($"Removing block: {JsonUtility.ToJson(msg)}");
-            Destroy( _blocks[msg.BlockId].gameObject);
-            _blocks.Remove(msg.BlockId);
-
-            Debug.Log($"Removed block: {JsonUtility.ToJson(msg)}");
-            return new ValueTask();
-        }
-
-        public ValueTask InvokeUpdateBlockInstance(int? blockId, PackableVector2 position, float rotationZ)
-        {
-            if (blockId == null || !_blocks.TryGetValue(blockId.Value, out var block))
-            {
-                return new ValueTask();
-            }
-
-            block.UpdatePose(position, rotationZ);
-            return new ValueTask();
-        }
-
-        public async ValueTask InvokeTriggerTestToBlazor(TriggerTestToBlazor msg)
-        {
-            await Awaitable.WaitForSecondsAsync(1);
-
-            var id = Random.Range(0, 1000);
-            var response = await _appApi.OnTestToBlazor(new TestToBlazor(){Id = id});
-
-            if (response.Id != id)
-            {
-                throw new InvalidOperationException();
-            }
-            Debug.Log("TriggerTestToBlazor is done");
-        }
-
-        public ValueTask<PerfCheck> InvokePerfCheck(PerfCheck msg)
-        {
-            return new ValueTask<PerfCheck>(msg);
-        }
-
-        public ValueTask<ScreenToWorldRayResponse>  InvokeRequestScreenToWorldRay(RequestScreenToWorldRay obj)
-        {
-            // convert to Unity screen coordinates
-            var unityScreenPoint = new Vector3(obj.Screen.X, Screen.height - obj.Screen.Y, 0);
-            
-            var ray = Camera.main.ScreenPointToRay(unityScreenPoint);
-
-            // convert ray to expected blazor world coordinate system
-            ray = new UnityEngine.Ray(transform.worldToLocalMatrix.MultiplyPoint(ray.origin),
-                transform.worldToLocalMatrix.MultiplyVector(ray.direction));
-
-            return new ValueTask<ScreenToWorldRayResponse>(new ScreenToWorldRayResponse()
-            {
-                Ray = ray.ToNumerics()
-            });
-        }
-
-
-        public ValueTask<RaycastResponse> InvokeRequestRaycast(RequestRaycast obj)
-        {
-            var ray = obj.Ray.ToUnity();
-
-            // convert ray from blazor world coordinate system to unity
-            ray = new UnityEngine.Ray(transform.localToWorldMatrix.MultiplyPoint(ray.origin),
-                transform.localToWorldMatrix.MultiplyVector(ray.direction));
-            
-            var hitController = Physics.Raycast(ray, out RaycastHit hit)
-                ? hit.collider.gameObject.GetComponentInParent<BlockController>()
-                : null;
-            if (hitController==null)
-            {
-              return new ValueTask<RaycastResponse> ( new RaycastResponse()
-                {
-                    HitBlockId = null, HitWorld = obj.Ray.Origin
-                });
-            }
-            
-            return new ValueTask<RaycastResponse> (  new RaycastResponse()
-            {
-                HitBlockId = hitController.BlockId, 
-                // convert result to blazor world coordinate system
-                HitWorld =  transform.worldToLocalMatrix.MultiplyPoint(hit.point).ToNumerics()
-            });
+            await _scriptDisposable.DisposeAsync();
         }
     }
+
 
 #if UNITY_EDITOR
 
     public class CameraImageStreamer:IDisposable
     {
-        private readonly BlazorWebSocketRelay _relay;
+        private readonly BinaryApiForSocket _relay;
         private readonly CancellationTokenSource _cts;
         private readonly RenderTexture _renderTexture;
         private readonly Texture2D _screenshot;
@@ -281,7 +137,7 @@ namespace ExampleApp
 
         private readonly Awaitable _streamTask;
 
-        public CameraImageStreamer(BlazorWebSocketRelay relay)
+        public CameraImageStreamer(BinaryApiForSocket relay)
         {
             _relay = relay;
             _cts = new CancellationTokenSource();
@@ -300,11 +156,6 @@ namespace ExampleApp
                 {
                     await Awaitable.NextFrameAsync();
 
-
-                    if (!_relay.IsConnected)
-                    {
-                        continue;
-                    }
                     
                     if (Time.time <= _nextScreenshotTime)
                     {
@@ -313,19 +164,27 @@ namespace ExampleApp
                     
                     _nextScreenshotTime= Time.time + 1/30f;
 
-                    var cam = Camera.main;
-                    cam.targetTexture = _renderTexture;
-                    cam.Render();
-                    cam.targetTexture = null;
+                    if (_cts.IsCancellationRequested)
+                    {
+                        return;
+                    }
 
-                    RenderTexture.active = _renderTexture;
-                    _screenshot.ReadPixels(new Rect(0, 0, Screen.width, Screen.height), 0, 0);
-                    _screenshot.Apply();
-                    RenderTexture.active = null;
+                    if (Camera.main != null)
+                    {
+                        var cam = Camera.main;
+                        cam.targetTexture = _renderTexture;
+                        cam.Render();
+                        cam.targetTexture = null;
 
-                    byte[] bytes = _screenshot.EncodeToJPG();
+                        RenderTexture.active = _renderTexture;
+                        _screenshot.ReadPixels(new Rect(0, 0, Screen.width, Screen.height), 0, 0);
+                        _screenshot.Apply();
+                        RenderTexture.active = null;
 
-                    await _relay.UpdateScreen(bytes);
+                        byte[] bytes = _screenshot.EncodeToJPG();
+
+                        await _relay.UpdateScreen(bytes);
+                    }
 
                 }
                 catch (Exception e)

@@ -7,6 +7,7 @@ namespace BlazorWith3d.Unity.CodeGenerator;
 internal record AppInfo(
     TypeInfo app,
     string eventHandlerConceptName,
+    bool eventHandlerNullable,
     TypeInfo eventHandler,
     IReadOnlyList<MethodInfo> methods,
     IReadOnlyList<MethodInfo> events)

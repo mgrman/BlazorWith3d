@@ -45,7 +45,6 @@
             InvokeAsync(async () =>
             {
                 DebugRelayUnityApi.NewFrame -= UpdateFrame;
-                _rendererAssignment?.Dispose();
                 UpdateFrame([]);
                 StateHasChanged();
                 
@@ -53,22 +52,21 @@
                 {
                     DebugRelayUnityApi.NewFrame += UpdateFrame;
                     var mainThreadApi = new BinaryApiThreadWrapper(obj, async t => await InvokeAsync(async () => await t()));
-                    unityAppApi = new BlocksOnGrid3DRendererOverBinaryApi(new BinaryApiOverBinaryMessageApi(mainThreadApi), new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory());
+                    unityAppApi = new BlocksOnGrid3DRendererOverBinaryApi(new BinaryApiOverBinaryMessageApi(mainThreadApi), new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory(),null);
                     unityAppApi.OnMessageError += (o, e) =>
                     {
                         Logger.LogError(e, $"error handling message {string.Join(",", o)}");
                     };
-                    _rendererAssignment=await ParentApp.InitializeRenderer(unityAppApi,null);
+                    await ParentApp.SetRenderer(unityAppApi);
 
                 }
             });
         }
 
     private BlocksOnGrid3DRendererOverBinaryApi? unityAppApi;
-    private IDisposable? _rendererAssignment;
 
     [CascadingParameter] 
-    public required I3DAppController ParentApp { get; set; }
+    public required IBlocksOnGrid3DController ParentApp { get; set; }
 
     private ElementReference _image;
 
@@ -111,7 +109,6 @@
         DebugRelayUnityApi.ConnectedApi = null;
         DebugRelayUnityApi.NewFrame -= UpdateFrame;
         unityAppApi?.Dispose();
-        _rendererAssignment?.Dispose();
     }
 
 }

@@ -6,31 +6,27 @@ using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
 using BlazorWith3d.Shared;
+
 using UnityEngine;
 
 namespace BlazorWith3d.Unity
 {
-    public class BlazorWebSocketRelay : IAsyncDisposable, IBinaryMessageApi
+    public class BlazorWebSocketRelay : IAsyncDisposable
     {
         private readonly string _url;
-
-        private ClientWebSocket? _ws;
-
-        private readonly CancellationTokenSource _cts;
-        private readonly List<IBufferWriterWithArraySegment<byte>> _unsentMessages= new ();
-
-        private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1,1);
-
-        public Func<ArraySegment<byte>, ValueTask>? MainMessageHandler { get; set; }
         
-        public bool IsConnected => _ws is { State: WebSocketState.Open };
+        private readonly Func<BinaryApiForSocket?, ValueTask> _handler;
+
+        private BinaryApiForSocket? _api;
+        private readonly CancellationTokenSource _cts;
 
 
-        public event Action? OnDisconnected;
+        public bool IsConnected => _api!=null;
 
-        public BlazorWebSocketRelay(string url)
+        public BlazorWebSocketRelay(string url, Func<BinaryApiForSocket?, ValueTask> handler)
         {
             _url = url;
+            _handler = handler;
             _cts = new CancellationTokenSource();
             Task.Run(async () =>
             {
@@ -39,27 +35,22 @@ namespace BlazorWith3d.Unity
                     await ConnectAsync();
                     await Task.Delay(1000, _cts.Token);
                 }
-            });
+            }, _cts.Token);
         }
 
         private async Task ConnectAsync()
         {
-            if (_ws != null)
+            if (_api != null)
             {
-                if (_ws.State == WebSocketState.Open)
-                {
-                    return;
-                }
-                else
-                {
-                    _ws.Dispose();
-                }
-
-                _ws = null;
+                await _api.DisposeAsync();
+                _api = null;
+                await _handler.Invoke(null);
             }
+
+
             Debug.Log($"Connecting to {_url}");
 
-            _ws = new ClientWebSocket();
+            var ws = new ClientWebSocket();
 
             if (_cts.IsCancellationRequested)
             {
@@ -68,7 +59,7 @@ namespace BlazorWith3d.Unity
 
             try
             {
-                await _ws.ConnectAsync(new Uri(_url), _cts.Token);
+                await ws.ConnectAsync(new Uri(_url), _cts.Token);
                 Debug.Log($"Connected to {_url}");
             }
             catch (ObjectDisposedException)
@@ -85,121 +76,131 @@ namespace BlazorWith3d.Unity
                 return;
             }
 
-            await Task.Factory.StartNew(ReceiveLoop, _cts.Token, TaskCreationOptions.LongRunning,
-                TaskScheduler.Default);
+            var api= new BinaryApiForSocket(ws);
+            _api = api;
+            await _handler.Invoke(api);
 
-            foreach (var unsentMessage in _unsentMessages)
-            {
-                
-              await  SendMessageInner(0,unsentMessage.WrittenArray);
-                unsentMessage.Dispose();
-            }
-            _unsentMessages.Clear();
+            await api.HandleWebSocket();
+
+            _api = null;
+            await _handler.Invoke(null);
+            await api.DisposeAsync();
         }
 
-        private async Task ReceiveLoop()
+        public async ValueTask UpdateScreen(byte[] bytes)
         {
-            var loopToken = _cts.Token;
-            
-            var buffer =new ArraySegment<byte>( new byte[1024 * 4]);
-            try
+            if (_api==null)
             {
-                while (!loopToken.IsCancellationRequested)
-                {
-                    var receiveResult = await _ws!.ReceiveAsync(buffer, _cts.Token);
-                    if (!receiveResult.EndOfMessage)
-                    {
-                        throw new InvalidOperationException("Did not receive full message!");
-                    }
+                return;
+            }
+            await _api.UpdateScreen( bytes);
+        }
 
-                    await ResponseReceived(buffer.Slice(0, receiveResult.Count).ToArray());
+        public async ValueTask DisposeAsync()
+        {
+            if (_api != null)
+            {
+                await _api.DisposeAsync();
+            }
+             
+            _cts.Cancel();
+        }
+
+    }
+
+
+    public class BinaryApiForSocket : IBinaryMessageApi, IAsyncDisposable
+    {
+        private readonly WebSocket _webSocket;
+        private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
+        private readonly CancellationTokenSource _cts;
+
+        public Func<ArraySegment<byte>, ValueTask>? MainMessageHandler { get; set; }
+
+        public BinaryApiForSocket(WebSocket webSocket)
+        {
+            _webSocket = webSocket;
+            _cts= new CancellationTokenSource();
+        }
+
+        public async ValueTask HandleWebSocket()
+        {
+            int bufferIndex = 0;
+            var buffer = new ArraySegment<byte>(new byte[1024 * 1024 * 4]);
+            while (_webSocket.State == WebSocketState.Open)
+            {
+                try
+                {
+                    var bufferToFill = buffer.Slice(bufferIndex);
+                    var receiveResult = await _webSocket.ReceiveAsync(bufferToFill, _cts.Token).ConfigureAwait(false);
+                    bufferIndex += receiveResult.Count;
+
+                    if (receiveResult.EndOfMessage)
+                    {
+                        var msg = buffer.Slice(0, bufferIndex ).ToArray();
+                        bufferIndex = 0;
+                        await Awaitable.MainThreadAsync();
+                        await (MainMessageHandler?.Invoke(msg) ?? new ValueTask());
+                    }
                 }
-            }
-            catch (TaskCanceledException)
-            {
-            }
-            catch (Exception ex)
-            {
-                OnDisconnected?.Invoke();
-                Debug.LogException(ex);
+                catch (OperationCanceledException ex)
+                {
+                    return;
+                }
+                catch (WebSocketException ex)
+                {
+                    // Debug.LogWarning($"HandleWebSocket OnMessageFromUnity error {ex.Message}");
+                    // if (ex.InnerException != null)
+                    // {
+                    //     Debug.LogWarning($"HandleWebSocket InnerException: {ex.InnerException.Message}");
+                    // }
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"HandleWebSocket OnMessageFromUnity error {ex.Message}");
+                    return;
+                }
             }
         }
 
         public async ValueTask SendMessage(IBufferWriterWithArraySegment<byte> bytes)
         {
-            if (_ws?.State!= WebSocketState.Open)
-            {
-                _unsentMessages.Add(bytes);
-                return ;
-            }
-
-            
             Debug.Log($"SendMessage at {Time.realtimeSinceStartup}");
-            
-            await SendMessageInner(0,bytes.WrittenArray);
-            
+            await SendMessageInner(0, bytes.WrittenArray);
+
             bytes.Dispose();
-            
-            return ;
         }
 
         public async ValueTask UpdateScreen(byte[] bytes)
         {
-            if (_ws?.State!= WebSocketState.Open)
-            {
-                return ;
-            }
-            
-            //Debug.LogWarning($"UpdateScreen at {Time.realtimeSinceStartup}");
-
-            await SendMessageInner(1,bytes);
-            return ;
+            await SendMessageInner(1, bytes);
         }
 
         private async Task SendMessageInner(byte prefix, ArraySegment<byte> bytes)
         {
             await _semaphore.WaitAsync();
-            if (_ws?.State == WebSocketState.Open)
+            if (_webSocket?.State == WebSocketState.Open)
             {
-                await _ws.SendAsync(new []{prefix}, WebSocketMessageType.Binary, false, _cts.Token);
-                await _ws.SendAsync(bytes, WebSocketMessageType.Binary, true, _cts.Token);
+                await _webSocket.SendAsync(new[] { prefix }, WebSocketMessageType.Binary, false, _cts.Token);
+                await _webSocket.SendAsync(bytes, WebSocketMessageType.Binary, true, _cts.Token);
             }
-            _semaphore.Release();
-        }
 
-        private async ValueTask ResponseReceived(byte[] data)
-        {
-            await Awaitable.MainThreadAsync();
-            try
-            {
-                //Debug.LogError($"MessageReceived at {Time.realtimeSinceStartup}");
-                await (MainMessageHandler?.Invoke(data) ?? new ValueTask());
-            }
-            catch (Exception ex)
-            {
-                Debug.LogException(ex);
-            }
+            _semaphore.Release();
         }
 
         public async ValueTask DisposeAsync()
         {
-            if (_ws is null)
-            {
-                return;
-            }
-
             _cts.Cancel();
-
-            if (_ws.State == WebSocketState.Open)
+            if (_webSocket.State == WebSocketState.Open)
             {
-                await _ws.CloseOutputAsync(WebSocketCloseStatus.Empty, "", CancellationToken.None);
-                await _ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "", CancellationToken.None);
+                await _webSocket.CloseOutputAsync(WebSocketCloseStatus.Empty, "", CancellationToken.None);
+                await _webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "", CancellationToken.None);
             }
 
-            _ws.Dispose();
-            _ws = null;
-            _cts.Dispose();
+            _webSocket.Dispose();
         }
     }
+
 }
 #endif

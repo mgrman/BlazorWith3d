@@ -11,7 +11,6 @@
 @inject IServiceProvider Services
 @inject ILogger<BlocksOnGrid3DComponent> Logger
 @inject IJSRuntime JsRuntime
-@implements I3DAppController
 @implements IAsyncDisposable
 @implements IBlocksOnGrid3DController
 
@@ -235,7 +234,6 @@
         _newIdCounter = _templates.Select(o => o.TemplateId).Concat(_instances.Select(o => o.BlockId)).DefaultIfEmpty(-1).Max() + 1;
         
         StateHasChanged();
-        await ReplayState();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -252,22 +250,10 @@
         await base.OnAfterRenderAsync(firstRender);
     }
 
-    public void SetRenderer(IBlocksOnGrid3DRenderer? renderer)
-    {
-        throw new NotImplementedException();
-    }
-
-    private int _rendererCounter;
     private bool _isMouseMoveBeingHanlded;
 
-    public async ValueTask<IDisposable> InitializeRenderer(IBlocksOnGrid3DRenderer rendererApi, Func<ValueTask>? afterEventHandlerIsSet)
+    public async ValueTask SetRenderer(IBlocksOnGrid3DRenderer? rendererApi)
     {
-        unchecked
-        {
-            _rendererCounter++;
-        }
-        var rendererCounter = _rendererCounter;
-        
         await _initializeRendererSemaphoreSlim.WaitAsync();
         try
         {
@@ -275,12 +261,7 @@
             _rendererApi = rendererApi;
             if (_rendererApi != null)
             {
-                _rendererApi.SetController(this);
-
-                if (afterEventHandlerIsSet != null)
-                {
-                    await afterEventHandlerIsSet();
-                }
+                await _rendererApi.SetController(this);
 
                 await _rendererApi.InitializeRenderer(new RendererInitializationInfo()
                 {
@@ -289,24 +270,14 @@
                     RequestedCameraRotation = new Vector3(0,0,0),
                     RequestedCameraFoV = 60
                 });
+                await ReplayState();
             }
-
-            await ReplayState();
 
         }
         finally
         {
             _initializeRendererSemaphoreSlim.Release();
         }
-
-        return new DisposableAction(() =>
-        {
-            if (rendererCounter == _rendererCounter)
-            {
-                _rendererApi = null;
-            }
-            rendererApi.SetController(null);
-        });
     }
 
     public async ValueTask OnUnityAppInitialized(UnityAppInitialized msg)
@@ -318,6 +289,7 @@
     {
         if (_rendererApi == null)
         {
+            throw new InvalidOperationException();
             return;
         }
         
@@ -567,6 +539,5 @@
         
         await _rendererApi.InvokeTriggerTestToBlazor(new TriggerTestToBlazor());
     }
-
 
 }

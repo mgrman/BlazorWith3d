@@ -112,6 +112,26 @@ benchmarks
   - Interop (avg 0.50 ms)  // slower but works with more types than memorypack, so you could get rid of that dependency (the slowdown is worse when the larger the messages are)
   - MemoryPack (avg 0.33 ms)
 
+
+
+# initializaiton order
+
+Controller is created first
+ 
+
+Renderers are then created 
+
+Renderer calls SetRenderer on the controller.
+
+Controller then starts listening for messages
+and then calls SetController on the renderer (ie the renderer can assume that when SetController is called, the controller is ready to receive messages)
+
+After SetController it is assumed the renderer is listening to messages as well.
+
+
+
+
+
 ### Prio 0 (improve generic packages)
 
 SetController method seems to be needed in Unity?

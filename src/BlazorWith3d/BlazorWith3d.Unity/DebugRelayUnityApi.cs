@@ -38,7 +38,12 @@ public class DebugRelayUnityApi
     {
         _logger = logger;
     }
-    
+
+    public bool CanHandleWebSocket()
+    {
+        return _connectedApiCts != null;
+    }
+
     public async Task HandleWebSocket(WebSocket webSocket)
     {
         if (_connectedApiCts == null)

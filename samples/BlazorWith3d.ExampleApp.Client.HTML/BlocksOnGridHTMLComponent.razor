@@ -51,11 +51,10 @@
 
     private IJSObjectReference jsInteropModule;
     private IBlocksOnGrid3DController? _eventHandler;
-    private IDisposable? _rendererAssignment;
     private Color _backgroundColor = Color.Azure;
 
     [CascadingParameter] 
-    public required I3DAppController ParentApp { get; set; }
+    public required IBlocksOnGrid3DController ParentApp { get; set; }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -67,7 +66,7 @@
 
         jsInteropModule = await new Lazy<Task<IJSObjectReference>>(() => JsRuntime.InvokeAsync<IJSObjectReference>("import", "./_content/BlazorWith3d.ExampleApp.Client.HTML/jsInterop.js").AsTask()).Value;
 
-        _rendererAssignment= await ParentApp.InitializeRenderer(this,null);
+        await ParentApp.SetRenderer(this);
 
         var bounds = await GetBoundingClientRect(_rendererContainerReference);
 
@@ -88,7 +87,6 @@
 
 public void Dispose()
 {
-    _rendererAssignment?.Dispose();
 }
 
     private async ValueTask<RectangleF> GetBoundingClientRect(ElementReference elementReference)
@@ -217,7 +215,7 @@ public void Dispose()
         Logger.LogCritical("TriggerTestToBlazor is done");
     }
 
-    public void SetController(IBlocksOnGrid3DController? controller)
+    public async ValueTask SetController(IBlocksOnGrid3DController? controller)
     {
         _eventHandler = controller;
         controller?.OnUnityAppInitialized(new UnityAppInitialized());

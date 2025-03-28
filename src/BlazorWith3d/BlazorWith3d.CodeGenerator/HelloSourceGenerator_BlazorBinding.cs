@@ -35,20 +35,29 @@ internal static class HelloSourceGenerator_BlazorBinding
             {
                 sb.AppendLine($"private {renderer.eventHandler.typeName}? _eventHandler;");
                 sb.AppendLine($"private IJSObjectReference? _typescriptApp;");
+                sb.AppendLine($"private Func<ValueTask>? _onAfterSet{renderer.eventHandlerConceptName};");
 
                 sb.AppendLine($"public event Action<byte[], Exception> OnMessageError;");
 
+                sb.AppendLine();
+                sb.AppendLine($"public {bindingType.typeName}(Func<ValueTask>? onAfterSet{renderer.eventHandlerConceptName})");
+                using (sb.IndentWithCurlyBrackets())
+                {
+                    sb.AppendLine($"_onAfterSet{renderer.eventHandlerConceptName} = onAfterSet{renderer.eventHandlerConceptName};");
+                }
+                
                 sb.AppendLine($"public void SetTypescriptApp(IJSObjectReference typescriptApp)");
                 using (sb.IndentWithCurlyBrackets())
                 {
                     sb.AppendLine($"_typescriptApp=typescriptApp;");
                 }
 
-                sb.AppendLine($"public void Set{renderer.eventHandlerConceptName}({renderer.eventHandler.typeName}? {renderer.eventHandlerConceptName.ToCamelCase()})");
+                sb.AppendLine($"public async ValueTask Set{renderer.eventHandlerConceptName}({renderer.eventHandler.typeName}{(renderer.eventHandlerNullable?"?":"")} {renderer.eventHandlerConceptName.ToCamelCase()})");
                 using (sb.IndentWithCurlyBrackets())
                 {
 
                     sb.AppendLine($"_eventHandler={renderer.eventHandlerConceptName.ToCamelCase()};");
+                    sb.AppendLine($"await (_onAfterSet{renderer.eventHandlerConceptName}?.Invoke() ?? new ValueTask());");
                 }
 
                 foreach (var m in renderer.methods)

@@ -11,11 +11,10 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Components;
 public class BlocksOnGridUnityRenderer:BaseUnityRenderer, IDisposable
 {
     private BlocksOnGrid3DRendererOverBinaryApi? _unityAppApi;
-    private IDisposable? _rendererAssignment;
     private IJsBinaryApi? _binaryApi;
     
     [CascadingParameter] 
-    public required I3DAppController ParentApp { get; set; }
+    public required IBlocksOnGrid3DController ParentApp { get; set; }
     
     [Inject]
     protected IJSRuntime _jsRuntime { get; set; }
@@ -35,7 +34,10 @@ public class BlocksOnGridUnityRenderer:BaseUnityRenderer, IDisposable
         
         _binaryApi=new JsBinaryApiWithResponseRenderer(_jsRuntime,_logger);
 
-        var unityAppApi = new BlocksOnGrid3DRendererOverBinaryApi(_binaryApi, new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory());
+        var unityAppApi = new BlocksOnGrid3DRendererOverBinaryApi(_binaryApi, new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory(), async () =>
+            {
+                await _binaryApi.InitializeJsApp(this._unityInitializationJsPath, _containerElementReference,"showUnity", GetExtraArg(UnityBuildFilesRootPath, false));
+            });
         unityAppApi.OnMessageError += (bytes, exception) =>
         {
             _logger.LogError($"Error deserializing message {bytes}", exception);
@@ -43,10 +45,7 @@ public class BlocksOnGridUnityRenderer:BaseUnityRenderer, IDisposable
         _unityAppApi=unityAppApi;
 
 
-        _rendererAssignment = await ParentApp.InitializeRenderer(_unityAppApi, async () =>
-        {
-            await _binaryApi.InitializeJsApp(this._unityInitializationJsPath, _containerElementReference,"showUnity", GetExtraArg(UnityBuildFilesRootPath, false));
-        });
+        await ParentApp.SetRenderer(_unityAppApi);
 
         await base.OnAfterRenderAsync(firstRender);
     }
@@ -55,6 +54,5 @@ public class BlocksOnGridUnityRenderer:BaseUnityRenderer, IDisposable
     {
         _unityAppApi?.Dispose();
         _binaryApi?.TryDisposeAsync();
-        _rendererAssignment?.Dispose();
     }
 }
