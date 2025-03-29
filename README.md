@@ -134,12 +134,32 @@ After SetController it is assumed the renderer is listening to messages as well.
 
 ### Prio 0 (improve generic packages)
 
-SetController method seems to be needed in Unity?
+Ensure initialization order is as defined
+- controller exists first (ie controller is singleton and gets a single renderer attached, the controller does not handle lifecycle of renderers, only should SetController to null when renderer is being replaced)
+- renderer is created and prepares to listen
+- renderer calls SetRenderer on the Controller
+- Controller prepares itself to listen
+- Controller call SetController on the renderer (add also to generated controller)
+- !!! ie after SetRenderer and SetController were called,both can send and receive messages
+- Controller can send messages 
+- Renderer can send messages
+OR Ensure initialization order is as defined
+- controller exists first (ie controller is singleton and gets a single renderer attached, the controller does not handle lifecycle of renderers, only should SetController to null when renderer is being replaced)
+- renderer is created and prepares to listen
+- renderer calls SetRenderer on the Controller
+- Controller prepares itself to listen during SetRenderer execution
+- ie after SetRenderer, renderer can send messages to controller, and renderer should expect messages to alraedy arrive during SetRenderer execution
+- NO need for SetController
+// ISSUES:
+- the renderer never knows when the controller stopped listening to it. But as the controller does not manage the renderer lifecycle, maybe the disposal should handle this.
+- ie isntead of SetRenderer, we have AddRenderer, and RemoveRenderer.
+- There should be support for having multiple renderers this way.
+- ie the Controller does not trigger removal of renderers, it does not need to care about that
 
 Rest API using memory pack/ json
- - using an interface create a rest api
-   - using auth and from* attributes and respecting them
- - also create a wrapper for the service that checks the attributes when in wasm context
+- using an interface create a rest api
+  - using auth and from* attributes and respecting them
+- also create a wrapper for the service that checks the attributes when in wasm context
 
 - if turned on via csproj config, generate typescript types intended for direct interop
  - ie using asp.net interop types 
