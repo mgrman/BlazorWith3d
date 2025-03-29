@@ -4,7 +4,7 @@
 @using Microsoft.Extensions.Logging
 @inject ILogger<BlocksOnGridUnityDebugRelay> Logger
 @inject IJSRuntime JS
-@implements IDisposable
+@implements IAsyncDisposable
 @inject DebugRelayUnityApi DebugRelayUnityApi
 
 <img @ref="_image"  draggable="false" style="width:100%; height: 100%; position: relative; pointer-events: none;  user-select: none;"/>
@@ -47,7 +47,7 @@
                 DebugRelayUnityApi.NewFrame -= UpdateFrame;
                 UpdateFrame([]);
                 StateHasChanged();
-                
+
                 if (obj != null)
                 {
                     DebugRelayUnityApi.NewFrame += UpdateFrame;
@@ -57,12 +57,18 @@
                     {
                         Logger.LogError(e, $"error handling message {string.Join(",", o)}");
                     };
-                    
-                    var eventHandler=await ParentApp.AddRenderer(unityAppApi);
+
+                    var eventHandler = await ParentApp.AddRenderer(new BlocksOnGrid3DBlazorRenderer(unityAppApi, _image));
                     await unityAppApi.SetEventHandler(eventHandler);
-        
+
                     // no need to notify that controller is ready, as the debug relay starts processing messages only after this handler finishes
-            
+                }
+                else
+                {
+                    if (unityAppApi != null)
+                    {
+                        await ParentApp.RemoveRenderer(unityAppApi);
+                    }
                 }
             });
         }
@@ -70,7 +76,7 @@
     private BlocksOnGrid3DRendererOverBinaryApi? unityAppApi;
 
     [CascadingParameter] 
-    public required IBlocksOnGrid3DControllerApp ParentApp { get; set; }
+    public required IBlocksOnGrid3DBlazorController ParentApp { get; set; }
 
     private ElementReference _image;
 
@@ -108,8 +114,12 @@
         }
     }
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
+        if (unityAppApi != null)
+        {
+            await ParentApp.RemoveRenderer(unityAppApi);
+        }
         DebugRelayUnityApi.ConnectedApi = null;
         DebugRelayUnityApi.NewFrame -= UpdateFrame;
         unityAppApi?.Dispose();

@@ -4,10 +4,11 @@
 @inject ILogger<BaseJsRenderer> Logger
 @using Microsoft.Extensions.Logging
 
+<div  style="width: 500px; height: 500px; position: relative; border: red 1px solid; user-select: none">
 <canvas @ref="_containerElementReference" class="my-component"   style="width: 100%; height: 100%; position: relative;"  tabindex="-1">
     This component will be controlled by component inheriting from this one
 </canvas>
-
+</div>
 
 @code{
 

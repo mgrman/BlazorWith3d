@@ -13,7 +13,7 @@
 @inject IJSRuntime JsRuntime
 @implements IAsyncDisposable
 @implements IBlocksOnGrid3DController
-@implements IBlocksOnGrid3DControllerApp
+@implements IBlocksOnGrid3DBlazorController
 
 <text>@(RendererInfo.Name) @(RendererInfo.IsInteractive?"Interactive":"Static")</text>
 
@@ -171,7 +171,7 @@
 }
 <button @onclick="TriggerTestToBlazor">TriggerTestToBlazor</button>
 
-<div @ref="_rendererContainerReference" @onmousedown="OnMouseDown" draggable="false" style="width: 500px; height: 500px; position: relative; border: red 1px solid; user-select: none">
+<div @ref="_rendererContainerReference" @onmousedown="OnMouseDown" draggable="false">
 
     <CascadingValue Value="this" IsFixed="true">
         @ChildContent
@@ -201,11 +201,11 @@
     private List<AddBlockTemplate> _templates = new();
     private List<AddBlockInstance> _instances = new();
 
-    private IBlocksOnGrid3DRenderer? _rendererApi;
+    private readonly List<IBlocksOnGrid3DBlazorRenderer> _renderers= new ();
     private DotNetObjectReference<JsProxy>? _jsProxyReference;
 
     private UnityAppInitialized _appState;
-    private (AddBlockInstance instance, float offsetX,float offsetY, float dragPlaneZ)? _dragging;
+    private (IBlocksOnGrid3DBlazorRenderer renderer, AddBlockInstance instance, float offsetX,float offsetY, float dragPlaneZ)? _dragging;
     private IJSObjectReference module;
     private IJSObjectReference? _mouseEventsDispose;
 
@@ -253,23 +253,22 @@
 
     private bool _isMouseMoveBeingHandled;
     
-    public async ValueTask<IBlocksOnGrid3DController> AddRenderer(IBlocksOnGrid3DRenderer rendererApi)
+    public async ValueTask<IBlocksOnGrid3DController> AddRenderer(IBlocksOnGrid3DBlazorRenderer rendererApi)
     {
         await _initializeRendererSemaphoreSlim.WaitAsync();
         try
         {
-            _rendererApi = rendererApi;
-            if (_rendererApi != null)
+            _renderers.Add(rendererApi);
+            
+            await rendererApi.RendererApi.InitializeRenderer(new RendererInitializationInfo()
             {
-                await _rendererApi.InitializeRenderer(new RendererInitializationInfo()
-                {
-                    BackgroundColor = Color.DarkSlateGray,
-                    RequestedCameraPosition = new Vector3(0,0,10),
-                    RequestedCameraRotation = new Vector3(0,0,0),
-                    RequestedCameraFoV = 60
-                });
-                await ReplayState();
-            }
+                BackgroundColor = Color.DarkSlateGray,
+                RequestedCameraPosition = new Vector3(0,0,10),
+                RequestedCameraRotation = new Vector3(0,0,0),
+                RequestedCameraFoV = 60
+            });
+            await ReplayState(rendererApi);
+            
 
             return this;
         }
@@ -285,10 +284,7 @@
         await _initializeRendererSemaphoreSlim.WaitAsync();
         try
         {
-            if (_rendererApi == rendererApi)
-            {
-                _rendererApi = null;
-            }
+            _renderers.RemoveAll(o=>o.RendererApi== rendererApi);
         }
         finally
         {
@@ -301,22 +297,20 @@
         _appState = msg;
     }
 
-    private async ValueTask ReplayState()
+    private async ValueTask ReplayState(IBlocksOnGrid3DBlazorRenderer? rendererApi)
     {
-        if (_rendererApi == null)
+        var apis = rendererApi == null ? _renderers : [rendererApi];
+        foreach (var api in apis)
         {
-            throw new InvalidOperationException();
-            return;
-        }
-        
-        foreach (var template in _templates)
-        {
-            await _rendererApi.InvokeAddBlockTemplate(template);
-        }
+            foreach (var template in _templates)
+            {
+                await api.RendererApi.InvokeAddBlockTemplate(template);
+            }
 
-        foreach (var block in _instances)
-        {
-            await _rendererApi.InvokeAddBlockInstance(block);
+            foreach (var block in _instances)
+            {
+                await api.RendererApi.InvokeAddBlockInstance(block);
+            }
         }
     }
 
@@ -325,10 +319,10 @@
         var msg = new AddBlockTemplate { TemplateId = _newIdCounter++, Size = new Vector3(_newTemplateSizeX, _newTemplateSizeY, _newTemplateSizeZ), VisualsUri = _newTemplateAsset==null?null:GltfAssets[_newTemplateAsset.Value].url};
         _templates.Add(msg);
         SaveToLocalStorage();
-        
-        if (_rendererApi != null)
+
+        foreach (var rendererApi in _renderers)
         {
-            await _rendererApi.InvokeAddBlockTemplate(msg);
+            await rendererApi.RendererApi.InvokeAddBlockTemplate(msg);
         }
     }
 
@@ -346,9 +340,10 @@
         _templates.RemoveAll(o => o.TemplateId == id);
         SaveToLocalStorage();
         
-        if (_rendererApi != null)
+       
+        foreach (var rendererApi in _renderers)
         {
-            await _rendererApi.InvokeRemoveBlockTemplate(new RemoveBlockTemplate { TemplateId = id });
+            await rendererApi.RendererApi.InvokeRemoveBlockTemplate(new RemoveBlockTemplate { TemplateId = id });
         }
     }
 
@@ -358,9 +353,10 @@
         _instances.Add(msg);
         SaveToLocalStorage();
         
-        if (_rendererApi != null)
+     
+        foreach (var rendererApi in _renderers)
         {
-            await _rendererApi.InvokeAddBlockInstance(msg);
+            await rendererApi.RendererApi.InvokeAddBlockInstance(msg);
         }
     }
 
@@ -368,15 +364,16 @@
     {
         _instances.RemoveAll(o => o.BlockId == id);
         SaveToLocalStorage();
-        if (_rendererApi != null)
+      
+        foreach (var rendererApi in _renderers)
         {
-            await _rendererApi.InvokeRemoveBlockInstance(new RemoveBlockInstance { BlockId = id });
+            await rendererApi.RendererApi.InvokeRemoveBlockInstance(new RemoveBlockInstance { BlockId = id });
         }
     }
 
     private async Task PerfCheck(bool isLarge)
     {
-        if (_rendererApi == null)
+        if (_renderers.Count==0)
         {
             _perfResponse = "No Renderer is configured!";
             return;
@@ -384,25 +381,30 @@
         var testCount = _perfTestCount;
 
         var testString =isLarge? string.Join(",", Enumerable.Range(0, 1000)) : string.Empty;
-        
-        var avgStopwatch = new Stopwatch();
-
-        avgStopwatch.Start();
-        for (var i = 0; i < testCount; i++)
+        _perfResponse = "";
+        foreach (var rendererApi in _renderers)
         {
-           var response= await _rendererApi.InvokePerfCheck(new PerfCheck
+
+            var avgStopwatch = new Stopwatch();
+
+            avgStopwatch.Start();
+            for (var i = 0; i < testCount; i++)
             {
-                Id = i,
-                Aaa = 12,
-                Bbb = 12.12,
-                Ccc = 13888888888888,
-                Ddd = testString
-            });
+                var response= await rendererApi.RendererApi.InvokePerfCheck(new PerfCheck
+                {
+                    Id = i,
+                    Aaa = 12,
+                    Bbb = 12.12,
+                    Ccc = 13888888888888,
+                    Ddd = testString
+                });
+            }
+            avgStopwatch.Stop();
+
+            _perfResponse += $"{testCount} messages there and back, took {avgStopwatch.ElapsedMilliseconds:F2} ms (avg {(decimal)avgStopwatch.ElapsedMilliseconds / testCount:F2} ms) ";
+
         }
-        avgStopwatch.Stop();
-
-        _perfResponse = $"{testCount} messages there and back, took {avgStopwatch.ElapsedMilliseconds:F2} ms (avg {(decimal)avgStopwatch.ElapsedMilliseconds / testCount:F2} ms)";
-
+        
     }
 
     private class JSVector2
@@ -414,20 +416,37 @@
 
     private async Task OnMouseDown(MouseEventArgs e)
     {
-        if (_rendererApi == null)
+        if (_renderers.Count == 0)
         {
             return;
         }
-        
-        var offset = await module.InvokeAsync<JSVector2>("ConvertPageToOffset", _rendererContainerReference, e.ClientX, e.ClientY);
 
-        var screenToRayResponse = await _rendererApi.InvokeRequestScreenToWorldRay(new RequestScreenToWorldRay()
+        IBlocksOnGrid3DBlazorRenderer? rendererApi = null;
+        JSVector2 offset = null;
+        foreach (var renderer in _renderers)
+        {
+            var potentialOffset = await module.InvokeAsync<JSVector2?>("ConvertPageToOffsetIfInside", _rendererContainerReference, e.ClientX, e.ClientY);
+
+            if (potentialOffset != null)
+            {
+                rendererApi = renderer;
+                offset = potentialOffset;
+                break;
+            }
+        }
+
+        if (rendererApi == null || offset==null)
+        {
+            return;
+        }
+
+        var screenToRayResponse = await rendererApi.RendererApi.InvokeRequestScreenToWorldRay(new RequestScreenToWorldRay()
         {
             Screen = new Vector2(offset.X, offset.Y)
         });
 
 
-        var raycastResponse = await _rendererApi.InvokeRequestRaycast(new RequestRaycast()
+        var raycastResponse = await rendererApi.RendererApi.InvokeRequestRaycast(new RequestRaycast()
         {
             Ray = screenToRayResponse.Ray
         });
@@ -443,7 +462,7 @@
 
         var offsetX = raycastResponse.HitWorld.X - instance.Position.X;
         var offsetY = raycastResponse.HitWorld.Y - instance.Position.Y;
-        _dragging = (instance, offsetX, offsetY, raycastResponse.HitWorld.Z);
+        _dragging = (rendererApi,instance, offsetX, offsetY, raycastResponse.HitWorld.Z);
 
         _mouseEventsDispose = await module.InvokeAsync<IJSObjectReference>("InitializeGlobalMouseEvents", _rendererContainerReference, _jsProxyReference, nameof(JsProxy.OnMouseMove), nameof(JsProxy.OnMouseUp));
     }
@@ -454,9 +473,9 @@
         {
             return;
         }
-        if (_rendererApi == null)
+        if (!_renderers.Contains(_dragging.Value.renderer))
         {
-            // force end drag in case the renderer is set to null while dragging
+            // force end drag in case the renderer is removed while dragging
             OnMouseUp();
             return;
         }
@@ -468,8 +487,10 @@
 
         _isMouseMoveBeingHandled = true;
         var dragging = _dragging.Value;
+
+        var draggingRenderer = dragging.renderer;
         
-        var screenToRayResponse=await _rendererApi.InvokeRequestScreenToWorldRay(new RequestScreenToWorldRay()
+        var screenToRayResponse=await draggingRenderer.RendererApi.InvokeRequestScreenToWorldRay(new RequestScreenToWorldRay()
         {
             Screen = new Vector2(offsetX,offsetY)
         });
@@ -501,9 +522,11 @@
 
 
         dragging.instance.Position = new Vector2(newPositionX, newPositionY);
-        
-        _rendererApi.InvokeUpdateBlockInstance(dragging.instance.BlockId, new Vector2(newPositionX,newPositionY), dragging.instance.RotationZ);
-        
+
+        foreach (var renderer in _renderers)
+        {
+            await renderer.RendererApi.InvokeUpdateBlockInstance(dragging.instance.BlockId, new Vector2(newPositionX,newPositionY), dragging.instance.RotationZ);
+        }
         
         StateHasChanged();
         _isMouseMoveBeingHandled = false;
@@ -548,12 +571,10 @@
 
     private async Task TriggerTestToBlazor()
     {
-        if (_rendererApi == null)
+        foreach (var renderer in _renderers)
         {
-            return;
+            await renderer.RendererApi.InvokeTriggerTestToBlazor(new TriggerTestToBlazor());
         }
-        
-        await _rendererApi.InvokeTriggerTestToBlazor(new TriggerTestToBlazor());
     }
 
 }

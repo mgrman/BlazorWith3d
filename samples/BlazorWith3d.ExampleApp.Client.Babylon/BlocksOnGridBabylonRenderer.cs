@@ -13,7 +13,7 @@ public class BlocksOnGridBabylonRenderer:BaseJsRenderer, IAsyncDisposable
     private JsBinaryApiWithResponseRenderer? _binaryApi;
 
     [CascadingParameter] 
-    public required IBlocksOnGrid3DControllerApp ParentApp { get; set; }
+    public required IBlocksOnGrid3DBlazorController ParentApp { get; set; }
     
     
     [Inject]
@@ -43,7 +43,7 @@ public class BlocksOnGridBabylonRenderer:BaseJsRenderer, IAsyncDisposable
         {
             _logger.LogError($"Error deserializing message {bytes}", exception);
         };
-        var eventHandler=await ParentApp.AddRenderer(_appApi);
+        var eventHandler=await ParentApp.AddRenderer(new BlocksOnGrid3DBlazorRenderer(_appApi,_containerElementReference));
         await _appApi.SetEventHandler(eventHandler);
         
         await _binaryApi.OnConnectedToController();
@@ -52,6 +52,10 @@ public class BlocksOnGridBabylonRenderer:BaseJsRenderer, IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        if (_appApi != null)
+        {
+            await ParentApp.RemoveRenderer(_appApi);
+        }
         _appApi?.Dispose();
         await _binaryApi.TryDisposeAsync();
     }

@@ -13,7 +13,7 @@ public class BlocksOnGridThreeJSRenderer: BaseJsRenderer, IAsyncDisposable
     private JsBinaryApiWithResponseRenderer _binaryApi;
 
     [CascadingParameter] 
-    public required IBlocksOnGrid3DControllerApp ParentApp { get; set; }
+    public required IBlocksOnGrid3DBlazorController ParentApp { get; set; }
     
     [Inject]
     protected IJSRuntime _jsRuntime { get; set; }
@@ -50,7 +50,7 @@ public class BlocksOnGridThreeJSRenderer: BaseJsRenderer, IAsyncDisposable
             _logger.LogError($"Error deserializing message {bytes}", exception);
         };
         
-        var eventHandler=await ParentApp.AddRenderer(_unityAppApi);
+        var eventHandler=await ParentApp.AddRenderer(new BlocksOnGrid3DBlazorRenderer(_unityAppApi, _containerElementReference));
         await _unityAppApi.SetEventHandler(eventHandler);
         
         await _binaryApi.OnConnectedToController();
@@ -62,6 +62,11 @@ public class BlocksOnGridThreeJSRenderer: BaseJsRenderer, IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        if (_unityAppApi != null)
+        {
+            await ParentApp.RemoveRenderer(_unityAppApi);
+        }
+
         _unityAppApi?.Dispose();
         await _binaryApi.TryDisposeAsync();
     }

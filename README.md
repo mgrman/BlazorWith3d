@@ -114,7 +114,7 @@ benchmarks
 
 
 
-# Initializaiton order
+# Initialization order
 
 - controller exists first (ie controller is singleton and gets a single renderer attached, the controller does not handle lifecycle of renderers, only should SetController to null when renderer is being replaced)
 - renderer is created and prepares to listen
@@ -124,32 +124,31 @@ benchmarks
 
 ### Prio 0 (improve generic packages)
 
-Add option to have multiple renderers, side by side. as now the Add/Remove renderer feels a bit weird, ie does not fit
-- ie mouse handling should be renderer bound, ie operate on the renderer you are on top of
+Handle warnings in generated code in Unity
+
+The blazor renderers should inherit directly IBlocksOnGrid3DBlazorRenderer interface, to prevent creation of extra wrapper and have consistent removeRenderer, and then reflection about the type makes more sense (e.g. get type name)
+
+Reconsider the namings, as the concepts might not be aligned any more
 
 Rest API using memory pack/ json
 - using an interface create a rest api
   - using auth and from* attributes and respecting them
 - also create a wrapper for the service that checks the attributes when in wasm context
 
-- if turned on via csproj config, generate typescript types intended for direct interop
- - ie using asp.net interop types 
-
-- showcase that there does not have to be direct mapping
-  - generate wire connecting the instances
-  - and generate cube under the gltf mesh
-
-- add more visuals control for the renderes
-  - request light position and direction
-  - show/hide background mesh
-
-- ensure the generator has fully optional dependence on memory pack, even for js direct interop use case
 
 - publish generator and supporting libraries as nuget
 
 
 ### Prio 1 (improve sample app)
 
+- showcase that there does not have to be direct mapping
+    - generate wire connecting the instances
+    - and generate cube under the gltf mesh
+
+- add more visuals control for the renderes
+    - request light position and direction
+    - show/hide background mesh
+    - 
 - And drag and drop trigger to add blocks from HTML
 
 - Add context menu to delete block instance
@@ -161,6 +160,11 @@ Rest API using memory pack/ json
 - check if current GLTF instancing in Unity is working
 
 ### Prio 2 (backlog)
+
+- ensure the generator has fully optional dependence on memory pack, even for js direct interop use case
+  - if turned on via csproj config, generate typescript types intended for direct interop
+    - ie using asp.net interop types
+    - or via attribute, have MemoryPack based attribute, or have .net wasm interop generator via another attribute
 
 - Optimize Typescript dev experience
     - add option to live recompile changes

@@ -8,13 +8,13 @@ using Microsoft.JSInterop;
 
 namespace BlazorWith3d.ExampleApp.Client.Unity.Components;
 
-public class BlocksOnGridUnityRenderer:BaseUnityRenderer, IDisposable
+public class BlocksOnGridUnityRenderer:BaseUnityRenderer, IAsyncDisposable
 {
     private BlocksOnGrid3DRendererOverBinaryApi? _unityAppApi;
     private JsBinaryApiWithResponseRenderer? _binaryApi;
     
     [CascadingParameter] 
-    public required IBlocksOnGrid3DControllerApp ParentApp { get; set; }
+    public required IBlocksOnGrid3DBlazorController ParentApp { get; set; }
     
     [Inject]
     protected IJSRuntime _jsRuntime { get; set; }
@@ -43,7 +43,7 @@ public class BlocksOnGridUnityRenderer:BaseUnityRenderer, IDisposable
         _unityAppApi=unityAppApi;
         
         
-        var eventHandler=await ParentApp.AddRenderer(_unityAppApi);
+        var eventHandler=await ParentApp.AddRenderer(new BlocksOnGrid3DBlazorRenderer(_unityAppApi,_containerElementReference));
         await _unityAppApi.SetEventHandler(eventHandler);
         
         await _binaryApi.OnConnectedToController();
@@ -51,8 +51,12 @@ public class BlocksOnGridUnityRenderer:BaseUnityRenderer, IDisposable
         await base.OnAfterRenderAsync(firstRender);
     }
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
+        if (_unityAppApi != null)
+        {
+            await ParentApp.RemoveRenderer(_unityAppApi);
+        }
         _unityAppApi?.Dispose();
         _binaryApi?.TryDisposeAsync();
     }

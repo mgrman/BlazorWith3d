@@ -29,3 +29,15 @@ export function ConvertPageToOffset(elementTarget, clientX, clientY) {
     var y = clientY - rect.top;
     return { x: x, y: y };
 }
+
+export function ConvertPageToOffsetIfInside(elementTarget, clientX, clientY) {
+
+    var rect = elementTarget.getBoundingClientRect();
+    var x = clientX - rect.left;
+    var y = clientY - rect.top;
+    
+    if(x<0 || x> rect.width || y<0 || y > rect.height) {
+        return null;
+    }
+    return { x: x, y: y };
+}
