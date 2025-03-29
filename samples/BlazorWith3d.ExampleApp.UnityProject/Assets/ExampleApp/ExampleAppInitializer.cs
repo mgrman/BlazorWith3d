@@ -102,13 +102,13 @@ namespace ExampleApp
 
             Console.WriteLine($"{Screen.width},{Screen.height}");
             var controller = new BlocksOnGrid3DControllerOverBinaryApi(binaryApi, new MemoryPackBinaryApiSerializer(),
-                new PoolingArrayBufferWriterFactory(),null);
+                new PoolingArrayBufferWriterFactory());
             controller.OnMessageError += (o, e) =>
             {
                 Debug.LogException(e);
             };
             
-            await controller.SetRenderer(activeRenderer);
+            await controller.SetEventHandler(activeRenderer);
             await activeRenderer.SetController(controller);
             
             

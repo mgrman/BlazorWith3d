@@ -5,7 +5,7 @@
 @using Microsoft.Extensions.Logging
 @using Microsoft.JSInterop
 @implements IBlocksOnGrid3DRenderer
-@implements IDisposable
+@implements IAsyncDisposable
 @inject ILogger<BlocksOnGridHTMLComponent> Logger
 @inject IJSRuntime JsRuntime
 
@@ -54,7 +54,7 @@
     private Color _backgroundColor = Color.Azure;
 
     [CascadingParameter] 
-    public required IBlocksOnGrid3DController ParentApp { get; set; }
+    public required IBlocksOnGrid3DControllerApp ParentApp { get; set; }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -66,8 +66,11 @@
 
         jsInteropModule = await new Lazy<Task<IJSObjectReference>>(() => JsRuntime.InvokeAsync<IJSObjectReference>("import", "./_content/BlazorWith3d.ExampleApp.Client.HTML/jsInterop.js").AsTask()).Value;
 
-        await ParentApp.SetRenderer(this);
+        var controller= await ParentApp.AddRenderer(this);
 
+        _eventHandler = controller;
+        controller?.OnUnityAppInitialized(new UnityAppInitialized());
+        
         var bounds = await GetBoundingClientRect(_rendererContainerReference);
 
         var desiredCanvasSize = 10f;
@@ -85,17 +88,15 @@
         await base.OnAfterRenderAsync(firstRender);
     }
 
-public void Dispose()
+public async ValueTask DisposeAsync()
 {
+    await ParentApp.RemoveRenderer(this);
 }
 
     private async ValueTask<RectangleF> GetBoundingClientRect(ElementReference elementReference)
     {
         return await jsInteropModule.InvokeAsync<RectangleF>("getBoundingClientRect", elementReference);
     }
-
-
-    public event Action<byte[], Exception>? OnMessageError;
 
 
     public async ValueTask InitializeRenderer(RendererInitializationInfo msg)
@@ -215,9 +216,4 @@ public void Dispose()
         Logger.LogCritical("TriggerTestToBlazor is done");
     }
 
-    public async ValueTask SetController(IBlocksOnGrid3DController? controller)
-    {
-        _eventHandler = controller;
-        controller?.OnUnityAppInitialized(new UnityAppInitialized());
-    }
 }

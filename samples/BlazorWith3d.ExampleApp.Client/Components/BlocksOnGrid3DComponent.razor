@@ -13,6 +13,7 @@
 @inject IJSRuntime JsRuntime
 @implements IAsyncDisposable
 @implements IBlocksOnGrid3DController
+@implements IBlocksOnGrid3DControllerApp
 
 <text>@(RendererInfo.Name) @(RendererInfo.IsInteractive?"Interactive":"Static")</text>
 
@@ -250,19 +251,16 @@
         await base.OnAfterRenderAsync(firstRender);
     }
 
-    private bool _isMouseMoveBeingHanlded;
-
-    public async ValueTask SetRenderer(IBlocksOnGrid3DRenderer? rendererApi)
+    private bool _isMouseMoveBeingHandled;
+    
+    public async ValueTask<IBlocksOnGrid3DController> AddRenderer(IBlocksOnGrid3DRenderer rendererApi)
     {
         await _initializeRendererSemaphoreSlim.WaitAsync();
         try
         {
-            
             _rendererApi = rendererApi;
             if (_rendererApi != null)
             {
-                await _rendererApi.SetController(this);
-
                 await _rendererApi.InitializeRenderer(new RendererInitializationInfo()
                 {
                     BackgroundColor = Color.DarkSlateGray,
@@ -273,6 +271,24 @@
                 await ReplayState();
             }
 
+            return this;
+        }
+        finally
+        {
+            _initializeRendererSemaphoreSlim.Release();
+        }
+    }
+
+    
+    public async ValueTask RemoveRenderer(IBlocksOnGrid3DRenderer rendererApi)
+    {
+        await _initializeRendererSemaphoreSlim.WaitAsync();
+        try
+        {
+            if (_rendererApi == rendererApi)
+            {
+                _rendererApi = null;
+            }
         }
         finally
         {
@@ -445,12 +461,12 @@
             return;
         }
 
-        if (_isMouseMoveBeingHanlded)
+        if (_isMouseMoveBeingHandled)
         {
             return;
         }
 
-        _isMouseMoveBeingHanlded = true;
+        _isMouseMoveBeingHandled = true;
         var dragging = _dragging.Value;
         
         var screenToRayResponse=await _rendererApi.InvokeRequestScreenToWorldRay(new RequestScreenToWorldRay()
@@ -490,7 +506,7 @@
         
         
         StateHasChanged();
-        _isMouseMoveBeingHanlded = false;
+        _isMouseMoveBeingHandled = false;
     }
     
     private void OnMouseUp()

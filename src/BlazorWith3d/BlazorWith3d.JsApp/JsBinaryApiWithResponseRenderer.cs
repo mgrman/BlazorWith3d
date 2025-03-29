@@ -29,6 +29,11 @@ public class JsBinaryApiWithResponseRenderer: IJsBinaryApi
         _typescriptApp=   await module.InvokeAsync<IJSObjectReference>(initMethod, container,extraArg,_messageReceiverProxyReference,nameof(BinaryApiJsMessageReceiverProxy.OnMessageBytesReceived),nameof(BinaryApiJsMessageReceiverProxy.OnMessageBytesWithResponse) );
     }
 
+    public async ValueTask OnConnectedToController()
+    {
+        await _typescriptApp.InvokeVoidAsync("OnConnectedToController");
+    }
+
     public Func<ArraySegment<byte>, ValueTask>? MainMessageHandler { get; set; }
     
     public Func<ArraySegment<byte>, ValueTask<IBufferWriterWithArraySegment<byte>>>? MainMessageWithResponseHandler { get; set; }

@@ -31,15 +31,7 @@ internal static class HelloSourceGenerator_DotnetApis
         sb.AppendLine($"namespace {info.app.@namespace}");
         using (sb.IndentWithCurlyBrackets())
         {
-
             var eventHandlerVarName = info.eventHandlerConceptName.ToCamelCase();
-
-            sb.AppendLine($"public partial interface {info.app.typeName}");
-            using (sb.IndentWithCurlyBrackets())
-            { 
-                sb.AppendLine($"ValueTask Set{info.eventHandlerConceptName}({info.eventHandler.typeName}{(info.eventHandlerNullable?"?":"")} {info.eventHandlerConceptName.ToCamelCase()});");
-            }
-
 
             sb.AppendLine();
             sb.AppendLine($"public partial class {info.app.TypeNameWithoutIPrefix}OverBinaryApi: {info.app.typeName}, IDisposable");
@@ -50,22 +42,20 @@ internal static class HelloSourceGenerator_DotnetApis
                 sb.AppendLine($"private readonly IBinaryApi _binaryApi;");
                 sb.AppendLine($"private {info.eventHandler.typeName}? _eventHandler;");
                 sb.AppendLine($"private readonly IBufferWriterFactory<byte> _writerFactory;");
-                sb.AppendLine($"private readonly Func<ValueTask>? _onAfterSet{info.eventHandlerConceptName};");
                 sb.AppendLine($"private bool _setMainMessageHandler;");
                 sb.AppendLine($"private bool _disposed;");
 
                 sb.AppendLine();
-                sb.AppendLine($"public {info.app.TypeNameWithoutIPrefix}OverBinaryApi(IBinaryApi binaryApi, IBinaryApiSerializer serializer, IBufferWriterFactory<byte> writerFactory, Func<ValueTask>? onAfterSet{info.eventHandlerConceptName})");
+                sb.AppendLine($"public {info.app.TypeNameWithoutIPrefix}OverBinaryApi(IBinaryApi binaryApi, IBinaryApiSerializer serializer, IBufferWriterFactory<byte> writerFactory)");
                 using (sb.IndentWithCurlyBrackets())
                 {
                     sb.AppendLine("_binaryApi = binaryApi;");
                     sb.AppendLine($"_serializer = serializer;");
                     sb.AppendLine($"_writerFactory = writerFactory;");
-                    sb.AppendLine($"_onAfterSet{info.eventHandlerConceptName} = onAfterSet{info.eventHandlerConceptName};");
                 }
                 sb.AppendLine($"public bool IsProcessingMessages => _binaryApi.MainMessageHandler == ProcessMessages;");
 
-                sb.AppendLine($"public async ValueTask Set{info.eventHandlerConceptName}({info.eventHandler.typeName}{(info.eventHandlerNullable?"?":"")} {eventHandlerVarName})");
+                sb.AppendLine($"public async ValueTask SetEventHandler({info.eventHandler.typeName}{(info.eventHandlerNullable?"?":"")} {eventHandlerVarName})");
                 using (sb.IndentWithCurlyBrackets())
                 {
                     sb.AppendLine("if(_disposed)");
@@ -89,7 +79,6 @@ internal static class HelloSourceGenerator_DotnetApis
                     sb.AppendLine($"_setMainMessageHandler=true;");
                     sb.AppendLine($"_binaryApi.MainMessageHandler = ProcessMessages;");
                     sb.AppendLine($"_binaryApi.MainMessageWithResponseHandler = ProcessMessagesWithResponse;");
-                    sb.AppendLine($"await (_onAfterSet{info.eventHandlerConceptName}?.Invoke() ?? new ValueTask());");
                 }
 
                 sb.AppendLine($"public event Action<ArraySegment<byte>, Exception> OnMessageError;");

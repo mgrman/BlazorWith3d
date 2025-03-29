@@ -13,7 +13,7 @@ public class BlocksOnGridThreeJSRenderer: BaseJsRenderer, IAsyncDisposable
     private JsBinaryApiWithResponseRenderer _binaryApi;
 
     [CascadingParameter] 
-    public required IBlocksOnGrid3DController ParentApp { get; set; }
+    public required IBlocksOnGrid3DControllerApp ParentApp { get; set; }
     
     [Inject]
     protected IJSRuntime _jsRuntime { get; set; }
@@ -43,17 +43,19 @@ public class BlocksOnGridThreeJSRenderer: BaseJsRenderer, IAsyncDisposable
             _binaryApi = new JsBinaryApiWithResponseRendererWithoutCopy(_jsRuntime, _logger);
         }
 
-        _unityAppApi = new BlocksOnGrid3DRendererOverBinaryApi(_binaryApi, new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory(),async () =>
-        {
-            await _binaryApi.InitializeJsApp(JsAppPath, _containerElementReference);
-        });
+        await _binaryApi.InitializeJsApp(JsAppPath, _containerElementReference);
+        _unityAppApi = new BlocksOnGrid3DRendererOverBinaryApi(_binaryApi, new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory());
         _unityAppApi.OnMessageError += (bytes, exception) =>
         {
             _logger.LogError($"Error deserializing message {bytes}", exception);
         };
-
+        
+        var eventHandler=await ParentApp.AddRenderer(_unityAppApi);
+        await _unityAppApi.SetEventHandler(eventHandler);
+        
+        await _binaryApi.OnConnectedToController();
+        
         await base.OnAfterRenderAsync(firstRender);
-        await ParentApp.SetRenderer(_unityAppApi);
     }
 
 

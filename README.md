@@ -114,47 +114,18 @@ benchmarks
 
 
 
-# initializaiton order
+# Initializaiton order
 
-Controller is created first
- 
-
-Renderers are then created 
-
-Renderer calls SetRenderer on the controller.
-
-Controller then starts listening for messages
-and then calls SetController on the renderer (ie the renderer can assume that when SetController is called, the controller is ready to receive messages)
-
-After SetController it is assumed the renderer is listening to messages as well.
-
-
-
-
-
-### Prio 0 (improve generic packages)
-
-Ensure initialization order is as defined
-- controller exists first (ie controller is singleton and gets a single renderer attached, the controller does not handle lifecycle of renderers, only should SetController to null when renderer is being replaced)
-- renderer is created and prepares to listen
-- renderer calls SetRenderer on the Controller
-- Controller prepares itself to listen
-- Controller call SetController on the renderer (add also to generated controller)
-- !!! ie after SetRenderer and SetController were called,both can send and receive messages
-- Controller can send messages 
-- Renderer can send messages
-OR Ensure initialization order is as defined
 - controller exists first (ie controller is singleton and gets a single renderer attached, the controller does not handle lifecycle of renderers, only should SetController to null when renderer is being replaced)
 - renderer is created and prepares to listen
 - renderer calls SetRenderer on the Controller
 - Controller prepares itself to listen during SetRenderer execution
 - ie after SetRenderer, renderer can send messages to controller, and renderer should expect messages to alraedy arrive during SetRenderer execution
-- NO need for SetController
-// ISSUES:
-- the renderer never knows when the controller stopped listening to it. But as the controller does not manage the renderer lifecycle, maybe the disposal should handle this.
-- ie isntead of SetRenderer, we have AddRenderer, and RemoveRenderer.
-- There should be support for having multiple renderers this way.
-- ie the Controller does not trigger removal of renderers, it does not need to care about that
+
+### Prio 0 (improve generic packages)
+
+Add option to have multiple renderers, side by side. as now the Add/Remove renderer feels a bit weird, ie does not fit
+- ie mouse handling should be renderer bound, ie operate on the renderer you are on top of
 
 Rest API using memory pack/ json
 - using an interface create a rest api
@@ -207,7 +178,6 @@ Rest API using memory pack/ json
 - better JS plugin via $ as in https://github.com/Made-For-Gamers/NEAR-Unity-WebGL-API/blob/main/Assets/WebGLSupport/WebGLInput/WebGLInput.jslib
 
 - add explicit serializer interface for Typescript (to be able to override and mainly expose new types serialization)
-
 
 - Unity debug socket is logging a lot of errors, handle the disconnect cases more explicitly
 

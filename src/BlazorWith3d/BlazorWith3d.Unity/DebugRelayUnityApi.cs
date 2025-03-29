@@ -9,7 +9,7 @@ public class DebugRelayUnityApi
 {
     private readonly ILogger<DebugRelayUnityApi> _logger;
 
-    public Action<BinaryApiForSocket?>? ConnectedApi
+    public Func<BinaryApiForSocket?, ValueTask>? ConnectedApi
     {
         get;
         set
@@ -60,7 +60,7 @@ public class DebugRelayUnityApi
         }
 
         var api = new BinaryApiForSocket(webSocket);
-        apiEvent.Invoke(api);
+        await apiEvent.Invoke(api);
 
         int bufferIndex = 0;
         var buffer =new ArraySegment<byte>( new byte[1024 *1024 * 4]);
@@ -80,6 +80,10 @@ public class DebugRelayUnityApi
                     switch (msgType)
                     {
                         case 0:
+                            if (api.MainMessageHandler == null)
+                            {
+                                
+                            }
                             await (api.MainMessageHandler?.Invoke(msg) ?? ValueTask.CompletedTask);
                             break;
                         case 1:
@@ -93,11 +97,11 @@ public class DebugRelayUnityApi
             }
             catch (OperationCanceledException ex)
             {
-                apiEvent.Invoke(null);
+                await apiEvent.Invoke(null);
             }
             catch (WebSocketException ex)
             {
-                apiEvent.Invoke(null);
+                await apiEvent.Invoke(null);
                 _logger.LogWarning(ex,"HandleWebSocket OnMessageFromUnity error");
                 if (ex.InnerException != null)
                 {
@@ -106,7 +110,7 @@ public class DebugRelayUnityApi
             }
             catch (Exception ex)
             {
-                apiEvent.Invoke(null);
+                await apiEvent.Invoke(null);
                 _logger.LogError(ex,"HandleWebSocket OnMessageFromUnity error");
             }
         }

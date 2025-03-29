@@ -11,6 +11,7 @@ namespace BlazorWith3d.Unity
 {
     public class UnityBlazorApi : IBinaryApi
     {
+        private static readonly AwaitableCompletionSource _otherSideReadyToListenTcs= new ();
         private static Dictionary<int, AwaitableCompletionSource<byte[]>> s_responses=new ();
         
         
@@ -59,7 +60,7 @@ namespace BlazorWith3d.Unity
             }
             
             Debug.Log("On before BlazorApiUnity.InitializeApi");
-            _InitializeApi(_ReadMessage,MainMessageWithResponseHandler==null?null:_ReadMessageWithResponse,MainMessageWithResponseHandler==null?null: _ReadResponse);
+            _InitializeApi(_ReadMessage,MainMessageWithResponseHandler==null?null:_ReadMessageWithResponse,MainMessageWithResponseHandler==null?null: _ReadResponse, _OnControllerConnected);
         }
 
         Func<ArraySegment<byte>, ValueTask>? IBinaryApi.MainMessageHandler { 
@@ -79,7 +80,7 @@ namespace BlazorWith3d.Unity
 
         public static UnityBlazorApi Singleton { get; } = new UnityBlazorApi();
 
-        public ValueTask SendMessage(IBufferWriterWithArraySegment<byte> bytes)
+        public async ValueTask SendMessage(IBufferWriterWithArraySegment<byte> bytes)
         {
 #if !(UNITY_WEBGL && !UNITY_EDITOR)
             if (Application.isEditor|| Application.platform != RuntimePlatform.WebGLPlayer)
@@ -87,14 +88,18 @@ namespace BlazorWith3d.Unity
                 throw new NotImplementedException();
             }
 #endif
+
+            await _otherSideReadyToListenTcs.Awaitable;
+            
             var msg = bytes.WrittenArray;
             _SendMessageFromUnity(msg.Array,msg.Offset, msg.Count);
             bytes.Dispose();
-            return new ValueTask();
         }
         
         public async ValueTask<ArraySegment<byte>> SendMessageWithResponse(IBufferWriterWithArraySegment<byte> bytes)
         {
+            await _otherSideReadyToListenTcs.Awaitable;
+            
             int id = _GetNextRequestId();
 
             var tcs = new AwaitableCompletionSource<byte[]>();
@@ -118,6 +123,12 @@ namespace BlazorWith3d.Unity
                 return;
             }
 #endif
+        }
+
+        [MonoPInvokeCallback(typeof(Action))]
+        private static void _OnControllerConnected()
+        {
+            _otherSideReadyToListenTcs.SetResult();
         }
 
         // optimization, so the array is created on Unity side, and exposed to emscripten JS interop code to fill in.
@@ -191,6 +202,6 @@ namespace BlazorWith3d.Unity
         private static extern void _ReadBytesBuffer(int id, byte[] array);
 
         [DllImport("__Internal")]
-        private static extern string _InitializeApi(Action<int, int> readMessageCallback,Action<int, int>? readMessageWithResponseCallback,Action<int, int>? readResponseCallback);
+        private static extern string _InitializeApi(Action<int, int> readMessageCallback,Action<int, int>? readMessageWithResponseCallback,Action<int, int>? readResponseCallback,Action onControllerConnected);
     }
 }

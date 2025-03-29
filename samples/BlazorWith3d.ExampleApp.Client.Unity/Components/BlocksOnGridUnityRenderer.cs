@@ -11,10 +11,10 @@ namespace BlazorWith3d.ExampleApp.Client.Unity.Components;
 public class BlocksOnGridUnityRenderer:BaseUnityRenderer, IDisposable
 {
     private BlocksOnGrid3DRendererOverBinaryApi? _unityAppApi;
-    private IJsBinaryApi? _binaryApi;
+    private JsBinaryApiWithResponseRenderer? _binaryApi;
     
     [CascadingParameter] 
-    public required IBlocksOnGrid3DController ParentApp { get; set; }
+    public required IBlocksOnGrid3DControllerApp ParentApp { get; set; }
     
     [Inject]
     protected IJSRuntime _jsRuntime { get; set; }
@@ -33,20 +33,21 @@ public class BlocksOnGridUnityRenderer:BaseUnityRenderer, IDisposable
         }
         
         _binaryApi=new JsBinaryApiWithResponseRenderer(_jsRuntime,_logger);
-
-        var unityAppApi = new BlocksOnGrid3DRendererOverBinaryApi(_binaryApi, new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory(), async () =>
-            {
-                await _binaryApi.InitializeJsApp(this._unityInitializationJsPath, _containerElementReference,"showUnity", GetExtraArg(UnityBuildFilesRootPath, false));
-            });
+        
+        await _binaryApi.InitializeJsApp(this._unityInitializationJsPath, _containerElementReference,"showUnity", GetExtraArg(UnityBuildFilesRootPath, false));
+        var unityAppApi = new BlocksOnGrid3DRendererOverBinaryApi(_binaryApi, new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory());
         unityAppApi.OnMessageError += (bytes, exception) =>
         {
             _logger.LogError($"Error deserializing message {bytes}", exception);
         };
         _unityAppApi=unityAppApi;
-
-
-        await ParentApp.SetRenderer(_unityAppApi);
-
+        
+        
+        var eventHandler=await ParentApp.AddRenderer(_unityAppApi);
+        await _unityAppApi.SetEventHandler(eventHandler);
+        
+        await _binaryApi.OnConnectedToController();
+        
         await base.OnAfterRenderAsync(firstRender);
     }
 

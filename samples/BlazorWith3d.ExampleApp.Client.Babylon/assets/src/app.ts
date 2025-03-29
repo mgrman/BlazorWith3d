@@ -44,8 +44,7 @@ export function InitializeApp(canvas: HTMLCanvasElement, _: any, dotnetObject: a
 
     let app = new DebugApp(canvas, blazorApp);
 
-    blazorApp.SetRenderer(app);
-
+    blazorApp.SetEventHandler(app);
     let appAsAny: any = app;
     appAsAny.ProcessMessage = msg => {
         return binaryApi.mainMessageHandler(msg);
@@ -119,9 +118,13 @@ export class DebugApp implements IBlocksOnGrid3DRenderer {
             this.scene.render();
         });
 
-        this._methodInvoker.OnUnityAppInitialized(new UnityAppInitialized()).then(_ => console.log("UnityAppInitialized invoked"));
     }
 
+    public OnConnectedToController():void{
+
+        this._methodInvoker.OnUnityAppInitialized(new UnityAppInitialized()).then(_ => console.log("UnityAppInitialized invoked"));
+    }
+    
     public async InitializeRenderer(_: RendererInitializationInfo): Promise<void> {
         console.log("Quit called");
     }

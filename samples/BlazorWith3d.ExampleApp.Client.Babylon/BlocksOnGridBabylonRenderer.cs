@@ -10,10 +10,10 @@ namespace BlazorWith3d.ExampleApp.Client.Babylon;
 public class BlocksOnGridBabylonRenderer:BaseJsRenderer, IAsyncDisposable
 {
     private BlocksOnGrid3DRendererOverBinaryApi? _appApi;
-    private IJsBinaryApi? _binaryApi;
+    private JsBinaryApiWithResponseRenderer? _binaryApi;
 
     [CascadingParameter] 
-    public required IBlocksOnGrid3DController ParentApp { get; set; }
+    public required IBlocksOnGrid3DControllerApp ParentApp { get; set; }
     
     
     [Inject]
@@ -36,17 +36,18 @@ public class BlocksOnGridBabylonRenderer:BaseJsRenderer, IAsyncDisposable
 
         _binaryApi=new JsBinaryApiWithResponseRenderer(_jsRuntime,_logger);
         
-        _appApi = new BlocksOnGrid3DRendererOverBinaryApi(_binaryApi, new MemoryPackBinaryApiSerializer(),
-            new PoolingArrayBufferWriterFactory(), async () =>
-            {
-                await _binaryApi.InitializeJsApp(JsAppPath, _containerElementReference);
-            });
+        await _binaryApi.InitializeJsApp(JsAppPath, _containerElementReference);
+        
+        _appApi = new BlocksOnGrid3DRendererOverBinaryApi(_binaryApi, new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory());
         _appApi.OnMessageError += (bytes, exception) =>
         {
             _logger.LogError($"Error deserializing message {bytes}", exception);
         };
-
-        await ParentApp.SetRenderer(_appApi);
+        var eventHandler=await ParentApp.AddRenderer(_appApi);
+        await _appApi.SetEventHandler(eventHandler);
+        
+        await _binaryApi.OnConnectedToController();
+        
     }
 
     public async ValueTask DisposeAsync()

@@ -64,6 +64,8 @@ internal static class HelloSourceGenerator_TypeScript
         sb.AppendLine($"export interface {info.eventHandler.typeName}");
         using (sb.IndentWithCurlyBrackets())
         {
+            sb.AppendLine($"Quit():void;");
+            sb.AppendLine($"OnConnectedToController():void;");
             foreach (var e in info.events)
             {
 
@@ -74,7 +76,6 @@ internal static class HelloSourceGenerator_TypeScript
         sb.AppendLine($"export interface {info.app.typeName}");
         using (sb.IndentWithCurlyBrackets())
         {
-            sb.AppendLine($"Set{info.eventHandlerConceptName}({info.eventHandlerConceptName.ToCamelCase()}: {info.eventHandler.typeName}):void;");
             foreach (var m in info.methods)
             {
                 sb.AppendLine($"{m.name}({m.arguments.Select(a => $"{a.argName}: {TsType(a.argType)}").JoinStringWithComma()}): Promise<{TsType(m.returnType)}>;");
@@ -92,11 +93,6 @@ internal static class HelloSourceGenerator_TypeScript
                 sb.AppendLine($"this._dotnetObject = dotnetObject;");
             }
 
-            sb.AppendLine($"public SetRenderer(_: IBlocksOnGrid3DRenderer):void");
-            using (sb.IndentWithCurlyBrackets())
-            {
-                sb.AppendLine("// dummy method as the commands are invoked directly for now");
-            }
             foreach (var m in info.methods)
             {
                 sb.AppendLine($"public {m.name}({m.arguments.Select(a => $"{a.argName}: {TsType(a.argType)}").JoinStringWithComma()}): Promise<{TsType(m.returnType)}>");
@@ -124,7 +120,7 @@ internal static class HelloSourceGenerator_TypeScript
             }
 
             sb.AppendLines(
-                $@"public Set{info.eventHandlerConceptName}({info.eventHandlerConceptName.ToCamelCase()}: {info.eventHandler.typeName}):void
+                $@"public SetEventHandler({info.eventHandlerConceptName.ToCamelCase()}: {info.eventHandler.typeName}):void
  {{
      if(this._binaryApi.mainMessageHandler != null && this._binaryApi.mainMessageHandler != this._messageHandler)
      {{

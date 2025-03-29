@@ -11,7 +11,7 @@ namespace BlazorWith3d.ExampleApp.Client.ThreeJS;
 public class BlocksOnGridThreeJSDirectRenderer : BaseJsRenderer, IDisposable
 {
     [CascadingParameter] 
-    public required IBlocksOnGrid3DController ParentApp { get; set; }
+    public required IBlocksOnGrid3DControllerApp ParentApp { get; set; }
 
     private DotNetObjectReference<BlocksOnGrid3DBlazorDirectBinding>? _messageReceiverProxyReference;
     
@@ -35,13 +35,15 @@ public class BlocksOnGridThreeJSDirectRenderer : BaseJsRenderer, IDisposable
 
         await base.OnAfterRenderAsync(firstRender);
         
-        _messageReceiverProxyReference = DotNetObjectReference.Create(new BlocksOnGrid3DBlazorDirectBinding(async () =>
-            {
-                var module = await _jsRuntime.LoadModuleAsync(JsAppPath);
-                var app= await module.InvokeAsync<IJSObjectReference>(InitializeMethodName, _containerElementReference,_messageReceiverProxyReference);
-                _messageReceiverProxyReference.Value.SetTypescriptApp(app);
-            }));
-        await ParentApp.SetRenderer(_messageReceiverProxyReference.Value);
+        var module = await _jsRuntime.LoadModuleAsync(JsAppPath);
+        _messageReceiverProxyReference = DotNetObjectReference.Create(new BlocksOnGrid3DBlazorDirectBinding());
+        var app= await module.InvokeAsync<IJSObjectReference>(InitializeMethodName, _containerElementReference,_messageReceiverProxyReference);
+        
+        _messageReceiverProxyReference.Value.SetTypescriptApp(app);
+        var eventHandler=await ParentApp.AddRenderer(_messageReceiverProxyReference.Value);
+
+        await _messageReceiverProxyReference.Value.SetEventHandler(eventHandler);
+        await app.InvokeVoidAsync("OnConnectedToController");
     }
 
     public void Dispose()

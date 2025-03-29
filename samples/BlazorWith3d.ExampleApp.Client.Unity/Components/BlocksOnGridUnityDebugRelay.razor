@@ -40,9 +40,9 @@
             await base.OnAfterRenderAsync(firstRender);
         }
 
-        private void DebugRelayUnityApiOnConnectedApi(DebugRelayUnityApi.BinaryApiForSocket? obj)
+        private async ValueTask DebugRelayUnityApiOnConnectedApi(DebugRelayUnityApi.BinaryApiForSocket? obj)
         {
-            InvokeAsync(async () =>
+           await InvokeAsync(async () =>
             {
                 DebugRelayUnityApi.NewFrame -= UpdateFrame;
                 UpdateFrame([]);
@@ -52,13 +52,17 @@
                 {
                     DebugRelayUnityApi.NewFrame += UpdateFrame;
                     var mainThreadApi = new BinaryApiThreadWrapper(obj, async t => await InvokeAsync(async () => await t()));
-                    unityAppApi = new BlocksOnGrid3DRendererOverBinaryApi(new BinaryApiOverBinaryMessageApi(mainThreadApi), new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory(),null);
+                    unityAppApi = new BlocksOnGrid3DRendererOverBinaryApi(new BinaryApiOverBinaryMessageApi(mainThreadApi), new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory());
                     unityAppApi.OnMessageError += (o, e) =>
                     {
                         Logger.LogError(e, $"error handling message {string.Join(",", o)}");
                     };
-                    await ParentApp.SetRenderer(unityAppApi);
-
+                    
+                    var eventHandler=await ParentApp.AddRenderer(unityAppApi);
+                    await unityAppApi.SetEventHandler(eventHandler);
+        
+                    // no need to notify that controller is ready, as the debug relay starts processing messages only after this handler finishes
+            
                 }
             });
         }
@@ -66,7 +70,7 @@
     private BlocksOnGrid3DRendererOverBinaryApi? unityAppApi;
 
     [CascadingParameter] 
-    public required IBlocksOnGrid3DController ParentApp { get; set; }
+    public required IBlocksOnGrid3DControllerApp ParentApp { get; set; }
 
     private ElementReference _image;
 

@@ -30,7 +30,7 @@ export function InitializeApp(canvas: HTMLCanvasElement, _: any, dotnetObject: a
 
     let app = new DebugApp(canvas, blazorApp);
 
-    blazorApp.SetRenderer(app);
+    blazorApp.SetEventHandler(app);
 
     let appAsAny: any = app;
     appAsAny.ProcessMessage = (msg: Uint8Array, offset: number, count: number) => {
@@ -49,7 +49,6 @@ export function InitializeApp_DirectInterop(canvas: HTMLCanvasElement, dotnetObj
     var blazorApp = new BlocksOnGrid3DControllerOverDirectInterop(dotnetObject);
 
     let app = new DebugApp(canvas, blazorApp);
-    blazorApp.SetRenderer(app);
 
     return app;
 }
@@ -104,6 +103,9 @@ export class DebugApp implements IBlocksOnGrid3DRenderer {
         window.addEventListener('resize',this.resizeEvent );
 
         this.raycaster = new THREE.Raycaster();
+    }
+    
+    public OnConnectedToController():void{
 
         this._methodInvoker.OnUnityAppInitialized(new UnityAppInitialized()).then(_ => console.log("UnityAppInitialized invoked"));
     }
