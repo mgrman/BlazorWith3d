@@ -171,7 +171,7 @@
 }
 <button @onclick="TriggerTestToBlazor">TriggerTestToBlazor</button>
 
-<div @ref="_rendererContainerReference" @onmousedown="OnMouseDown" draggable="false">
+<div @onmousedown="OnMouseDown" draggable="false">
 
     <CascadingValue Value="this" IsFixed="true">
         @ChildContent
@@ -208,8 +208,6 @@
     private (IBlocksOnGrid3DBlazorRenderer renderer, AddBlockInstance instance, float offsetX,float offsetY, float dragPlaneZ)? _dragging;
     private IJSObjectReference module;
     private IJSObjectReference? _mouseEventsDispose;
-
-    private ElementReference _rendererContainerReference;
 
     private static (string name, string url )[] GltfAssets = [ ("BoomBox", "./_content/BlazorWith3d.ExampleApp.Client/gltf/BoomBox.glb")];
 
@@ -421,32 +419,32 @@
             return;
         }
 
-        IBlocksOnGrid3DBlazorRenderer? rendererApi = null;
+        IBlocksOnGrid3DBlazorRenderer? renderer = null;
         JSVector2 offset = null;
-        foreach (var renderer in _renderers)
+        foreach (var potentialRenderer in _renderers)
         {
-            var potentialOffset = await module.InvokeAsync<JSVector2?>("ConvertPageToOffsetIfInside", _rendererContainerReference, e.ClientX, e.ClientY);
+            var potentialOffset = await module.InvokeAsync<JSVector2?>("ConvertPageToOffsetIfInside", potentialRenderer.RendererContainer, e.ClientX, e.ClientY);
 
             if (potentialOffset != null)
             {
-                rendererApi = renderer;
+                renderer = potentialRenderer;
                 offset = potentialOffset;
                 break;
             }
         }
 
-        if (rendererApi == null || offset==null)
+        if (renderer == null || offset==null)
         {
             return;
         }
 
-        var screenToRayResponse = await rendererApi.RendererApi.InvokeRequestScreenToWorldRay(new RequestScreenToWorldRay()
+        var screenToRayResponse = await renderer.RendererApi.InvokeRequestScreenToWorldRay(new RequestScreenToWorldRay()
         {
             Screen = new Vector2(offset.X, offset.Y)
         });
 
 
-        var raycastResponse = await rendererApi.RendererApi.InvokeRequestRaycast(new RequestRaycast()
+        var raycastResponse = await renderer.RendererApi.InvokeRequestRaycast(new RequestRaycast()
         {
             Ray = screenToRayResponse.Ray
         });
@@ -462,9 +460,9 @@
 
         var offsetX = raycastResponse.HitWorld.X - instance.Position.X;
         var offsetY = raycastResponse.HitWorld.Y - instance.Position.Y;
-        _dragging = (rendererApi,instance, offsetX, offsetY, raycastResponse.HitWorld.Z);
+        _dragging = (renderer,instance, offsetX, offsetY, raycastResponse.HitWorld.Z);
 
-        _mouseEventsDispose = await module.InvokeAsync<IJSObjectReference>("InitializeGlobalMouseEvents", _rendererContainerReference, _jsProxyReference, nameof(JsProxy.OnMouseMove), nameof(JsProxy.OnMouseUp));
+        _mouseEventsDispose = await module.InvokeAsync<IJSObjectReference>("InitializeGlobalMouseEvents", renderer.RendererContainer, _jsProxyReference, nameof(JsProxy.OnMouseMove), nameof(JsProxy.OnMouseUp));
     }
 
     private async void OnMouseMove(float offsetX, float offsetY)
