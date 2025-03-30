@@ -7,7 +7,7 @@ using Microsoft.JSInterop;
 
 namespace BlazorWith3d.ExampleApp.Client.Babylon;
 
-public class BlocksOnGridBabylonRenderer:BaseJsRenderer, IAsyncDisposable
+public class BlocksOnGridBabylonRenderer:BaseJsRenderer,IBlocksOnGrid3DBlazorRenderer, IAsyncDisposable
 {
     private BlocksOnGrid3DRendererOverBinaryApi? _appApi;
     private JsBinaryApiWithResponseRenderer? _binaryApi;
@@ -43,16 +43,19 @@ public class BlocksOnGridBabylonRenderer:BaseJsRenderer, IAsyncDisposable
         {
             _logger.LogError($"Error deserializing message {bytes}", exception);
         };
-        await ParentApp.AddRenderer(new BlocksOnGrid3DBlazorRenderer(_appApi,_containerElementReference));
+        await ParentApp.AddRenderer(this);
     }
 
     public async ValueTask DisposeAsync()
     {
         if (_appApi != null)
         {
-            await ParentApp.RemoveRenderer(_appApi);
+            await ParentApp.RemoveRenderer(this);
         }
         _appApi?.Dispose();
         await _binaryApi.TryDisposeAsync();
     }
+
+    IBlocksOnGrid3DRenderer IBlocksOnGrid3DBlazorRenderer.RendererApi => _appApi;
+    ElementReference IBlocksOnGrid3DBlazorRenderer.RendererContainer => _containerElementReference;
 }

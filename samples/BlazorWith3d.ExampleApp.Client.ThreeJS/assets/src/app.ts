@@ -5,7 +5,7 @@ import {PerfCheck} from "com.blazorwith3d.exampleapp.client.shared/memorypack/Pe
 import {AddBlockTemplate} from "com.blazorwith3d.exampleapp.client.shared/memorypack/AddBlockTemplate";
 import {RemoveBlockInstance} from "com.blazorwith3d.exampleapp.client.shared/memorypack/RemoveBlockInstance";
 import {RemoveBlockTemplate} from "com.blazorwith3d.exampleapp.client.shared/memorypack/RemoveBlockTemplate";
-import { UnityAppInitialized } from "com.blazorwith3d.exampleapp.client.shared/memorypack/UnityAppInitialized";
+import { RendererInitialized } from "com.blazorwith3d.exampleapp.client.shared/memorypack/RendererInitialized";
 import {
     BlocksOnGrid3DControllerOverDirectInterop,
     BlocksOnGrid3DControllerOverBinaryApi, IBlocksOnGrid3DController, IBlocksOnGrid3DRenderer
@@ -24,15 +24,14 @@ export function InitializeApp(canvas: HTMLCanvasElement, _: any, dotnetObject: a
     let sendMessageCallback: (msgBytes: Uint8Array) => Promise<any> = msgBytes => dotnetObject.invokeMethodAsync(onMessageReceivedMethodName, msgBytes);
     let sendMessageWithResponseCallback: (msgBytes: Uint8Array) => Promise<Uint8Array> = msgBytes => dotnetObject.invokeMethodAsync(onMessageReceivedWithResponseMethodName, msgBytes);
 
+    let renderer = new DebugApp(canvas);
 
     let binaryApi = new BlazorBinaryApiWithResponse(sendMessageCallback, sendMessageWithResponseCallback);
-    let blazorApp = new BlocksOnGrid3DControllerOverBinaryApi(binaryApi);
+    let controller = new BlocksOnGrid3DControllerOverBinaryApi(binaryApi,renderer);
 
-    let app = new DebugApp(canvas, blazorApp);
+    renderer.Initialize(controller);
 
-    blazorApp.SetEventHandler(app);
-
-    let appAsAny: any = app;
+    let appAsAny: any = renderer;
     appAsAny.ProcessMessage = (msg: Uint8Array, offset: number, count: number) => {
 
         msg = msg.subarray(offset, count);
@@ -46,11 +45,12 @@ export function InitializeApp(canvas: HTMLCanvasElement, _: any, dotnetObject: a
 }
 
 export function InitializeApp_DirectInterop(canvas: HTMLCanvasElement, dotnetObject: any) {
-    var blazorApp = new BlocksOnGrid3DControllerOverDirectInterop(dotnetObject);
+    var controller = new BlocksOnGrid3DControllerOverDirectInterop(dotnetObject);
 
-    let app = new DebugApp(canvas, blazorApp);
+    let renderer = new DebugApp(canvas);
+    renderer.Initialize(controller);
 
-    return app;
+    return renderer;
 }
 
 export class DebugApp implements IBlocksOnGrid3DRenderer {
@@ -65,10 +65,9 @@ export class DebugApp implements IBlocksOnGrid3DRenderer {
     private _methodInvoker: IBlocksOnGrid3DController;
     resizeEvent: (_: any) => void;
 
-    constructor(canvas: HTMLCanvasElement, methodInvoker: IBlocksOnGrid3DController) {
+    constructor(canvas: HTMLCanvasElement) {
 
         this.canvas = canvas;
-        this._methodInvoker = methodInvoker;
         this.canvas.style.width = "100%";
         this.canvas.style.height = "100%";
         this.canvas.width = this.canvas.offsetWidth;
@@ -104,6 +103,10 @@ export class DebugApp implements IBlocksOnGrid3DRenderer {
 
         this.raycaster = new THREE.Raycaster();
     }
+
+    public Initialize(controller:IBlocksOnGrid3DController) {
+        this._methodInvoker = controller;
+    }
     
     private HandleResize():void {
 
@@ -132,7 +135,7 @@ export class DebugApp implements IBlocksOnGrid3DRenderer {
         // the camera in ThreeJS is looking down negativeZ direciton, so no need to rotate
         this.camera.setRotationFromEuler(new THREE.Euler(THREE.MathUtils.degToRad(msg.requestedCameraRotation.x), THREE.MathUtils.degToRad(msg.requestedCameraRotation.y), THREE.MathUtils.degToRad(msg.requestedCameraRotation.z)));
 
-        this._methodInvoker.OnUnityAppInitialized(new UnityAppInitialized()).then(_ => console.log("UnityAppInitialized invoked"));
+        this._methodInvoker.OnRendererInitialized(new RendererInitialized()).then(_ => console.log("UnityAppInitialized invoked"));
     }
 
     public async InvokeTriggerTestToBlazor(_: TriggerTestToBlazor): Promise<void> {

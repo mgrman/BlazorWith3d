@@ -54,25 +54,28 @@
                 {
                     DebugRelayUnityApi.NewFrame += UpdateFrame;
                     var mainThreadApi = new BinaryApiThreadWrapper(obj, async t => await InvokeAsync(async () => await t()));
-                    unityAppApi = new BlocksOnGrid3DRendererOverBinaryApi(new BinaryApiOverBinaryMessageApi(mainThreadApi), new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory(),ParentApp);
+                    var unityAppApi = new BlocksOnGrid3DRendererOverBinaryApi(new BinaryApiOverBinaryMessageApi(mainThreadApi), new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory(),ParentApp);
                     unityAppApi.OnMessageError += (o, e) =>
                     {
                         Logger.LogError(e, $"error handling message {string.Join(",", o)}");
                     };
 
-                    await ParentApp.AddRenderer(new BlocksOnGrid3DBlazorRenderer(unityAppApi, _image));
+                    _activeRenderer = new BlocksOnGridUnityDebugRelayRenderer(unityAppApi, _image);
+
+                    await ParentApp.AddRenderer(_activeRenderer);
                 }
                 else
                 {
-                    if (unityAppApi != null)
+                    if (_activeRenderer != null)
                     {
-                        await ParentApp.RemoveRenderer(unityAppApi);
+                        await ParentApp.RemoveRenderer(_activeRenderer);
                     }
                 }
             });
         }
-
-    private BlocksOnGrid3DRendererOverBinaryApi? unityAppApi;
+        
+        
+    private BlocksOnGridUnityDebugRelayRenderer? _activeRenderer;
 
     [CascadingParameter] 
     public required IBlocksOnGrid3DBlazorController ParentApp { get; set; }
@@ -115,13 +118,23 @@
 
     public async ValueTask DisposeAsync()
     {
-        if (unityAppApi != null)
+        if (_activeRenderer != null)
         {
-            await ParentApp.RemoveRenderer(unityAppApi);
+            await ParentApp.RemoveRenderer(_activeRenderer);
         }
         DebugRelayUnityApi.ConnectedApi = null;
         DebugRelayUnityApi.NewFrame -= UpdateFrame;
-        unityAppApi?.Dispose();
+
+        if (_activeRenderer?.RendererApi is IAsyncDisposable asyncDisposableApi)
+        {
+            await asyncDisposableApi.DisposeAsync();
+        }
+        else if (_activeRenderer?.RendererApi is IDisposable disposableApi)
+        {
+            disposableApi.Dispose();
+        }
     }
 
+    private record BlocksOnGridUnityDebugRelayRenderer(IBlocksOnGrid3DRenderer RendererApi, ElementReference RendererContainer)
+        : IBlocksOnGrid3DBlazorRenderer;
 }

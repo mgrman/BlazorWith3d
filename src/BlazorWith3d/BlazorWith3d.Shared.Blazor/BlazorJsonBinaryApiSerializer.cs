@@ -27,7 +27,7 @@ public class BlazorJsonBinaryApiSerializer : IBinaryApiSerializer
 
     }
 
-    public T? DeserializeObject<T>(ArraySegment<byte> bytes, out int readBytes)
+    public T DeserializeObject<T>(ArraySegment<byte> bytes, out int readBytes)
     {
         var headerBytes = BitConverter.ToInt32(bytes.Slice(0, 4));
 
@@ -35,6 +35,6 @@ public class BlazorJsonBinaryApiSerializer : IBinaryApiSerializer
 
         readBytes = headerBytes + 4;
 
-        return JsonSerializer.Deserialize<T>(json, _options);
+        return JsonSerializer.Deserialize<T>(json, _options)!;
     }
 }

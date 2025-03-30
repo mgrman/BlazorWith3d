@@ -3,35 +3,20 @@
 namespace BlazorWith3d.Shared
 {
     [AttributeUsage(AttributeTargets.Class, Inherited = false)]
-    public sealed class Blazor3DAppBindingAttribute : Attribute
+    public sealed class GenerateDirectBindingAttribute : Attribute
     {
-        public Blazor3DAppBindingAttribute(Type controllerType,Type rendererType)
-        {
-
-        }
-    }
-    
-    
-    [AttributeUsage(AttributeTargets.Interface, Inherited = false)]
-    public sealed class Blazor3DControllerAttribute : Attribute
-    {
-        public Blazor3DControllerAttribute(Type rendererType)
+        public GenerateDirectBindingAttribute(Type methodHandlerType,Type eventHandlerType)
         {
 
         }
     }
     
     [AttributeUsage(AttributeTargets.Interface, Inherited = false)]
-    public sealed class Blazor3DRendererAttribute : Attribute
+    public sealed class GenerateBinaryApiAttribute : Attribute
     {
-        public Blazor3DRendererAttribute(Type controllerType)
+        public GenerateBinaryApiAttribute(Type eventHandlerType)
         {
 
         }
     }
-    
-#if COMMON_DOTNET
-#endif
-#if COMMON_UNITY
-#endif
 }

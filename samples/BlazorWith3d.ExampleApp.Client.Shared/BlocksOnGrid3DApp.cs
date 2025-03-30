@@ -8,7 +8,7 @@ using MemoryPack;
 
 namespace BlazorWith3d.ExampleApp.Client.Shared
 {
-    [Blazor3DRenderer(typeof(IBlocksOnGrid3DController))]
+    [GenerateBinaryApi(typeof(IBlocksOnGrid3DController))]
     public partial interface IBlocksOnGrid3DRenderer
     {
         ValueTask InitializeRenderer(RendererInitializationInfo msg);
@@ -23,10 +23,10 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
         ValueTask<ScreenToWorldRayResponse> InvokeRequestScreenToWorldRay(RequestScreenToWorldRay msg);
     }
     
-    [Blazor3DController(typeof(IBlocksOnGrid3DRenderer))]
+    [GenerateBinaryApi(typeof(IBlocksOnGrid3DRenderer))]
     public partial interface IBlocksOnGrid3DController
     {
-        ValueTask OnUnityAppInitialized(UnityAppInitialized msg);
+        ValueTask OnRendererInitialized(RendererInitialized msg);
         ValueTask<TestToBlazor> OnTestToBlazor(TestToBlazor msg);
     }
     
@@ -57,7 +57,7 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
 
     [MemoryPackable]
     [GenerateTypeScript]
-    public partial class UnityAppInitialized 
+    public partial class RendererInitialized 
     {
     }
 

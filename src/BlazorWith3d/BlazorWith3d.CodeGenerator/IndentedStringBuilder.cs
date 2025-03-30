@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace BlazorWith3d.Unity.CodeGenerator;
+namespace BlazorWith3d.CodeGenerator;
 
 public sealed class IndentedStringBuilder
 {

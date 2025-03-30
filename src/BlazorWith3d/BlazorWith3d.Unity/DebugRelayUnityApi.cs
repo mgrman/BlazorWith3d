@@ -5,10 +5,8 @@ using Microsoft.Extensions.Logging;
 
 namespace BlazorWith3d.Unity;
 
-public class DebugRelayUnityApi
+public class DebugRelayUnityApi(ILogger<DebugRelayUnityApi> logger)
 {
-    private readonly ILogger<DebugRelayUnityApi> _logger;
-
     public Func<BinaryApiForSocket?, ValueTask>? ConnectedApi
     {
         get;
@@ -32,12 +30,7 @@ public class DebugRelayUnityApi
 
     private CancellationTokenSource? _connectedApiCts;
     
-    public event Action<byte[]> NewFrame;
-
-    public DebugRelayUnityApi(ILogger<DebugRelayUnityApi> logger)
-    {
-        _logger = logger;
-    }
+    public event Action<byte[]>? NewFrame;
 
     public bool CanHandleWebSocket()
     {
@@ -55,7 +48,7 @@ public class DebugRelayUnityApi
         var apiEvent = ConnectedApi;
         if (apiEvent == null)
         {
-            _logger.LogError("Event is null but Cts is not!");
+            logger.LogError("Event is null but Cts is not!");
             return;
         }
 
@@ -95,23 +88,23 @@ public class DebugRelayUnityApi
                     }
                 }
             }
-            catch (OperationCanceledException ex)
+            catch (OperationCanceledException)
             {
                 await apiEvent.Invoke(null);
             }
             catch (WebSocketException ex)
             {
                 await apiEvent.Invoke(null);
-                _logger.LogWarning(ex,"HandleWebSocket OnMessageFromUnity error");
+                logger.LogWarning(ex,"HandleWebSocket OnMessageFromUnity error");
                 if (ex.InnerException != null)
                 {
-                    _logger.LogWarning(ex.InnerException, "HandleWebSocket InnerException");
+                    logger.LogWarning(ex.InnerException, "HandleWebSocket InnerException");
                 }
             }
             catch (Exception ex)
             {
                 await apiEvent.Invoke(null);
-                _logger.LogError(ex,"HandleWebSocket OnMessageFromUnity error");
+                logger.LogError(ex,"HandleWebSocket OnMessageFromUnity error");
             }
         }
     }

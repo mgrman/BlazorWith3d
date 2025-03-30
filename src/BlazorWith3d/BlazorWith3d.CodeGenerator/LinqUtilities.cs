@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace BlazorWith3d.Unity.CodeGenerator;
+namespace BlazorWith3d.CodeGenerator;
 
 public static class LinqUtilities
 {

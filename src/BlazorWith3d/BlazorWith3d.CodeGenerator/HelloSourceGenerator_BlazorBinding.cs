@@ -1,18 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 
-using Microsoft.CodeAnalysis;
-
-namespace BlazorWith3d.Unity.CodeGenerator;
+namespace BlazorWith3d.CodeGenerator;
 
 internal static class HelloSourceGenerator_BlazorBinding
 {
     
-    internal static string GenerateBindingClass(TypeInfo bindingType, AppInfo renderer)
+    internal static string GenerateBindingClass(TypeInfo bindingType, AppInfo info)
     {
         IReadOnlyList<string> namespacesToInclude = new[] { bindingType.@namespace }
-            .Concat(renderer?.namespacesToInclude ?? Enumerable.Empty<string>())
+            .Concat(info?.namespacesToInclude ?? Enumerable.Empty<string>())
             .Distinct()
             .ToList();
 
@@ -31,10 +28,10 @@ internal static class HelloSourceGenerator_BlazorBinding
         sb.AppendLine($"namespace {bindingType.@namespace}");
         using (sb.IndentWithCurlyBrackets())
         {
-            sb.AppendLine($"public partial class {bindingType.typeName} : {renderer.app.typeName} ");
+            sb.AppendLine($"public partial class {bindingType.typeName} : {info.app.typeName} ");
             using (sb.IndentWithCurlyBrackets())
             {
-                sb.AppendLine($"private {renderer.eventHandler.typeName} _eventHandler = null!;");
+                sb.AppendLine($"private {info.eventHandler.typeName} _eventHandler = null!;");
                 sb.AppendLine($"private IJSObjectReference _typescriptApp = null!;");
                 
                 sb.AppendLine($"public void SetTypescriptApp(IJSObjectReference typescriptApp)");
@@ -43,13 +40,13 @@ internal static class HelloSourceGenerator_BlazorBinding
                     sb.AppendLine($"_typescriptApp = typescriptApp;");
                 }
 
-                sb.AppendLine($"public void SetEventHandler({renderer.eventHandler.typeName}{(renderer.eventHandlerNullable?"?":"")} {renderer.eventHandlerConceptName.ToCamelCase()})");
+                sb.AppendLine($"public void SetEventHandler({info.eventHandler.typeName} eventHandler)");
                 using (sb.IndentWithCurlyBrackets())
                 {
-                    sb.AppendLine($"_eventHandler = {renderer.eventHandlerConceptName.ToCamelCase()};");
+                    sb.AppendLine($"_eventHandler = eventHandler;");
                 }
 
-                foreach (var m in renderer.methods)
+                foreach (var m in info.methods)
                 {
 
                     sb.AppendLine($"public ValueTask{(m.returnType == null ? "" : $"<{m.returnType.typeName}>")} {m.name}({m.arguments.Select(a => $"{a.argType.typeName} {a.argName}").JoinStringWithComma()})");
@@ -60,7 +57,7 @@ internal static class HelloSourceGenerator_BlazorBinding
 
                 }
 
-                foreach (var e in renderer.events)
+                foreach (var e in info.events)
                 {
                     sb.AppendLine($"[JSInvokable]");
                     sb.AppendLine($"public ValueTask{(e.returnType == null ? "" : $"<{e.returnType.typeName}>")} {e.name}({e.arguments.Select(a => $"{a.argType.typeName} {a.argName}").JoinStringWithComma()})");

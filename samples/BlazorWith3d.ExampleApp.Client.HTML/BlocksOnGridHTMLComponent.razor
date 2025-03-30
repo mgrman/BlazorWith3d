@@ -5,6 +5,7 @@
 @using Microsoft.Extensions.Logging
 @using Microsoft.JSInterop
 @implements IBlocksOnGrid3DRenderer
+@implements IBlocksOnGrid3DBlazorRenderer
 @implements IAsyncDisposable
 @inject ILogger<BlocksOnGridHTMLComponent> Logger
 @inject IJSRuntime JsRuntime
@@ -68,7 +69,7 @@
 
         _eventHandler = ParentApp;
         
-        await ParentApp.AddRenderer(new BlocksOnGrid3DBlazorRenderer(this,_rendererContainerReference));
+        await ParentApp.AddRenderer(this);
 
         var bounds = await GetBoundingClientRect(_rendererContainerReference);
 
@@ -86,25 +87,26 @@
 
         await base.OnAfterRenderAsync(firstRender);
     }
+    
+    IBlocksOnGrid3DRenderer IBlocksOnGrid3DBlazorRenderer.RendererApi => this;
+    ElementReference IBlocksOnGrid3DBlazorRenderer.RendererContainer => _rendererContainerReference;
 
-public async ValueTask DisposeAsync()
-{
-    await ParentApp.RemoveRenderer(this);
-}
+    public async ValueTask DisposeAsync()
+    {
+        await ParentApp.RemoveRenderer(this);
+    }
 
     private async ValueTask<RectangleF> GetBoundingClientRect(ElementReference elementReference)
     {
         return await jsInteropModule.InvokeAsync<RectangleF>("getBoundingClientRect", elementReference);
     }
-
-
     public async ValueTask InitializeRenderer(RendererInitializationInfo msg)
     {
         Logger.LogInformation("InitializeRenderer");
 
         _backgroundColor = msg.BackgroundColor.ToColor();
         StateHasChanged();
-        _eventHandler?.OnUnityAppInitialized(new UnityAppInitialized());
+        _eventHandler?.OnRendererInitialized(new RendererInitialized());
 
     }
 

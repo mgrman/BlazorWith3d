@@ -3,7 +3,6 @@
     <PropertyGroup>
         <BaseIntermediateOutputPath>.obj</BaseIntermediateOutputPath>
         <RootNamespace>.BlazorWith3d.Shared</RootNamespace>
-        <DefineConstants>$(DefineConstants);COMMON_DOTNET</DefineConstants>
         <TargetFramework>netstandard2.1</TargetFramework>
     </PropertyGroup>
 

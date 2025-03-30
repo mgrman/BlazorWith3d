@@ -10,7 +10,7 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
     public interface IBlocksOnGrid3DBlazorController : IBlocksOnGrid3DController
     {
         ValueTask AddRenderer(IBlocksOnGrid3DBlazorRenderer rendererApi);
-        ValueTask RemoveRenderer(IBlocksOnGrid3DRenderer rendererApi);
+        ValueTask RemoveRenderer(IBlocksOnGrid3DBlazorRenderer rendererApi);
     }
     
     public interface IBlocksOnGrid3DBlazorRenderer 
@@ -20,6 +20,4 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
         
     }
 
-    public record BlocksOnGrid3DBlazorRenderer(IBlocksOnGrid3DRenderer RendererApi, ElementReference RendererContainer)
-        : IBlocksOnGrid3DBlazorRenderer;
 }

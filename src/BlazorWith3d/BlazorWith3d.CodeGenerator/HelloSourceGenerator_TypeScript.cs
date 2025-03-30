@@ -1,11 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
 using Microsoft.CodeAnalysis;
 
-namespace BlazorWith3d.Unity.CodeGenerator;
+namespace BlazorWith3d.CodeGenerator;
 
 internal static class HelloSourceGenerator_TypeScript
 {
@@ -49,8 +48,7 @@ internal static class HelloSourceGenerator_TypeScript
         {
             sb.AppendLine($"import {{{type}}} from \"./{type}\";");
         }
-
-
+        
         string TsType(TypeInfo? type)
         {
             if (type == null)
@@ -60,11 +58,11 @@ internal static class HelloSourceGenerator_TypeScript
             return options.GetTsType(type).tsType;
         }
 
-
         sb.AppendLine($"export interface {info.eventHandler.typeName}");
         using (sb.IndentWithCurlyBrackets())
         {
             sb.AppendLine($"Quit():void;");
+            sb.AppendLine($"Initialize(methodInvoker:{info.app.typeName}):void;");
             foreach (var e in info.events)
             {
 
@@ -110,26 +108,17 @@ internal static class HelloSourceGenerator_TypeScript
             sb.AppendLine($"private _messageHandler:(bytes: Uint8Array) => Promise<void>;");
             sb.AppendLine($"private _messageWithResponseHandler:(bytes: Uint8Array) => Promise<Uint8Array>;");
 
-            sb.AppendLine($"constructor( binaryApi: IBinaryApi)");
+            sb.AppendLine($"constructor( binaryApi: IBinaryApi, eventHandler: {info.eventHandler.typeName})");
             using (sb.IndentWithCurlyBrackets())
             {
                 sb.AppendLine($"this._binaryApi = binaryApi;");
                 sb.AppendLine($"this._messageHandler= (msg)=>this.ProcessMessages(msg);");
                 sb.AppendLine($"this._messageWithResponseHandler= (msg)=>this.ProcessMessagesWithResponse(msg);");
+                
+                sb.AppendLine($"this._eventHandler=eventHandler;");
+                sb.AppendLine($"this._binaryApi.mainMessageHandler = this._eventHandler==null?null:this._messageHandler;");
+                sb.AppendLine($"this._binaryApi.mainMessageWithResponseHandler = this._eventHandler==null?null:this._messageWithResponseHandler;");
             }
-
-            sb.AppendLines(
-                $@"public SetEventHandler({info.eventHandlerConceptName.ToCamelCase()}: {info.eventHandler.typeName}):void
- {{
-     if(this._binaryApi.mainMessageHandler != null && this._binaryApi.mainMessageHandler != this._messageHandler)
-     {{
-         return;
-     }}
-     this._eventHandler={info.eventHandlerConceptName.ToCamelCase()};
-     this._binaryApi.mainMessageHandler = this._eventHandler==null?null:this._messageHandler;
-     this._binaryApi.mainMessageWithResponseHandler = this._eventHandler==null?null:this._messageWithResponseHandler;
- }}".Split(new[] { "\r\n", "\n" }, StringSplitOptions.None));
-
 
             foreach (var (m, i) in info.methods.EnumerateWithIndex())
             {

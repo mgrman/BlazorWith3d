@@ -21,7 +21,7 @@ import {PerfCheck} from "com.blazorwith3d.exampleapp.client.shared/memorypack/Pe
 import {AddBlockTemplate} from "com.blazorwith3d.exampleapp.client.shared/memorypack/AddBlockTemplate";
 import {RemoveBlockInstance} from "com.blazorwith3d.exampleapp.client.shared/memorypack/RemoveBlockInstance";
 import {RemoveBlockTemplate} from "com.blazorwith3d.exampleapp.client.shared/memorypack/RemoveBlockTemplate";
-import { UnityAppInitialized } from "com.blazorwith3d.exampleapp.client.shared/memorypack/UnityAppInitialized";
+import { RendererInitialized } from "com.blazorwith3d.exampleapp.client.shared/memorypack/RendererInitialized";
 import {
     BlocksOnGrid3DControllerOverBinaryApi, IBlocksOnGrid3DController, IBlocksOnGrid3DRenderer
 } from "com.blazorwith3d.exampleapp.client.shared/memorypack/IBlocksOnGrid3DController";
@@ -39,13 +39,13 @@ export function InitializeApp(canvas: HTMLCanvasElement, _: any, dotnetObject: a
     let sendMessageWithResponseCallback: (msgBytes: Uint8Array) => Promise<Uint8Array> = msgBytes => dotnetObject.invokeMethodAsync(onMessageReceivedWithResponseMethodName, msgBytes);
 
 
+    let renderer = new DebugApp(canvas);
     let binaryApi = new BlazorBinaryApiWithResponse(sendMessageCallback, sendMessageWithResponseCallback);
-    let blazorApp = new BlocksOnGrid3DControllerOverBinaryApi(binaryApi);
+    let controller = new BlocksOnGrid3DControllerOverBinaryApi(binaryApi,renderer);
 
-    let app = new DebugApp(canvas, blazorApp);
 
-    blazorApp.SetEventHandler(app);
-    let appAsAny: any = app;
+    renderer.Initialize(controller);
+    let appAsAny: any = renderer;
     appAsAny.ProcessMessage = msg => {
         return binaryApi.mainMessageHandler(msg);
     }
@@ -64,10 +64,9 @@ export class DebugApp implements IBlocksOnGrid3DRenderer {
     private plane: Mesh;
     private _methodInvoker: IBlocksOnGrid3DController;
 
-    constructor(canvas: HTMLCanvasElement, methodInvoker: IBlocksOnGrid3DController) {
+    constructor(canvas: HTMLCanvasElement) {
 
         this.canvas = canvas;
-        this._methodInvoker = methodInvoker;
         canvas.style.width = "100%";
         canvas.style.height = "100%";
         canvas.width = canvas.offsetWidth;
@@ -120,9 +119,13 @@ export class DebugApp implements IBlocksOnGrid3DRenderer {
 
     }
 
+    public Initialize(methodInvoker: IBlocksOnGrid3DController): void {
+        this._methodInvoker = methodInvoker;
+    }
+
     public async InitializeRenderer(_: RendererInitializationInfo): Promise<void> {
         console.log("InitializeRenderer called");
-        this._methodInvoker.OnUnityAppInitialized(new UnityAppInitialized()).then(_ => console.log("UnityAppInitialized invoked"));
+        this._methodInvoker.OnRendererInitialized(new RendererInitialized()).then(_ => console.log("UnityAppInitialized invoked"));
     }
 
     public Quit(): void {

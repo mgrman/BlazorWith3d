@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 
-using Microsoft.CodeAnalysis;
-
-namespace BlazorWith3d.Unity.CodeGenerator;
+namespace BlazorWith3d.CodeGenerator;
 
 internal static class HelloSourceGenerator_DotnetApis
 {
@@ -31,8 +27,6 @@ internal static class HelloSourceGenerator_DotnetApis
         sb.AppendLine($"namespace {info.app.@namespace}");
         using (sb.IndentWithCurlyBrackets())
         {
-            var eventHandlerVarName = info.eventHandlerConceptName.ToCamelCase();
-
             sb.AppendLine();
             sb.AppendLine($"public partial class {info.app.TypeNameWithoutIPrefix}OverBinaryApi: {info.app.typeName}, IDisposable");
             using (sb.IndentWithCurlyBrackets())
@@ -46,7 +40,7 @@ internal static class HelloSourceGenerator_DotnetApis
                 sb.AppendLine($"private bool _disposed;");
 
                 sb.AppendLine();
-                sb.AppendLine($"public {info.app.TypeNameWithoutIPrefix}OverBinaryApi(IBinaryApi binaryApi, IBinaryApiSerializer serializer, IBufferWriterFactory<byte> writerFactory, {info.eventHandler.typeName}{(info.eventHandlerNullable?"?":"")} {eventHandlerVarName})");
+                sb.AppendLine($"public {info.app.TypeNameWithoutIPrefix}OverBinaryApi(IBinaryApi binaryApi, IBinaryApiSerializer serializer, IBufferWriterFactory<byte> writerFactory, {info.eventHandler.typeName} eventHandler)");
                 using (sb.IndentWithCurlyBrackets())
                 {
                     sb.AppendLine("_binaryApi = binaryApi;");
@@ -58,14 +52,14 @@ internal static class HelloSourceGenerator_DotnetApis
                         sb.AppendLine("throw new InvalidOperationException(\"Somebody else is handling messages!\");");
                     }
 
-                    sb.AppendLine($"_eventHandler={eventHandlerVarName};");
-                    sb.AppendLine($"_setMainMessageHandler=true;");
+                    sb.AppendLine($"_eventHandler = eventHandler;");
+                    sb.AppendLine($"_setMainMessageHandler = true;");
                     sb.AppendLine($"_binaryApi.MainMessageHandler = ProcessMessages;");
                     sb.AppendLine($"_binaryApi.MainMessageWithResponseHandler = ProcessMessagesWithResponse;");
                 }
                 sb.AppendLine($"public bool IsProcessingMessages => _binaryApi.MainMessageHandler == ProcessMessages;");
 
-                sb.AppendLine($"public event Action<ArraySegment<byte>, Exception> OnMessageError;");
+                sb.AppendLine($"public event Action<ArraySegment<byte>, Exception>? OnMessageError;");
 
                 sb.AppendLine();
                 foreach (var (m, i) in info.methods.EnumerateWithIndex())

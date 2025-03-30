@@ -7,9 +7,9 @@ using Microsoft.JSInterop;
 
 namespace BlazorWith3d.ExampleApp.Client.ThreeJS;
 
-public class BlocksOnGridThreeJSRenderer: BaseJsRenderer, IAsyncDisposable
+public class BlocksOnGridThreeJSRenderer: BaseJsRenderer, IBlocksOnGrid3DBlazorRenderer, IAsyncDisposable
 {
-    private BlocksOnGrid3DRendererOverBinaryApi? _unityAppApi;
+    private BlocksOnGrid3DRendererOverBinaryApi? _appApi;
     private JsBinaryApiWithResponseRenderer _binaryApi;
 
     [CascadingParameter] 
@@ -44,27 +44,29 @@ public class BlocksOnGridThreeJSRenderer: BaseJsRenderer, IAsyncDisposable
         }
 
         await _binaryApi.InitializeJsApp(JsAppPath, _containerElementReference);
-        _unityAppApi = new BlocksOnGrid3DRendererOverBinaryApi(_binaryApi, new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory(), ParentApp);
-        _unityAppApi.OnMessageError += (bytes, exception) =>
+        _appApi = new BlocksOnGrid3DRendererOverBinaryApi(_binaryApi, new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory(), ParentApp);
+        _appApi.OnMessageError += (bytes, exception) =>
         {
             _logger.LogError($"Error deserializing message {bytes}", exception);
         };
         
-        await ParentApp.AddRenderer(new BlocksOnGrid3DBlazorRenderer(_unityAppApi, _containerElementReference));
+        await ParentApp.AddRenderer(this);
         
         await base.OnAfterRenderAsync(firstRender);
     }
 
+    IBlocksOnGrid3DRenderer IBlocksOnGrid3DBlazorRenderer.RendererApi => _appApi;
+    ElementReference IBlocksOnGrid3DBlazorRenderer.RendererContainer => _containerElementReference;
 
 
     public async ValueTask DisposeAsync()
     {
-        if (_unityAppApi != null)
+        if (_appApi != null)
         {
-            await ParentApp.RemoveRenderer(_unityAppApi);
+            await ParentApp.RemoveRenderer(this);
         }
 
-        _unityAppApi?.Dispose();
+        _appApi?.Dispose();
         await _binaryApi.TryDisposeAsync();
     }
 }

@@ -96,10 +96,12 @@ https://github.com/dotnet/runtime/blob/main/src/mono/wasm/features.md
 
 All render modes, including Auto mode are supported ( render mode can be chosen on the Home page)
 
+
 ### Maui
 
 Blazor Maui Hybrid is supported (only tested as Desktop app)
 https://learn.microsoft.com/en-us/aspnet/core/blazor/hybrid/tutorials/maui-blazor-web-app?view=aspnetcore-9.0
+
 
 ## TODOs
 
@@ -113,37 +115,31 @@ benchmarks
   - MemoryPack (avg 0.33 ms)
 
 
-
 # Initialization order
 
-
 - controller exists first (ie controller is singleton and gets a single renderer attached, the controller does not handle lifecycle of renderers, only should SetController to null when renderer is being replaced)
-- renderer is created and prepares to listen
+- renderer is created and prepares to listen and sets the EventHandler to the controller
 - renderer calls SetRenderer on the Controller
-- Controller prepares itself to listen during SetRenderer execution
-- ie after SetRenderer, renderer can send messages to controller, and renderer should expect messages to alraedy arrive during SetRenderer execution
+- Controller starts sending commands during SetRenderer execution
+- ie renderer can send messages to controller even before registering (as the controller has multiple renderers so it is considered more as API, than a tightly bound pair)
+- and renderer should expect messages to already arrive during SetRenderer execution
+
 
 ### Prio 0 (improve generic packages)
-
-This should depends on what are you doing. The Example app is first attaching the renderers, therefore the renderer needs to exist, but is not ready to have messages invoked on it, as the EventHandler is not set.
-This could be simplified if desired, ie if the renderers will not send anything to controller until initialized (based on internal logic). You could create renderer, set the event handler to Controller (as kinda using the controllers API), and then attach the renderer.
-This assumes the Controller does not need to know about the renderer when any of the invoked events happen (hmm as the invoked events either way do not have reference to controller, we could assume this already, as there is no way to tell which renderer the messages came from)
-
-
-Handle warnings in generated code in Unity
-
-The blazor renderers should inherit directly IBlocksOnGrid3DBlazorRenderer interface, to prevent creation of extra wrapper and have consistent removeRenderer, and then reflection about the type makes more sense (e.g. get type name)
-
-Reconsider the namings, as the concepts might not be aligned any more
 
 Rest API using memory pack/ json
 - using an interface create a rest api
   - using auth and from* attributes and respecting them
 - also create a wrapper for the service that checks the attributes when in wasm context
+e.g. create a shared state on the server side, when serverside rendering you can get it direct, in WASM via HTTP
 
+Handle warnings in Generator
 
-- publish generator and supporting libraries as nuget
+publish generator and supporting libraries as nuget
 
+remove memory pack typescript support, use direct interop only! (for now at least, as I do not want to maintain memorypack fork)
+
+add support for special argument type, of the generated type itself, ie to get renderer instance fin controller methods
 
 ### Prio 1 (improve sample app)
 
@@ -164,6 +160,7 @@ Rest API using memory pack/ json
 - implement GLB loading for babylon
 
 - check if current GLTF instancing in Unity is working
+
 
 ### Prio 2 (backlog)
 
@@ -226,6 +223,7 @@ Rest API using memory pack/ json
         - this does not interop all types, so method returning Task<ArraySegment<byte>> has to be split into 2 calls retuning Task and ArraySegment<byte>
         - the interop is staticky, ie you do not have instances to interop with, meaning you need to pass around an ID of the instance (if you want to handle case where you have multiple renders at the same time)
         - NOT worth it for now
+
 
 ### Prio 3 (future ideas)
 

@@ -1,13 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 
-namespace BlazorWith3d.Unity.CodeGenerator;
+namespace BlazorWith3d.CodeGenerator;
 
 
 internal record AppInfo(
     TypeInfo app,
-    string eventHandlerConceptName,
-    bool eventHandlerNullable,
     TypeInfo eventHandler,
     IReadOnlyList<MethodInfo> methods,
     IReadOnlyList<MethodInfo> events)

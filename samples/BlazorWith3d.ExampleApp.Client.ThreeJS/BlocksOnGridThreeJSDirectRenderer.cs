@@ -8,7 +8,7 @@ using Microsoft.JSInterop;
 
 namespace BlazorWith3d.ExampleApp.Client.ThreeJS;
 
-public class BlocksOnGridThreeJSDirectRenderer : BaseJsRenderer, IAsyncDisposable
+public class BlocksOnGridThreeJSDirectRenderer : BaseJsRenderer, IBlocksOnGrid3DBlazorRenderer, IAsyncDisposable
 {
     [CascadingParameter] 
     public required IBlocksOnGrid3DBlazorController ParentApp { get; set; }
@@ -42,14 +42,17 @@ public class BlocksOnGridThreeJSDirectRenderer : BaseJsRenderer, IAsyncDisposabl
         _messageReceiverProxyReference.Value.SetTypescriptApp(app);
         _messageReceiverProxyReference.Value.SetEventHandler(ParentApp);
         
-        await ParentApp.AddRenderer(new BlocksOnGrid3DBlazorRenderer(_messageReceiverProxyReference.Value, _containerElementReference));
+        await ParentApp.AddRenderer(this);
     }
+    
+    IBlocksOnGrid3DRenderer IBlocksOnGrid3DBlazorRenderer.RendererApi => _messageReceiverProxyReference.Value;
+    ElementReference IBlocksOnGrid3DBlazorRenderer.RendererContainer => _containerElementReference;
 
     public async ValueTask DisposeAsync()
     {
         if (_messageReceiverProxyReference != null)
         {
-            await ParentApp.RemoveRenderer(_messageReceiverProxyReference.Value);
+            await ParentApp.RemoveRenderer(this);
         }
         _messageReceiverProxyReference?.Dispose();
     }

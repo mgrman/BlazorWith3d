@@ -28,9 +28,9 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
 
         }
 
-        public T? DeserializeObject<T>(ArraySegment<byte> bytes, out int readBytes)
+        public T DeserializeObject<T>(ArraySegment<byte> bytes, out int readBytes)
         {
-            T? item=default;
+            T? item = default;
 
             var readerState = MemoryPackReaderOptionalStatePool.Rent(MemoryPackSerializerOptions.Default);
 
@@ -39,8 +39,7 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
             {
                 reader.ReadValue(ref item);
                 readBytes = reader.Consumed;
-
-                return item;
+                return item!;
             }
             finally
             {

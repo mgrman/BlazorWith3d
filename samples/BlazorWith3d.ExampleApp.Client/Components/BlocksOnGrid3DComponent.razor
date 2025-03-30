@@ -1,18 +1,14 @@
 ﻿@using System.Diagnostics
-@using System.Diagnostics.CodeAnalysis
 @using System.Drawing
 @using System.Numerics
 @using Blazored.LocalStorage
 @using BlazorWith3d.ExampleApp.Client.Shared
-@using BlazorWith3d.Unity
-@using BlazorWith3d.Shared
 @using Microsoft.Extensions.Logging
 @inject ILocalStorageService LocalStorage
 @inject IServiceProvider Services
 @inject ILogger<BlocksOnGrid3DComponent> Logger
 @inject IJSRuntime JsRuntime
 @implements IAsyncDisposable
-@implements IBlocksOnGrid3DController
 @implements IBlocksOnGrid3DBlazorController
 
 <text>@(RendererInfo.Name) @(RendererInfo.IsInteractive?"Interactive":"Static")</text>
@@ -273,12 +269,12 @@
     }
 
     
-    public async ValueTask RemoveRenderer(IBlocksOnGrid3DRenderer rendererApi)
+    public async ValueTask RemoveRenderer(IBlocksOnGrid3DBlazorRenderer renderer)
     {
         await _initializeRendererSemaphoreSlim.WaitAsync();
         try
         {
-            _renderers.RemoveAll(o=>o.RendererApi== rendererApi);
+            _renderers.Remove(renderer);
         }
         finally
         {
@@ -286,9 +282,9 @@
         }
     }
 
-    public async ValueTask OnUnityAppInitialized(UnityAppInitialized msg)
+    public async ValueTask OnRendererInitialized(RendererInitialized msg)
     {
-        Logger.LogInformation("OnUnityAppInitialized");
+        Logger.LogInformation("RendererInitialized");
     }
 
     private async ValueTask ReplayState(IBlocksOnGrid3DBlazorRenderer? rendererApi)
@@ -395,7 +391,7 @@
             }
             avgStopwatch.Stop();
 
-            _perfResponse += $"{testCount} messages there and back, took {avgStopwatch.ElapsedMilliseconds:F2} ms (avg {(decimal)avgStopwatch.ElapsedMilliseconds / testCount:F2} ms) ";
+            _perfResponse += $"{testCount} messages there and back for {rendererApi.GetType().Name}, took {avgStopwatch.ElapsedMilliseconds:F2} ms (avg {(decimal)avgStopwatch.ElapsedMilliseconds / testCount:F2} ms) ";
 
         }
         
@@ -444,9 +440,7 @@
         {
             Ray = screenToRayResponse.Ray
         });
-
-        //#error raycast is somehow not hitting anything in unity!!!
-
+        
         if (!raycastResponse.HitBlockId.HasValue)
         {
             return;

@@ -35,17 +35,30 @@ public class JsBinaryApiWithResponseRenderer: IJsBinaryApi
 
     private void OnMessageBytesReceived(byte[] messageBytes)
     {
+        if (MainMessageHandler == null)
+        {
+            throw new InvalidCastException(
+                $"Received a message {messageBytes.Length} without a MainMessageHandler being set!");
+        }
+
         MainMessageHandler.Invoke(messageBytes);
     }
-    
+
     private async ValueTask<byte[]> OnMessageBytesWithResponseReceived(byte[] messageBytes)
     {
-       var response= await MainMessageWithResponseHandler.Invoke(messageBytes);
-       var responseByteArray= response.WrittenArray.ToArray();// ToArray() as JS interop only has fast path for byte[] type
-       response.Dispose();
-       return responseByteArray;
+        if (MainMessageWithResponseHandler == null)
+        {
+            throw new InvalidCastException(
+                $"Received a message {messageBytes.Length} without a MainMessageWithResponseHandler being set!");
+        }
+
+        var response = await MainMessageWithResponseHandler.Invoke(messageBytes);
+        var responseByteArray =
+            response.WrittenArray.ToArray(); // ToArray() as JS interop only has fast path for byte[] type
+        response.Dispose();
+        return responseByteArray;
     }
-    
+
     public async ValueTask SendMessage(IBufferWriterWithArraySegment<byte>  messageBytes)
     {
         if (_typescriptApp == null)
@@ -106,8 +119,12 @@ public class JsBinaryApiWithResponseRenderer: IJsBinaryApi
     {
         _messageReceiverProxyReference?.Dispose();
         _messageReceiverProxyReference = null;
-        await _typescriptApp.TryInvokeVoidAsync(_logger, "Quit");
-        await _typescriptApp.TryDisposeAsync();
+        if (_typescriptApp != null)
+        {
+            await _typescriptApp.TryInvokeVoidAsync(_logger, "Quit");
+            await _typescriptApp.TryDisposeAsync();
+        }
+
         _typescriptApp = null;
     }
 

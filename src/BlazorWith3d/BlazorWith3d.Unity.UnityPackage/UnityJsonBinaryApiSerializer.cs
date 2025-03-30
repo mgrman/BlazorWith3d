@@ -29,7 +29,7 @@ namespace BlazorWith3d.Unity
             
         }
 
-        public T? DeserializeObject<T>(ArraySegment<byte>  bytes, out int readBytes)
+        public T DeserializeObject<T>(ArraySegment<byte>  bytes, out int readBytes)
         {
             var headerBytes = BitConverter.ToInt32(bytes.Slice(0, 4));
             
@@ -45,7 +45,7 @@ namespace BlazorWith3d.Unity
                 var valueWrapper = new ValueWrapper<T>();
 
                 JsonUtility.FromJsonOverwrite(json, valueWrapper);
-                    return valueWrapper.value;
+                return valueWrapper.value;
             }
 
             return JsonUtility.FromJson<T>(json);
