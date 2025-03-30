@@ -116,6 +116,7 @@ benchmarks
 
 # Initialization order
 
+
 - controller exists first (ie controller is singleton and gets a single renderer attached, the controller does not handle lifecycle of renderers, only should SetController to null when renderer is being replaced)
 - renderer is created and prepares to listen
 - renderer calls SetRenderer on the Controller
@@ -123,6 +124,11 @@ benchmarks
 - ie after SetRenderer, renderer can send messages to controller, and renderer should expect messages to alraedy arrive during SetRenderer execution
 
 ### Prio 0 (improve generic packages)
+
+This should depends on what are you doing. The Example app is first attaching the renderers, therefore the renderer needs to exist, but is not ready to have messages invoked on it, as the EventHandler is not set.
+This could be simplified if desired, ie if the renderers will not send anything to controller until initialized (based on internal logic). You could create renderer, set the event handler to Controller (as kinda using the controllers API), and then attach the renderer.
+This assumes the Controller does not need to know about the renderer when any of the invoked events happen (hmm as the invoked events either way do not have reference to controller, we could assume this already, as there is no way to tell which renderer the messages came from)
+
 
 Handle warnings in generated code in Unity
 

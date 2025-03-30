@@ -143,11 +143,11 @@ namespace BlazorWith3d.Unity
                         await (MainMessageHandler?.Invoke(msg) ?? new ValueTask());
                     }
                 }
-                catch (OperationCanceledException ex)
+                catch (OperationCanceledException)
                 {
                     return;
                 }
-                catch (WebSocketException ex)
+                catch (WebSocketException)
                 {
                     // Debug.LogWarning($"HandleWebSocket OnMessageFromUnity error {ex.Message}");
                     // if (ex.InnerException != null)

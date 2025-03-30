@@ -55,7 +55,7 @@ internal static class HelloSourceGenerator_DotnetApis
                 }
                 sb.AppendLine($"public bool IsProcessingMessages => _binaryApi.MainMessageHandler == ProcessMessages;");
 
-                sb.AppendLine($"public async ValueTask SetEventHandler({info.eventHandler.typeName}{(info.eventHandlerNullable?"?":"")} {eventHandlerVarName})");
+                sb.AppendLine($"public void SetEventHandler({info.eventHandler.typeName}{(info.eventHandlerNullable?"?":"")} {eventHandlerVarName})");
                 using (sb.IndentWithCurlyBrackets())
                 {
                     sb.AppendLine("if(_disposed)");

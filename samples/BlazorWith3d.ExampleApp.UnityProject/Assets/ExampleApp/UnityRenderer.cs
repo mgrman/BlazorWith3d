@@ -41,7 +41,7 @@ namespace ExampleApp
         }
 
         // called by the controller signifying it can accept messages
-        public async ValueTask SetController(IBlocksOnGrid3DController controller)
+        public ValueTask SetController(IBlocksOnGrid3DController controller)
         {
             _eventHandler = controller;
             
@@ -50,6 +50,7 @@ namespace ExampleApp
             _templateRoot.transform.parent = transform;
             
             controller?.OnUnityAppInitialized(new UnityAppInitialized());
+            return new ValueTask();
         }
 
         public ValueTask InitializeRenderer(RendererInitializationInfo msg)

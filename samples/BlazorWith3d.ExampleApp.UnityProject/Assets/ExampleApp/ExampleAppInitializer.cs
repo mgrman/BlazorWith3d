@@ -32,7 +32,11 @@ namespace ExampleApp
 
         private readonly SemaphoreSlim _semaphore= new SemaphoreSlim(1);
 
-        public async void Start()
+        public 
+#if !UNITY_EDITOR
+            async 
+#endif
+            void Start()
         {
             #if UNITY_WEBGL && !UNITY_EDITOR
             WebGLInput.captureAllKeyboardInput = false;
