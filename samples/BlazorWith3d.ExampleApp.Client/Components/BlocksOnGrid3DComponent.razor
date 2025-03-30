@@ -204,7 +204,6 @@
     private readonly List<IBlocksOnGrid3DBlazorRenderer> _renderers= new ();
     private DotNetObjectReference<JsProxy>? _jsProxyReference;
 
-    private UnityAppInitialized _appState;
     private (IBlocksOnGrid3DBlazorRenderer renderer, AddBlockInstance instance, float offsetX,float offsetY, float dragPlaneZ)? _dragging;
     private IJSObjectReference module;
     private IJSObjectReference? _mouseEventsDispose;
@@ -251,7 +250,7 @@
 
     private bool _isMouseMoveBeingHandled;
     
-    public async ValueTask<IBlocksOnGrid3DController> AddRenderer(IBlocksOnGrid3DBlazorRenderer rendererApi)
+    public async ValueTask AddRenderer(IBlocksOnGrid3DBlazorRenderer rendererApi)
     {
         await _initializeRendererSemaphoreSlim.WaitAsync();
         try
@@ -266,9 +265,6 @@
                 RequestedCameraFoV = 60
             });
             await ReplayState(rendererApi);
-            
-
-            return this;
         }
         finally
         {
@@ -292,7 +288,7 @@
 
     public async ValueTask OnUnityAppInitialized(UnityAppInitialized msg)
     {
-        _appState = msg;
+        Logger.LogInformation("OnUnityAppInitialized");
     }
 
     private async ValueTask ReplayState(IBlocksOnGrid3DBlazorRenderer? rendererApi)

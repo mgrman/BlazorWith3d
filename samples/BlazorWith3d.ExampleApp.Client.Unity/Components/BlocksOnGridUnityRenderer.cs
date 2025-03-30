@@ -35,18 +35,14 @@ public class BlocksOnGridUnityRenderer:BaseUnityRenderer, IAsyncDisposable
         _binaryApi=new JsBinaryApiWithResponseRenderer(_jsRuntime,_logger);
         
         await _binaryApi.InitializeJsApp(this._unityInitializationJsPath, _containerElementReference,"showUnity", GetExtraArg(UnityBuildFilesRootPath, false));
-        var unityAppApi = new BlocksOnGrid3DRendererOverBinaryApi(_binaryApi, new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory());
+        var unityAppApi = new BlocksOnGrid3DRendererOverBinaryApi(_binaryApi, new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory(),ParentApp);
         unityAppApi.OnMessageError += (bytes, exception) =>
         {
             _logger.LogError($"Error deserializing message {bytes}", exception);
         };
         _unityAppApi=unityAppApi;
         
-        
-        var eventHandler=await ParentApp.AddRenderer(new BlocksOnGrid3DBlazorRenderer(_unityAppApi,_containerElementReference));
-        await _unityAppApi.SetEventHandler(eventHandler);
-        
-        await _binaryApi.OnConnectedToController();
+        await ParentApp.AddRenderer(new BlocksOnGrid3DBlazorRenderer(_unityAppApi,_containerElementReference));
         
         await base.OnAfterRenderAsync(firstRender);
     }

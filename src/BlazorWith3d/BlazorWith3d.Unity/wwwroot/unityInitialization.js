@@ -54,10 +54,6 @@ export function InitializeUnityApi(unityInstance, onMessageReceivedCallback, onM
 
     }
 
-    unityApi.OnConnectedToController = async function () {
-        await unityInstance.Module["BlazorApi_OnConnectedToController"]();
-
-    }
 
     return unityApi;
 }

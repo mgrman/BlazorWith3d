@@ -40,11 +40,9 @@ public class BlocksOnGridThreeJSDirectRenderer : BaseJsRenderer, IAsyncDisposabl
         
         var app= await module.InvokeAsync<IJSObjectReference>(InitializeMethodName, _containerElementReference,_messageReceiverProxyReference);
         _messageReceiverProxyReference.Value.SetTypescriptApp(app);
+        _messageReceiverProxyReference.Value.SetEventHandler(ParentApp);
         
         await ParentApp.AddRenderer(new BlocksOnGrid3DBlazorRenderer(_messageReceiverProxyReference.Value, _containerElementReference));
-        _messageReceiverProxyReference.Value.SetEventHandler(ParentApp);
-
-        await app.InvokeVoidAsync("OnConnectedToController");
     }
 
     public async ValueTask DisposeAsync()

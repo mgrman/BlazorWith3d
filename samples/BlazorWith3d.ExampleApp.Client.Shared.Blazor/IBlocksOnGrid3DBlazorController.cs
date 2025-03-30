@@ -9,7 +9,7 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
 {
     public interface IBlocksOnGrid3DBlazorController : IBlocksOnGrid3DController
     {
-        ValueTask<IBlocksOnGrid3DController> AddRenderer(IBlocksOnGrid3DBlazorRenderer rendererApi);
+        ValueTask AddRenderer(IBlocksOnGrid3DBlazorRenderer rendererApi);
         ValueTask RemoveRenderer(IBlocksOnGrid3DRenderer rendererApi);
     }
     

@@ -120,13 +120,9 @@ export class DebugApp implements IBlocksOnGrid3DRenderer {
 
     }
 
-    public OnConnectedToController():void{
-
-        this._methodInvoker.OnUnityAppInitialized(new UnityAppInitialized()).then(_ => console.log("UnityAppInitialized invoked"));
-    }
-    
     public async InitializeRenderer(_: RendererInitializationInfo): Promise<void> {
-        console.log("Quit called");
+        console.log("InitializeRenderer called");
+        this._methodInvoker.OnUnityAppInitialized(new UnityAppInitialized()).then(_ => console.log("UnityAppInitialized invoked"));
     }
 
     public Quit(): void {

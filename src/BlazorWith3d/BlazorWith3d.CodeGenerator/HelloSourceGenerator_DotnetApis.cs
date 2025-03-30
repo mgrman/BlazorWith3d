@@ -40,35 +40,18 @@ internal static class HelloSourceGenerator_DotnetApis
                 sb.AppendLine();
                 sb.AppendLine($"private readonly IBinaryApiSerializer _serializer;");
                 sb.AppendLine($"private readonly IBinaryApi _binaryApi;");
-                sb.AppendLine($"private {info.eventHandler.typeName}? _eventHandler;");
+                sb.AppendLine($"private {info.eventHandler.typeName} _eventHandler;");
                 sb.AppendLine($"private readonly IBufferWriterFactory<byte> _writerFactory;");
                 sb.AppendLine($"private bool _setMainMessageHandler;");
                 sb.AppendLine($"private bool _disposed;");
 
                 sb.AppendLine();
-                sb.AppendLine($"public {info.app.TypeNameWithoutIPrefix}OverBinaryApi(IBinaryApi binaryApi, IBinaryApiSerializer serializer, IBufferWriterFactory<byte> writerFactory)");
+                sb.AppendLine($"public {info.app.TypeNameWithoutIPrefix}OverBinaryApi(IBinaryApi binaryApi, IBinaryApiSerializer serializer, IBufferWriterFactory<byte> writerFactory, {info.eventHandler.typeName}{(info.eventHandlerNullable?"?":"")} {eventHandlerVarName})");
                 using (sb.IndentWithCurlyBrackets())
                 {
                     sb.AppendLine("_binaryApi = binaryApi;");
                     sb.AppendLine($"_serializer = serializer;");
                     sb.AppendLine($"_writerFactory = writerFactory;");
-                }
-                sb.AppendLine($"public bool IsProcessingMessages => _binaryApi.MainMessageHandler == ProcessMessages;");
-
-                sb.AppendLine($"public void SetEventHandler({info.eventHandler.typeName}{(info.eventHandlerNullable?"?":"")} {eventHandlerVarName})");
-                using (sb.IndentWithCurlyBrackets())
-                {
-                    sb.AppendLine("if(_disposed)");
-                    using (sb.IndentWithCurlyBrackets())
-                    {
-                        sb.AppendLine($"throw new ObjectDisposedException(\"{info.app.TypeNameWithoutIPrefix}OverBinaryApi\");");
-                    }
-                    
-                    sb.AppendLine("if(_eventHandler!=null)");
-                    using (sb.IndentWithCurlyBrackets())
-                    {
-                        sb.AppendLine($"throw new InvalidOperationException(\"Set{info.eventHandlerConceptName} can only be called once!\");");
-                    }
                     sb.AppendLine("if(_binaryApi.MainMessageHandler != null && _binaryApi.MainMessageHandler != ProcessMessages)");
                     using (sb.IndentWithCurlyBrackets())
                     {
@@ -80,6 +63,7 @@ internal static class HelloSourceGenerator_DotnetApis
                     sb.AppendLine($"_binaryApi.MainMessageHandler = ProcessMessages;");
                     sb.AppendLine($"_binaryApi.MainMessageWithResponseHandler = ProcessMessagesWithResponse;");
                 }
+                sb.AppendLine($"public bool IsProcessingMessages => _binaryApi.MainMessageHandler == ProcessMessages;");
 
                 sb.AppendLine($"public event Action<ArraySegment<byte>, Exception> OnMessageError;");
 

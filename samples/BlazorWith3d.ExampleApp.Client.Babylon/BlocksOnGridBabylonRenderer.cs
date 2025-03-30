@@ -38,16 +38,12 @@ public class BlocksOnGridBabylonRenderer:BaseJsRenderer, IAsyncDisposable
         
         await _binaryApi.InitializeJsApp(JsAppPath, _containerElementReference);
         
-        _appApi = new BlocksOnGrid3DRendererOverBinaryApi(_binaryApi, new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory());
+        _appApi = new BlocksOnGrid3DRendererOverBinaryApi(_binaryApi, new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory(), ParentApp);
         _appApi.OnMessageError += (bytes, exception) =>
         {
             _logger.LogError($"Error deserializing message {bytes}", exception);
         };
-        var eventHandler=await ParentApp.AddRenderer(new BlocksOnGrid3DBlazorRenderer(_appApi,_containerElementReference));
-        await _appApi.SetEventHandler(eventHandler);
-        
-        await _binaryApi.OnConnectedToController();
-        
+        await ParentApp.AddRenderer(new BlocksOnGrid3DBlazorRenderer(_appApi,_containerElementReference));
     }
 
     public async ValueTask DisposeAsync()

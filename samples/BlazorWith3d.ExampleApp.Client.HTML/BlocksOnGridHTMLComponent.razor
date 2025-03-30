@@ -66,11 +66,10 @@
 
         jsInteropModule = await new Lazy<Task<IJSObjectReference>>(() => JsRuntime.InvokeAsync<IJSObjectReference>("import", "./_content/BlazorWith3d.ExampleApp.Client.HTML/jsInterop.js").AsTask()).Value;
 
-        var controller= await ParentApp.AddRenderer(new BlocksOnGrid3DBlazorRenderer(this,_rendererContainerReference));
-
-        _eventHandler = controller;
-        controller?.OnUnityAppInitialized(new UnityAppInitialized());
+        _eventHandler = ParentApp;
         
+        await ParentApp.AddRenderer(new BlocksOnGrid3DBlazorRenderer(this,_rendererContainerReference));
+
         var bounds = await GetBoundingClientRect(_rendererContainerReference);
 
         var desiredCanvasSize = 10f;
@@ -105,6 +104,8 @@ public async ValueTask DisposeAsync()
 
         _backgroundColor = msg.BackgroundColor.ToColor();
         StateHasChanged();
+        _eventHandler?.OnUnityAppInitialized(new UnityAppInitialized());
+
     }
 
     public async ValueTask<PerfCheck> InvokePerfCheck(PerfCheck msg)

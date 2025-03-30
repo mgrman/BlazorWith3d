@@ -65,7 +65,6 @@ internal static class HelloSourceGenerator_TypeScript
         using (sb.IndentWithCurlyBrackets())
         {
             sb.AppendLine($"Quit():void;");
-            sb.AppendLine($"OnConnectedToController():void;");
             foreach (var e in info.events)
             {
 

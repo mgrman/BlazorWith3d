@@ -41,19 +41,17 @@ namespace ExampleApp
         }
 
         // called by the controller signifying it can accept messages
-        public ValueTask SetController(IBlocksOnGrid3DController controller)
+        public ValueTask Initialize(IBlocksOnGrid3DController controller)
         {
             _eventHandler = controller;
             
             _templateRoot = new GameObject("BlockTemplateRoot");
             _templateRoot.SetActive(false);
             _templateRoot.transform.parent = transform;
-            
-            controller?.OnUnityAppInitialized(new UnityAppInitialized());
             return new ValueTask();
         }
 
-        public ValueTask InitializeRenderer(RendererInitializationInfo msg)
+        public async ValueTask InitializeRenderer(RendererInitializationInfo msg)
         {
             Debug.Log($"BlazorControllerInitialized: ");
             _camera.transform.position = new Vector3(msg.RequestedCameraPosition.X, msg.RequestedCameraPosition.Y, -msg.RequestedCameraPosition.Z);
@@ -62,7 +60,8 @@ namespace ExampleApp
             
             _camera.backgroundColor = msg.BackgroundColor.ToUnity();
             _camera.fieldOfView = msg.RequestedCameraFoV;
-            return new ValueTask();
+            
+            await _eventHandler.OnUnityAppInitialized(new UnityAppInitialized());
         }
         
 

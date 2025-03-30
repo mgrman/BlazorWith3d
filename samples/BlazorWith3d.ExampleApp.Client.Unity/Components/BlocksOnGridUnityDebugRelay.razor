@@ -7,7 +7,9 @@
 @implements IAsyncDisposable
 @inject DebugRelayUnityApi DebugRelayUnityApi
 
-<img @ref="_image"  draggable="false" style="width:100%; height: 100%; position: relative; pointer-events: none;  user-select: none;"/>
+<div  style="width: 500px; height: 500px; position: relative; border: red 1px solid; user-select: none">
+    <img @ref="_image"  draggable="false" style="width:100%; height: 100%; position: relative; pointer-events: none;  user-select: none;"/>
+</div>
 <script>
     window.setSource = async (element, stream, contentType, title) => {
         const arrayBuffer = await stream.arrayBuffer();
@@ -52,16 +54,13 @@
                 {
                     DebugRelayUnityApi.NewFrame += UpdateFrame;
                     var mainThreadApi = new BinaryApiThreadWrapper(obj, async t => await InvokeAsync(async () => await t()));
-                    unityAppApi = new BlocksOnGrid3DRendererOverBinaryApi(new BinaryApiOverBinaryMessageApi(mainThreadApi), new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory());
+                    unityAppApi = new BlocksOnGrid3DRendererOverBinaryApi(new BinaryApiOverBinaryMessageApi(mainThreadApi), new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory(),ParentApp);
                     unityAppApi.OnMessageError += (o, e) =>
                     {
                         Logger.LogError(e, $"error handling message {string.Join(",", o)}");
                     };
 
-                    var eventHandler = await ParentApp.AddRenderer(new BlocksOnGrid3DBlazorRenderer(unityAppApi, _image));
-                    await unityAppApi.SetEventHandler(eventHandler);
-
-                    // no need to notify that controller is ready, as the debug relay starts processing messages only after this handler finishes
+                    await ParentApp.AddRenderer(new BlocksOnGrid3DBlazorRenderer(unityAppApi, _image));
                 }
                 else
                 {

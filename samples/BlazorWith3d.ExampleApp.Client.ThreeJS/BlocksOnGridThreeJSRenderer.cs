@@ -44,16 +44,13 @@ public class BlocksOnGridThreeJSRenderer: BaseJsRenderer, IAsyncDisposable
         }
 
         await _binaryApi.InitializeJsApp(JsAppPath, _containerElementReference);
-        _unityAppApi = new BlocksOnGrid3DRendererOverBinaryApi(_binaryApi, new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory());
+        _unityAppApi = new BlocksOnGrid3DRendererOverBinaryApi(_binaryApi, new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory(), ParentApp);
         _unityAppApi.OnMessageError += (bytes, exception) =>
         {
             _logger.LogError($"Error deserializing message {bytes}", exception);
         };
         
-        var eventHandler=await ParentApp.AddRenderer(new BlocksOnGrid3DBlazorRenderer(_unityAppApi, _containerElementReference));
-        await _unityAppApi.SetEventHandler(eventHandler);
-        
-        await _binaryApi.OnConnectedToController();
+        await ParentApp.AddRenderer(new BlocksOnGrid3DBlazorRenderer(_unityAppApi, _containerElementReference));
         
         await base.OnAfterRenderAsync(firstRender);
     }

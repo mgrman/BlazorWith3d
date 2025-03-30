@@ -105,11 +105,6 @@ export class DebugApp implements IBlocksOnGrid3DRenderer {
         this.raycaster = new THREE.Raycaster();
     }
     
-    public OnConnectedToController():void{
-
-        this._methodInvoker.OnUnityAppInitialized(new UnityAppInitialized()).then(_ => console.log("UnityAppInitialized invoked"));
-    }
-
     private HandleResize():void {
 
         this.canvas.style.width = "100%";
@@ -136,6 +131,8 @@ export class DebugApp implements IBlocksOnGrid3DRenderer {
         this.camera.position.z = msg.requestedCameraPosition.z;
         // the camera in ThreeJS is looking down negativeZ direciton, so no need to rotate
         this.camera.setRotationFromEuler(new THREE.Euler(THREE.MathUtils.degToRad(msg.requestedCameraRotation.x), THREE.MathUtils.degToRad(msg.requestedCameraRotation.y), THREE.MathUtils.degToRad(msg.requestedCameraRotation.z)));
+
+        this._methodInvoker.OnUnityAppInitialized(new UnityAppInitialized()).then(_ => console.log("UnityAppInitialized invoked"));
     }
 
     public async InvokeTriggerTestToBlazor(_: TriggerTestToBlazor): Promise<void> {
