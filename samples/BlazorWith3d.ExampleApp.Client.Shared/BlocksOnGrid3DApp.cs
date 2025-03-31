@@ -28,7 +28,7 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
     [GenerateBinaryApi(typeof(IBlocksOnGrid3DRenderer))]
     public partial interface IBlocksOnGrid3DController
     {
-        ValueTask OnRendererInitialized(RendererInitialized msg);
+        ValueTask OnRendererInitialized(RendererInitialized msg, IBlocksOnGrid3DRenderer renderer);
         ValueTask<TestToBlazor> OnTestToBlazor(TestToBlazor msg);
     }
     

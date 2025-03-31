@@ -282,9 +282,9 @@
         }
     }
 
-    public async ValueTask OnRendererInitialized(RendererInitialized msg)
+    public async ValueTask OnRendererInitialized(RendererInitialized msg, IBlocksOnGrid3DRenderer renderer)
     {
-        Logger.LogInformation("RendererInitialized");
+        Logger.LogInformation($"Renderer {renderer.GetType().Name} is Initialized");
     }
 
     private async ValueTask ReplayState(IBlocksOnGrid3DBlazorRenderer? rendererApi)

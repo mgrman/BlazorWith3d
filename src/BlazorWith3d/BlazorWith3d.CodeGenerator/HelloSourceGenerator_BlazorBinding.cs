@@ -60,10 +60,10 @@ internal static class HelloSourceGenerator_BlazorBinding
                 foreach (var e in info.events)
                 {
                     sb.AppendLine($"[JSInvokable]");
-                    sb.AppendLine($"public ValueTask{(e.returnType == null ? "" : $"<{e.returnType.typeName}>")} {e.name}({e.arguments.Select(a => $"{a.argType.typeName} {a.argName}").JoinStringWithComma()})");
+                    sb.AppendLine($"public ValueTask{(e.returnType == null ? "" : $"<{e.returnType.typeName}>")} {e.name}({e.arguments.Where(a=>a.argType.typeName != info.app.typeName).Select(a => $"{a.argType.typeName} {a.argName}").JoinStringWithComma()})");
                     using (sb.IndentWithCurlyBrackets())
                     {
-                        sb.AppendLine($"return _eventHandler.{e.name}({e.arguments.Select(a => a.argName).JoinStringWithComma()});");
+                        sb.AppendLine($"return _eventHandler.{e.name}({e.arguments.Select(a =>(a.argType.typeName == info.app.typeName? "this" : a.argName)).JoinStringWithComma()});");
                     }
 
                 }

@@ -106,7 +106,7 @@
 
         _backgroundColor = msg.BackgroundColor.ToColor();
         StateHasChanged();
-        _eventHandler?.OnRendererInitialized(new RendererInitialized());
+        _eventHandler?.OnRendererInitialized(new RendererInitialized(), this);
 
     }
 

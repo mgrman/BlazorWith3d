@@ -135,7 +135,7 @@ export class DebugApp implements IBlocksOnGrid3DRenderer {
         // the camera in ThreeJS is looking down negativeZ direciton, so no need to rotate
         this.camera.setRotationFromEuler(new THREE.Euler(THREE.MathUtils.degToRad(msg.requestedCameraRotation.x), THREE.MathUtils.degToRad(msg.requestedCameraRotation.y), THREE.MathUtils.degToRad(msg.requestedCameraRotation.z)));
 
-        this._methodInvoker.OnRendererInitialized(new RendererInitialized()).then(_ => console.log("UnityAppInitialized invoked"));
+        this._methodInvoker.OnRendererInitialized(new RendererInitialized(), this).then(_ => console.log("UnityAppInitialized invoked"));
     }
 
     public async InvokeTriggerTestToBlazor(_: TriggerTestToBlazor): Promise<void> {

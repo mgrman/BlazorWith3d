@@ -61,7 +61,7 @@ namespace ExampleApp
             _camera.backgroundColor = msg.BackgroundColor.ToUnity();
             _camera.fieldOfView = msg.RequestedCameraFoV;
             
-            await _eventHandler.OnRendererInitialized(new RendererInitialized());
+            await _eventHandler.OnRendererInitialized(new RendererInitialized(), this);
         }
         
 

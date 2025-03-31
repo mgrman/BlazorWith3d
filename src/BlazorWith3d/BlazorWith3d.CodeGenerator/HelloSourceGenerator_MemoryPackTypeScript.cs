@@ -38,6 +38,7 @@ internal static class HelloSourceGenerator_TypeScript
             .ToList();
         var typesToGenerate = allTypes
             .Where(o => o.specialType == null && !o.isMemoryPackTypescriptGenerated)
+            .Where(o=>o.typeName!=  info.eventHandler.typeName && o.typeName!=  info.app.typeName )
             .ToList();
 
         foreach (var t in typesToGenerate)
@@ -129,6 +130,7 @@ internal static class HelloSourceGenerator_TypeScript
                 .Where(o => o != null)
                 .Where(o => options.GetTsType(o).needsImport)
                 .Select(o => o.typeName)
+                .Except(new []{ info.eventHandler.typeName, info.app.typeName })
                 .Distinct();
 
             foreach (var type in typesToImport)
@@ -178,10 +180,10 @@ internal static class HelloSourceGenerator_TypeScript
 
                 foreach (var m in info.methods)
                 {
-                    sb.AppendLine($"public {m.name}({m.arguments.Select(a => $"{a.argName}: {TsType(a.argType)}").JoinStringWithComma()}): Promise<{TsType(m.returnType)}>");
+                    sb.AppendLine($"public {m.name}({m.arguments.Select(a => $"{(a.argType.typeName == info.eventHandler.typeName?"_":a.argName)}: {TsType(a.argType)}").JoinStringWithComma()}): Promise<{TsType(m.returnType)}>");
                     using (sb.IndentWithCurlyBrackets())
                     {
-                        sb.AppendLine($"return this._dotnetObject.invokeMethodAsync(\"{m.name}\", {m.arguments.Select(a => $"{a.argName}").JoinStringWithComma()});");
+                        sb.AppendLine($"return this._dotnetObject.invokeMethodAsync(\"{m.name}\", {m.arguments.Where(a=>a.argType.typeName != info.eventHandler.typeName).Select(a => $"{a.argName}").JoinStringWithComma()});");
                     }
                 }
             }
@@ -208,7 +210,7 @@ internal static class HelloSourceGenerator_TypeScript
 
                 foreach (var (m, i) in info.methods.EnumerateWithIndex())
                 {
-                    sb.AppendLine($"public async {m.name}({m.arguments.Select(a => $"{a.argName}: {TsType(a.argType)}").JoinStringWithComma()}): Promise<{TsType(m.returnType)}>");
+                    sb.AppendLine($"public async {m.name}({m.arguments.Select(a => $"{(a.argType.typeName == info.eventHandler.typeName?"_":a.argName)}: {TsType(a.argType)}").JoinStringWithComma()}): Promise<{TsType(m.returnType)}>");
                     using (sb.IndentWithCurlyBrackets())
                     {
                         if (m.returnType == null)
@@ -217,6 +219,10 @@ internal static class HelloSourceGenerator_TypeScript
                             sb.AppendLine($"writer.writeInt8({i});");
                             foreach (var a in m.arguments)
                             {
+                                if (a.argType.typeName == info.eventHandler.typeName)
+                                {
+                                    continue;
+                                }
                                 sb.AppendLine(string.Format(options.GetTsType(a.argType).serializationFormat, "writer", a.argName));
 
                             }

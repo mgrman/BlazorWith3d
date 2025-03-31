@@ -124,6 +124,9 @@ benchmarks
 - ie renderer can send messages to controller even before registering (as the controller has multiple renderers so it is considered more as API, than a tightly bound pair)
 - and renderer should expect messages to already arrive during SetRenderer execution
 
+# Deploy issues
+CODE: 409 -> https://github.com/projectkudu/kudu/issues/3042#issuecomment-2200340379 
+
 
 ### Prio 0 (improve generic packages)
 
@@ -139,9 +142,6 @@ publish generator and supporting libraries as nuget
 
 Add option to generate TS bindings for Direct Interop without MemoryPack
 
-add support for special argument type, of the generated type itself, ie to get renderer instance fin controller methods
-
-add JSON only unity version (ie memorypack would be nice to have in an optional packages)
 
 add requirement that non MemoryPack TS types must be marked as sequential struct layout!
 
@@ -165,6 +165,7 @@ add requirement that non MemoryPack TS types must be marked as sequential struct
 
 - check if current GLTF instancing in Unity is working
 
+add JSON only unity version (ie memorypack would be nice to have in an optional packages)
 
 ### Prio 2 (backlog)
 

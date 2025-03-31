@@ -20,9 +20,8 @@ public static class Extensions
         {
             await jsObject.InvokeVoidAsync(method, args);
         }
-        catch (Exception ex)
+        catch (Exception )
         {
-            loggerIfError.LogError(ex,"BaseJsApi DisposeAsync failed to invoke Quit method");
         }
     }
 

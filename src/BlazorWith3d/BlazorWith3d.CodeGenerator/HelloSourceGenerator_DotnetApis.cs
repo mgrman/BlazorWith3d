@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace BlazorWith3d.CodeGenerator;
 
@@ -75,12 +77,12 @@ internal static class HelloSourceGenerator_DotnetApis
                         }
                         if (m.returnType == null)
                         {
-                            sb.AppendLine($"var encodedMessage=SerializeMessage({i}, {string.Join(", ", m.arguments.Select(a => a.argName))});");
+                            sb.AppendLine($"var encodedMessage=SerializeMessage({i}, {string.Join(", ", m.arguments.Where(a=>a.argType.typeName!= info.eventHandler.typeName).Select(a => a.argName))});");
                             sb.AppendLine($"await _binaryApi.SendMessage(encodedMessage);");
                         }
                         else
                         {
-                            sb.AppendLine($"var encodedMessage=SerializeMessage({i}, {string.Join(", ", m.arguments.Select(a => a.argName))});");
+                            sb.AppendLine($"var encodedMessage=SerializeMessage({i}, {string.Join(", ", m.arguments.Where(a=>a.argType.typeName!= info.eventHandler.typeName).Select(a => a.argName))});");
                             sb.AppendLine($"var responseMessage=await _binaryApi.SendMessageWithResponse(encodedMessage);");
                             sb.AppendLine($"var response=_serializer.DeserializeObject<{m.returnType.typeName}>(responseMessage, out var _);");
                             sb.AppendLine($"return response;");
@@ -179,8 +181,29 @@ internal static class HelloSourceGenerator_DotnetApis
                                 sb.AppendLine($"case {i}:");
                                 using (sb.IndentWithCurlyBrackets())
                                 {
-                                    sb.AppendLine($"var {e.arguments.Select((a, i) => $"arg{i}").JoinStringWithComma().WrapWithParenthesis(e.arguments.Length > 1)} = DeserializeObject<{e.arguments.Select(a => a.argType.typeName).JoinStringWithComma()}>(message.Slice(0,message.Count-1));");
-                                    sb.AppendLine($"await _eventHandler.{e.name}({e.arguments.Select((a, i) => $"arg{i}").JoinStringWithComma()});");
+                                    var deserializableArguments = e.arguments
+                                        .Where(a => a.argType.typeName != info.app.typeName)
+                                        .ToList();
+                                    
+                                    sb.AppendLine($"var {deserializableArguments.Select((a, i) => $"arg{i}").JoinStringWithComma().WrapWithParenthesis(deserializableArguments.Count > 1)} = DeserializeObject<{deserializableArguments.Select(a => a.argType.typeName).JoinStringWithComma()}>(message.Slice(0,message.Count-1));");
+                                    
+                                    var eventHandlerArgs=new List<string>();
+                                    int counter=0;
+                                    foreach (var a in e.arguments)
+                                    {
+                                        if (a.argType.typeName == info.app.typeName)
+                                        {
+                                            eventHandlerArgs.Add("this");
+                                        }
+                                        else
+                                        {
+                                            eventHandlerArgs.Add($"arg{counter}");
+                                            counter++;
+                                        }
+                                    }
+                                    
+                                    
+                                    sb.AppendLine($"await _eventHandler.{e.name}({eventHandlerArgs.JoinStringWithComma()});");
                                     sb.AppendLine($"break;");
                                 }
                             }
