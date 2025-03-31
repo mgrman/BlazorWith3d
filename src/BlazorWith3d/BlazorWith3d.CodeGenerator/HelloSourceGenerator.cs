@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -34,7 +35,7 @@ public class HelloSourceGenerator : ISourceGenerator
         }
 
 
-        var controllers = receiver.BinaryApiTypes.Select(typeDeclaration =>
+        var binaryApiTypes = receiver.BinaryApiTypes.Select(typeDeclaration =>
         {
 
             var methodHandlerType = GetTypeInfo(typeDeclaration.mainType);
@@ -64,16 +65,43 @@ public class HelloSourceGenerator : ISourceGenerator
         });
 
 
-        foreach (var appInfo in controllers)
+        foreach (var appInfo in binaryApiTypes)
         {
             var text = HelloSourceGenerator_DotnetApis.GenerateClass(appInfo);
             context.AddSource($"{appInfo.app.typeName}.g.cs", text);
+        }
+        
+        //# error need to get not just immediate arguments but also the full hierarchy, in a serializer specific way, ie all specialtype (e.g. numbers) are excluded etc
+        
+        var tsInteropTypes = receiver.MemoryPackTsInteropTypes.Select(typeDeclaration =>
+        {
+            var methodHandlerType = GetTypeInfo(typeDeclaration.mainType);
+            var eventHandlerType = GetTypeInfo(typeDeclaration.eventHandlerType, context.Compilation);
 
+            var methods = typeDeclaration.mainType.Members
+                .OfType<MethodDeclarationSyntax>()
+                .Select(m => GetMethodInfo(m, context.Compilation))
+                .Where(m => m != null)
+                .ToList();
+
+            var events = context.Compilation
+                .GetSemanticModel(typeDeclaration.eventHandlerType.SyntaxTree)
+                .GetTypeInfo(typeDeclaration.eventHandlerType)
+                .Type
+                .GetMembers()
+                .OfType<IMethodSymbol>()
+                .Select(m => GetMethodInfo(m, context.Compilation))
+                .Where(m => m != null)
+                .ToList();
+
+            return new AppInfo(methodHandlerType, eventHandlerType, methods, events);
+        });
+
+        foreach (var appInfo in tsInteropTypes)
+        {
             var generatedTypeScript = HelloSourceGenerator_TypeScript.GenerateTypeScriptClass(context, appInfo);
-
-            if (generatedTypeScript != null)
+            foreach(var (ts,path) in generatedTypeScript)
             {
-                var (ts, path) = generatedTypeScript.Value;
                 // save to file
                 try
                 {
@@ -90,7 +118,6 @@ public class HelloSourceGenerator : ISourceGenerator
                 }
             }
         }
-
 
         foreach (var o in receiver.BlazorBindingTypes)
         {
@@ -138,8 +165,8 @@ public class HelloSourceGenerator : ISourceGenerator
         {
             throw new InvalidOperationException();
         }
-
-        return new TypeInfo(typeName, namespaceName, false, typeDeclaration.AttributeLists.SelectMany(a => a.Attributes).Any(a => a.Name.NormalizeWhitespace().ToFullString().StartsWith("GenerateTypeScript")));
+        
+        return new TypeInfo(typeName, namespaceName, false, typeDeclaration.AttributeLists.SelectMany(a => a.Attributes).Any(a => a.Name.NormalizeWhitespace().ToFullString().StartsWith("GenerateTypeScript")), null,null);
     }
 
     private static TypeInfo GetTypeInfo(INamedTypeSymbol typeSymbol, Compilation compilation)
@@ -152,8 +179,21 @@ public class HelloSourceGenerator : ISourceGenerator
             typeName = typeSymbol.TypeArguments[0].Name;
         }
 
+        if (HelloSourceGenerator_TypeScript.TryGetSpecialType(typeSymbol, out var specialType))
+        {
+            return new TypeInfo(typeName, typeSymbol.ContainingNamespace.ToDisplayString(), isNullable, false, specialType, null!);
+        }
 
-        return new TypeInfo(typeName, typeSymbol.ContainingNamespace.ToDisplayString(), isNullable, typeSymbol.GetAttributes().Any(a=>a.AttributeClass.Name.StartsWith("GenerateTypeScript")));
+
+        var properties = typeSymbol.GetMembers().OfType<IPropertySymbol>()
+            .Select(o =>
+            {
+                var typeInfo = GetTypeInfo(o.Type as INamedTypeSymbol, compilation);
+                return (typeInfo, o.Name);
+            })
+            .ToList();
+
+        return new TypeInfo(typeName, typeSymbol.ContainingNamespace.ToDisplayString(), isNullable, typeSymbol.GetAttributes().Any(a=>a.AttributeClass.Name.StartsWith("GenerateTypeScript")), null, properties);
     }
 
     private static TypeInfo GetTypeInfo(TypeSyntax typeSyntax, Compilation compilation)
@@ -251,6 +291,7 @@ public class HelloSourceGenerator : ISourceGenerator
         public bool ShouldGenerate => BinaryApiTypes.Count > 0 || BlazorBindingTypes.Count>0;
 
         public List<(InterfaceDeclarationSyntax mainType, TypeSyntax eventHandlerType)> BinaryApiTypes { get; } = new();
+        public List<(InterfaceDeclarationSyntax mainType, TypeSyntax eventHandlerType)> MemoryPackTsInteropTypes { get; } = new();
 
         public List<(TypeDeclarationSyntax mainType, TypeSyntax methodHandlerType, TypeSyntax eventHandlerType)> BlazorBindingTypes { get; } = new();
         /// <summary>
@@ -263,11 +304,19 @@ public class HelloSourceGenerator : ISourceGenerator
             if (context.Node is InterfaceDeclarationSyntax interfaceDeclarationSyntax)
             {
                 if (interfaceDeclarationSyntax.AttributeLists.SelectMany(e => e.Attributes)
-                    .TryGet(e => e.Name.NormalizeWhitespace().ToFullString() == "GenerateBinaryApi", out var blazor3DAppAttr))
+                    .TryGet(e => e.Name.NormalizeWhitespace().ToFullString() == "GenerateBinaryApi", out var generateBinaryApiAttr))
                 {
-                    var eventHandlerType = (blazor3DAppAttr.ArgumentList.Arguments[0].Expression as TypeOfExpressionSyntax).Type;
+                    var eventHandlerType = (generateBinaryApiAttr.ArgumentList.Arguments[0].Expression as TypeOfExpressionSyntax).Type;
 
                     BinaryApiTypes.Add((interfaceDeclarationSyntax, eventHandlerType));
+                }
+                
+                if (interfaceDeclarationSyntax.AttributeLists.SelectMany(e => e.Attributes)
+                    .TryGet(e => e.Name.NormalizeWhitespace().ToFullString() == "GenerateTSTypesWithMemoryPack", out var generateTSTypesAttr))
+                {
+                    var eventHandlerType = (generateTSTypesAttr.ArgumentList.Arguments[0].Expression as TypeOfExpressionSyntax).Type;
+
+                    MemoryPackTsInteropTypes.Add((interfaceDeclarationSyntax, eventHandlerType));
                 }
             }
             

@@ -3,7 +3,6 @@
     "com.blazorwith3d.exampleapp.client.shared": "file:../../BlazorWith3d.ExampleApp.Client.Shared",
     "com.blazorwith3d.shared": "file:../../../src/BlazorWith3d/BlazorWith3d.Shared",
     "com.blazorwith3d.unity": "file:../../../src/BlazorWith3d/BlazorWith3d.Unity.UnityPackage",
-    "com.cysharp.memorypack": "https://github.com/Cysharp/MemoryPack.git?path=src/MemoryPack.Unity/Assets/MemoryPack.Unity#1.21.3",
     "com.github-glitchenzo.nugetforunity": "https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity#v4.1.1",
     "com.unity.cloud.gltfast": "6.10.3",
     "com.unity.ide.rider": "3.0.35",

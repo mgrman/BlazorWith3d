@@ -37,13 +37,4 @@ obj
 /src/BlazorWith3d/BlazorWith3d.Unity.UnityPackage/Generator/*
 !src/BlazorWith3d/BlazorWith3d.Unity.UnityPackage/Generator/BlazorWith3d.CodeGenerator.dll.meta
 
-/src/BlazorWith3d/BlazorWith3d.Unity.UnityPackage/MemoryPackFork/MemoryPack.Core/net7.0/*
-!/src/BlazorWith3d/BlazorWith3d.Unity.UnityPackage/MemoryPackFork/MemoryPack.Core/net7.0/MemoryPack.Core.dll.meta
-/src/BlazorWith3d/BlazorWith3d.Unity.UnityPackage/MemoryPackFork/MemoryPack.Core/net8.0/*
-!/src/BlazorWith3d/BlazorWith3d.Unity.UnityPackage/MemoryPackFork/MemoryPack.Core/net8.0/MemoryPack.Core.dll.meta
-/src/BlazorWith3d/BlazorWith3d.Unity.UnityPackage/MemoryPackFork/MemoryPack.Core/netstandard2.1/*
-!/src/BlazorWith3d/BlazorWith3d.Unity.UnityPackage/MemoryPackFork/MemoryPack.Core/netstandard2.1/MemoryPack.Core.dll.meta
-/src/BlazorWith3d/BlazorWith3d.Unity.UnityPackage/MemoryPackFork/MemoryPack.Generator/netstandard2.0/*
-!/src/BlazorWith3d/BlazorWith3d.Unity.UnityPackage/MemoryPackFork/MemoryPack.Generator/netstandard2.0/MemoryPack.Generator.dll.meta
-
 node_modules

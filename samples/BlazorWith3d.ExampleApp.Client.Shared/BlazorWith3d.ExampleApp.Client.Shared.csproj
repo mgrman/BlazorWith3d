@@ -5,7 +5,7 @@
         <TargetFrameworks>netstandard2.1;net9.0</TargetFrameworks>
     </PropertyGroup>
   <PropertyGroup>
-    <MemoryPackGenerator_TypeScriptOutputDirectory>$(MSBuildProjectDirectory)\scripts\memorypack</MemoryPackGenerator_TypeScriptOutputDirectory>
+      <MemoryPackGenerator_TypeScriptOutputDirectory>$(MSBuildProjectDirectory)\scripts\memorypack</MemoryPackGenerator_TypeScriptOutputDirectory>
       <MemoryPackGenerator_TypeScriptImportExtension> </MemoryPackGenerator_TypeScriptImportExtension>
       <MemoryPackGenerator_TypeScriptEnableNullableTypes> True</MemoryPackGenerator_TypeScriptEnableNullableTypes>
   </PropertyGroup>
@@ -35,7 +35,6 @@
         <ProjectReference Include="..\..\src\BlazorWith3d\BlazorWith3d.Shared\BlazorWith3d.Shared.csproj" />
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="..\..\src\MemoryPack\MemoryPack.Core\MemoryPack.Core.csproj" />
-        <ProjectReference Include="..\..\src\MemoryPack\MemoryPack.Generator\MemoryPack.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+      <PackageReference Include="MemoryPack" Version="1.21.4" />
     </ItemGroup>
 </Project>

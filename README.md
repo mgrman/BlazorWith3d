@@ -137,9 +137,13 @@ Handle warnings in Generator
 
 publish generator and supporting libraries as nuget
 
-remove memory pack typescript support, use direct interop only! (for now at least, as I do not want to maintain memorypack fork)
+Add option to generate TS bindings for Direct Interop without MemoryPack
 
 add support for special argument type, of the generated type itself, ie to get renderer instance fin controller methods
+
+add JSON only unity version (ie memorypack would be nice to have in an optional packages)
+
+add requirement that non MemoryPack TS types must be marked as sequential struct layout!
 
 ### Prio 1 (improve sample app)
 

@@ -19,4 +19,12 @@ namespace BlazorWith3d.Shared
 
         }
     }
+    [AttributeUsage(AttributeTargets.Interface, Inherited = false)]
+    public sealed class GenerateTSTypesWithMemoryPackAttribute : Attribute
+    {
+        public GenerateTSTypesWithMemoryPackAttribute(Type eventHandlerType)
+        {
+
+        }
+    }
 }

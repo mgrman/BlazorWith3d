@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "MemoryPack.Generator": {
-      "commandName": "DebugRoslynComponent",
-      "targetProject": "..\\..\\..\\samples\\BlazorWith3d.ExampleApp.Client.Shared\\BlazorWith3d.ExampleApp.Client.Shared.csproj"
-    }
-  }
-}

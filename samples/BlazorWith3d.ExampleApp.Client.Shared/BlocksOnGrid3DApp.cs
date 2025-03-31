@@ -1,5 +1,6 @@
 ﻿using System.Drawing;
 using System.Numerics;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 using BlazorWith3d.Shared;
@@ -23,6 +24,7 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
         ValueTask<ScreenToWorldRayResponse> InvokeRequestScreenToWorldRay(RequestScreenToWorldRay msg);
     }
     
+    [GenerateTSTypesWithMemoryPack(typeof(IBlocksOnGrid3DRenderer))]
     [GenerateBinaryApi(typeof(IBlocksOnGrid3DRenderer))]
     public partial interface IBlocksOnGrid3DController
     {
@@ -139,7 +141,7 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
 
 
     [MemoryPackable]
-    [GenerateTypeScript]
+    [StructLayout(LayoutKind.Sequential)]
     public partial struct PackableMatrix4x4
     {
         public float M11{ get; set; }
@@ -206,7 +208,7 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
     }
 
     [MemoryPackable]
-    [GenerateTypeScript]
+    [StructLayout(LayoutKind.Sequential)]
     public partial struct PackableVector3
     {
         public float X{ get; set; }
@@ -234,7 +236,7 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
     }
 
     [MemoryPackable]
-    [GenerateTypeScript]
+    [StructLayout(LayoutKind.Sequential)]
     public partial struct PackableVector2
     {
         public float X{ get; set; }
@@ -258,7 +260,7 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
     }
 
     [MemoryPackable]
-    [GenerateTypeScript]
+    [StructLayout(LayoutKind.Sequential)]
     public partial struct PackableColor
     {
         public float R { get; set; }
@@ -281,7 +283,7 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
     }
 
     [MemoryPackable]
-    [GenerateTypeScript]
+    [StructLayout(LayoutKind.Sequential)]
     public partial struct PackableRay
     {
         public PackableVector3 Origin{ get; set; }
