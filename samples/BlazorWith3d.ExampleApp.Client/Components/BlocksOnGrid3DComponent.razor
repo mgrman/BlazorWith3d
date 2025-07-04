@@ -162,7 +162,9 @@
 @if (!string.IsNullOrEmpty(_perfResponse))
 {
     <div class="alert alert-warning alert-dismissible fade show" role="alert">
-        @_perfResponse
+        <pre>
+            @_perfResponse
+        </pre>
     </div>
 }
 <button @onclick="TriggerTestToBlazor">TriggerTestToBlazor</button>
@@ -391,7 +393,12 @@
             }
             avgStopwatch.Stop();
 
-            _perfResponse += $"{testCount} messages there and back for {rendererApi.GetType().Name}, took {avgStopwatch.ElapsedMilliseconds:F2} ms (avg {(decimal)avgStopwatch.ElapsedMilliseconds / testCount:F2} ms) ";
+            if (_perfResponse.Length != 0)
+            {
+                _perfResponse += "\n";
+            }
+
+            _perfResponse += $"{testCount} messages there and back for {rendererApi.Label}, took {avgStopwatch.ElapsedMilliseconds:F2} ms (avg {(decimal)avgStopwatch.ElapsedMilliseconds / testCount:F2} ms) ";
 
         }
         

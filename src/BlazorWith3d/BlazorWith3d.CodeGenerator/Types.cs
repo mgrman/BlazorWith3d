@@ -7,16 +7,32 @@ using static BlazorWith3d.CodeGenerator.HelloSourceGenerator_TypeScript;
 namespace BlazorWith3d.CodeGenerator;
 
 
-internal record AppInfo(
+internal record TwoWayAppInfo(
     TypeInfo app,
     TypeInfo eventHandler,
     IReadOnlyList<MethodInfo> methods,
     IReadOnlyList<MethodInfo> events)
 {
-    public IEnumerable<string> namespacesToInclude => new string[] { app.@namespace }
+    public IEnumerable<string> NamespacesToInclude => new string?[] { app.@namespace }
         .Concat(methods.SelectMany(o => o.namespaces))
         .Concat(events.SelectMany(o => o.namespaces))
         .Where(o => !string.IsNullOrEmpty(o))
+        .Select(o=>o!)
+        .Distinct();
+}
+
+internal record TwoWayAppInfoWithOwner(
+    TypeInfo ownerType,
+    TypeInfo app,
+    TypeInfo eventHandler,
+    IReadOnlyList<MethodInfo> methods,
+    IReadOnlyList<MethodInfo> events)
+{
+    public IEnumerable<string> NamespacesToInclude => new string?[] { app.@namespace, ownerType.@namespace }
+        .Concat(methods.SelectMany(o => o.namespaces))
+        .Concat(events.SelectMany(o => o.namespaces))
+        .Where(o => !string.IsNullOrEmpty(o))
+        .Select(o=>o!)
         .Distinct();
 }
 

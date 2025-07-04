@@ -23,6 +23,7 @@ public class HelloSourceGenerator : ISourceGenerator
 
     public void Execute(GeneratorExecutionContext context) // Implement Execute method
     {
+
         // retrieve the populated receiver 
         if (!(context.SyntaxContextReceiver is SyntaxReceiver receiver))
         {
@@ -34,70 +35,59 @@ public class HelloSourceGenerator : ISourceGenerator
             return;
         }
 
-
-        var binaryApiTypes = receiver.BinaryApiTypes.Select(typeDeclaration =>
+        List<MethodInfo> GetMethodInfos(INamedTypeSymbol? o)
         {
-
-            var methodHandlerType = GetTypeInfo(typeDeclaration.mainType);
-            var eventHandlerType = GetTypeInfo(typeDeclaration.eventHandlerType, context.Compilation);
-
-
-
-            var methods = typeDeclaration.mainType.Members
-                .OfType<MethodDeclarationSyntax>()
-                .Select(m => GetMethodInfo(m, context.Compilation))
-                .Where(m => m != null)
-                .ToList();
-
-
-
-            var events = context.Compilation
-                .GetSemanticModel(typeDeclaration.eventHandlerType.SyntaxTree)
-                .GetTypeInfo(typeDeclaration.eventHandlerType)
-                .Type
-                .GetMembers()
+            var methods = o.GetMembers()
                 .OfType<IMethodSymbol>()
                 .Select(m => GetMethodInfo(m, context.Compilation))
                 .Where(m => m != null)
                 .ToList();
-
-            return new AppInfo(methodHandlerType, eventHandlerType, methods, events);
-        });
-
-
-        foreach (var appInfo in binaryApiTypes)
-        {
-            var text = HelloSourceGenerator_DotnetApis.GenerateClass(appInfo);
-            context.AddSource($"{appInfo.app.typeName}.g.cs", text);
+            return methods;
         }
         
-        //# error need to get not just immediate arguments but also the full hierarchy, in a serializer specific way, ie all specialtype (e.g. numbers) are excluded etc
-        
-        var tsInteropTypes = receiver.MemoryPackTsInteropTypes.Select(typeDeclaration =>
+        List<MethodInfo> GetMethodInfosFromDeclaration(InterfaceDeclarationSyntax o)
         {
-            var methodHandlerType = GetTypeInfo(typeDeclaration.mainType);
-            var eventHandlerType = GetTypeInfo(typeDeclaration.eventHandlerType, context.Compilation);
-
-            var methods = typeDeclaration.mainType.Members
-                .OfType<MethodDeclarationSyntax>()
+            var methods = o.Members.OfType<MethodDeclarationSyntax>()
                 .Select(m => GetMethodInfo(m, context.Compilation))
                 .Where(m => m != null)
                 .ToList();
+            return methods;
+        }
 
-            var events = context.Compilation
-                .GetSemanticModel(typeDeclaration.eventHandlerType.SyntaxTree)
-                .GetTypeInfo(typeDeclaration.eventHandlerType)
-                .Type
-                .GetMembers()
-                .OfType<IMethodSymbol>()
-                .Select(m => GetMethodInfo(m, context.Compilation))
-                .Where(m => m != null)
-                .ToList();
+        TwoWayAppInfo InterfaceTypeToTwoWayAppInfo((InterfaceDeclarationSyntax mainType, TypeSyntax eventHandlerType) o)
+        {
+            var methodHandlerTypeInfo = GetTypeInfo(o.mainType);
+            var eventHandlerTypeInfo = GetTypeInfo(o.eventHandlerType, context.Compilation);
 
-            return new AppInfo(methodHandlerType, eventHandlerType, methods, events);
-        });
+            var eventHandlerTypeSymbol = context.Compilation.GetSemanticModel(o.eventHandlerType.SyntaxTree).GetTypeInfo(o.eventHandlerType).Type as INamedTypeSymbol;
 
-        foreach (var appInfo in tsInteropTypes)
+            var methods = GetMethodInfosFromDeclaration(o.mainType);
+
+            var events = GetMethodInfos(eventHandlerTypeSymbol);
+            return new TwoWayAppInfo(methodHandlerTypeInfo, eventHandlerTypeInfo, methods, events);
+        }
+
+
+        TwoWayAppInfoWithOwner ConcreteTypeToTwoWayAppInfoWithOwner((TypeDeclarationSyntax mainType, TypeSyntax methodHandlerType, TypeSyntax eventHandlerType) o)
+        {
+            var bindingType = GetTypeInfo(o.mainType);
+            var eventHandlerTypeSymbol = context.Compilation.GetSemanticModel(o.eventHandlerType.SyntaxTree).GetTypeInfo(o.eventHandlerType).Type as INamedTypeSymbol;
+            var methodHandlerTypeSymbol= context.Compilation.GetSemanticModel(o.methodHandlerType.SyntaxTree).GetTypeInfo(o.methodHandlerType).Type as INamedTypeSymbol;
+
+            var events = GetMethodInfos(methodHandlerTypeSymbol);
+
+            var methods = GetMethodInfos(eventHandlerTypeSymbol);
+            return new TwoWayAppInfoWithOwner(bindingType,GetTypeInfo(eventHandlerTypeSymbol, context.Compilation), GetTypeInfo(methodHandlerTypeSymbol, context.Compilation), methods, events);
+        }
+
+        foreach (var appInfo in receiver.BinaryApiTypes.Select(InterfaceTypeToTwoWayAppInfo))
+        {
+            var files = HelloSourceGenerator_DotnetApis.GenerateClass(appInfo);
+            context.AddSourceFiles(files);
+        }
+        
+        
+        foreach (var appInfo in receiver.MemoryPackTsInteropTypes.Select(InterfaceTypeToTwoWayAppInfo))
         {
             var generatedTypeScript = HelloSourceGenerator_TypeScript.GenerateTypeScriptClass(context, appInfo);
             foreach(var (ts,path) in generatedTypeScript)
@@ -119,32 +109,14 @@ public class HelloSourceGenerator : ISourceGenerator
             }
         }
 
-        foreach (var o in receiver.BlazorBindingTypes)
+        foreach (var appInfo in receiver.BlazorBindingTypes.Select(ConcreteTypeToTwoWayAppInfoWithOwner))
         {
-            var eventHandlerType = context.Compilation.GetSemanticModel(o.eventHandlerType.SyntaxTree).GetTypeInfo(o.eventHandlerType).Type as INamedTypeSymbol;
-            var methodHandlerType = context.Compilation.GetSemanticModel(o.methodHandlerType.SyntaxTree).GetTypeInfo(o.methodHandlerType).Type as INamedTypeSymbol;
+            var files = HelloSourceGenerator_BlazorBinding.GenerateBindingClass(appInfo);
 
-            var bindingType = GetTypeInfo(o.mainType);
-
-
-            var events = methodHandlerType.GetMembers()
-                .OfType<IMethodSymbol>()
-                .Select(m => GetMethodInfo(m, context.Compilation))
-                .Where(m => m != null)
-                .ToList();
-
-            var methods = eventHandlerType.GetMembers()
-                .OfType<IMethodSymbol>()
-                .Select(m => GetMethodInfo(m, context.Compilation))
-                .Where(m => m != null)
-                .ToList();
-
-            var text = HelloSourceGenerator_BlazorBinding.GenerateBindingClass(bindingType, new AppInfo(GetTypeInfo(eventHandlerType, context.Compilation), GetTypeInfo(methodHandlerType, context.Compilation), methods, events));
-
-            context.AddSource($"{bindingType.typeName}.g.cs", text);
-
+            context.AddSourceFiles(files);
         }
     }
+
 
     private static TypeInfo GetTypeInfo(TypeDeclarationSyntax typeDeclaration)
     {
@@ -288,9 +260,11 @@ public class HelloSourceGenerator : ISourceGenerator
     /// </summary>
     private class SyntaxReceiver : ISyntaxContextReceiver
     {
-        public bool ShouldGenerate => BinaryApiTypes.Count > 0 || BlazorBindingTypes.Count>0;
+        public bool ShouldGenerate => BinaryApiTypes.Count > 0 || BlazorBindingTypes.Count>0|| HttpClientTypes.Count>0|| MemoryPackTsInteropTypes.Count>0|| HttpControllerTypes.Count>0;
 
         public List<(InterfaceDeclarationSyntax mainType, TypeSyntax eventHandlerType)> BinaryApiTypes { get; } = new();
+        public List<InterfaceDeclarationSyntax> HttpClientTypes { get; } = new();
+        public List<(TypeDeclarationSyntax mainType, TypeSyntax methodHandlerType)> HttpControllerTypes { get; } = new();
         public List<(InterfaceDeclarationSyntax mainType, TypeSyntax eventHandlerType)> MemoryPackTsInteropTypes { get; } = new();
 
         public List<(TypeDeclarationSyntax mainType, TypeSyntax methodHandlerType, TypeSyntax eventHandlerType)> BlazorBindingTypes { get; } = new();
@@ -318,6 +292,12 @@ public class HelloSourceGenerator : ISourceGenerator
 
                     MemoryPackTsInteropTypes.Add((interfaceDeclarationSyntax, eventHandlerType));
                 }
+                
+                if (interfaceDeclarationSyntax.AttributeLists.SelectMany(e => e.Attributes)
+                    .TryGet(e => e.Name.NormalizeWhitespace().ToFullString() == "GenerateHttpClient", out var generateHttpClientAttr))
+                {
+                    HttpClientTypes.Add(interfaceDeclarationSyntax);
+                }
             }
             
             // any field with at least one attribute is a candidate for property generation
@@ -325,12 +305,21 @@ public class HelloSourceGenerator : ISourceGenerator
             {
                 if (typeDeclarationSyntax.AttributeLists.SelectMany(e => e.Attributes)
                     .TryGet(e => e.Name.NormalizeWhitespace().ToFullString() == "GenerateDirectBinding",
-                        out var blazor3DBindingAttr))
+                        out var generateDirectBindingAttr))
                 {
 
-                    var methodHandlerType = (blazor3DBindingAttr.ArgumentList.Arguments[0].Expression as TypeOfExpressionSyntax).Type;
-                    var eventHandlerType = (blazor3DBindingAttr.ArgumentList.Arguments[1].Expression as TypeOfExpressionSyntax).Type;
+                    var methodHandlerType = (generateDirectBindingAttr.ArgumentList.Arguments[0].Expression as TypeOfExpressionSyntax).Type;
+                    var eventHandlerType = (generateDirectBindingAttr.ArgumentList.Arguments[1].Expression as TypeOfExpressionSyntax).Type;
                     BlazorBindingTypes.Add((typeDeclarationSyntax,methodHandlerType, eventHandlerType));
+                }
+                
+                if (typeDeclarationSyntax.AttributeLists.SelectMany(e => e.Attributes)
+                    .TryGet(e => e.Name.NormalizeWhitespace().ToFullString() == "GenerateHttpController",
+                        out var generateHttpControllerAttr))
+                {
+
+                    var methodHandlerType = (generateHttpControllerAttr.ArgumentList.Arguments[0].Expression as TypeOfExpressionSyntax).Type;
+                    HttpControllerTypes.Add((typeDeclarationSyntax, methodHandlerType));
                 }
             }
         }

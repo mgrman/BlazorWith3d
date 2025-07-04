@@ -18,6 +18,8 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
         IBlocksOnGrid3DRenderer RendererApi { get; }
         ElementReference RendererContainer { get; }
         
+        string Label => this.GetType().Name;
+        
     }
-
+    
 }

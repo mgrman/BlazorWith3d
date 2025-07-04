@@ -24,7 +24,7 @@ internal static class HelloSourceGenerator_TypeScript
     {
     }
     
-    internal static IEnumerable<(string text, string path)> GenerateTypeScriptClass(GeneratorExecutionContext context, AppInfo info)
+    internal static IEnumerable<(string text, string path)> GenerateTypeScriptClass(GeneratorExecutionContext context, TwoWayAppInfo info)
     {
         var options = GetTsOptions(context);
 

@@ -6,7 +6,7 @@ namespace BlazorWith3d.CodeGenerator;
 
 internal static class HelloSourceGenerator_DotnetApis
 {
-    internal static string GenerateClass( AppInfo info)
+    internal static IEnumerable<(string name, string content)> GenerateClass( TwoWayAppInfo info)
     {
         var namespaces = new []
             {
@@ -15,10 +15,8 @@ internal static class HelloSourceGenerator_DotnetApis
                 "System.Threading.Tasks",
                 "System.Buffers",
                 "BlazorWith3d.Shared",
-                "MemoryPack",
-                "MemoryPack.Formatters"
             }
-            .Concat(info.namespacesToInclude)
+            .Concat(info.NamespacesToInclude)
             .Distinct();
         
         var sb = new IndentedStringBuilder();
@@ -125,7 +123,6 @@ internal static class HelloSourceGenerator_DotnetApis
                         sb.AppendLine("return writer;");
 
                     }
-
                 }
 
                 sb.AppendLine();
@@ -258,7 +255,7 @@ internal static class HelloSourceGenerator_DotnetApis
             }
         }
 
-        return sb.ToString();
+        yield return ($"{info.app.typeName}.g.cs", sb.ToString());
     }
 
 }

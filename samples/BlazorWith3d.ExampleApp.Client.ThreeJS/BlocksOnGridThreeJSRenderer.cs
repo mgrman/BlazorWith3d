@@ -26,6 +26,8 @@ public class BlocksOnGridThreeJSRenderer: BaseJsRenderer, IBlocksOnGrid3DBlazorR
     
     private string JsAppPath => Assets["./_content/BlazorWith3d.ExampleApp.Client.ThreeJS/clientassets/blazorwith3d-exampleapp-client-threejs-bundle.js"];
 
+    public string Label => $"{this.GetType().Name}{(CopyArrays?"(CopyArrays)":"")}";
+    
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender)

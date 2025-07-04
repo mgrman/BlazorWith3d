@@ -130,18 +130,11 @@ CODE: 409 -> https://github.com/projectkudu/kudu/issues/3042#issuecomment-220034
 
 ### Prio 0 (improve generic packages)
 
-Rest API using memory pack/ json
-- using an interface create a rest api
-  - using auth and from* attributes and respecting them
-- also create a wrapper for the service that checks the attributes when in wasm context
-e.g. create a shared state on the server side, when serverside rendering you can get it direct, in WASM via HTTP
-
 Handle warnings in Generator
 
 publish generator and supporting libraries as nuget
 
 Add option to generate TS bindings for Direct Interop without MemoryPack
-
 
 add requirement that non MemoryPack TS types must be marked as sequential struct layout!
 
