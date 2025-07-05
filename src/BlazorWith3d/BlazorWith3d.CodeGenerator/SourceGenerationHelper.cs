@@ -1,4 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace BlazorWith3d.CodeGenerator;
+public static class SourceGenerationHelper
+{
+    public const string Attribute = @"
+using System;
 
 namespace BlazorWith3d.Shared
 {
@@ -27,4 +35,5 @@ namespace BlazorWith3d.Shared
 
         }
     }
+}";
 }

@@ -11,9 +11,11 @@ Library
 Logs
 Temp
 obj
+UserSettings
+
+# Unity builds
 Build
 Build.*
-UserSettings
 labels.json
 functions.json
 
@@ -40,3 +42,6 @@ obj
 !src/BlazorWith3d/BlazorWith3d.Unity.UnityPackage/Generator/BlazorWith3d.CodeGenerator.dll.meta
 
 node_modules
+
+#maui publish folder
+/publish

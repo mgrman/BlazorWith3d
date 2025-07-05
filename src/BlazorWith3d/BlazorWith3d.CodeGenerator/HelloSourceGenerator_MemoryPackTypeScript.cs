@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Security.Principal;
 
 using Microsoft.CodeAnalysis;
 
@@ -10,7 +9,7 @@ namespace BlazorWith3d.CodeGenerator;
 
 internal static class HelloSourceGenerator_TypeScript
 {
-    private record TsOptions
+    internal record TsOptions
     {
         public string OutputDirectory{ get; init; }
         public string ImportExtension { get; init; }
@@ -20,14 +19,19 @@ internal static class HelloSourceGenerator_TypeScript
         public Func<TypeInfo,TsTypeInfo>GetTsType { get; init; }
     }
 
-    private record TsTypeInfo(string tsType, string serializationFormat, string deserializationFormat, bool needsImport)
+    internal record TsTypeInfo(string tsType, string serializationFormat, string deserializationFormat, bool needsImport)
     {
     }
-    
+
     internal static IEnumerable<(string text, string path)> GenerateTypeScriptClass(GeneratorExecutionContext context, TwoWayAppInfo info)
     {
         var options = GetTsOptions(context);
 
+        return GenerateTypeScriptClass(options, info);
+    }
+
+    internal static IEnumerable<(string text, string path)> GenerateTypeScriptClass(TsOptions? options, TwoWayAppInfo info)
+    {
         if (options == null)
         {
             yield break;
@@ -434,8 +438,94 @@ internal static class HelloSourceGenerator_TypeScript
             }
         };
     }
-    
-    
+
+    internal static IncrementalValueProvider< TsOptions?> GetTsOptions(IncrementalGeneratorInitializationContext context)
+    {
+        return context.AnalyzerConfigOptionsProvider
+            .Combine(context.CompilationProvider)
+            .Select((value, _) => {
+
+                var (configOptions, compilation) = value;
+                if (!compilation.ReferencedAssemblyNames.Any(o => o.Name.Contains("MemoryPack")))
+                {
+                    return null;
+                }
+
+                // https://github.com/dotnet/project-system/blob/main/docs/design-time-builds.md
+                var isDesignTimeBuild =
+                    configOptions.GlobalOptions.TryGetValue("build_property.DesignTimeBuild", out var designTimeBuild) &&
+                    designTimeBuild == "true";
+
+                if (isDesignTimeBuild)
+                {
+                    return null;
+                }
+
+                string? path;
+                if (!configOptions.GlobalOptions.TryGetValue("build_property.MemoryPackGenerator_TypeScriptOutputDirectory",
+                        out path))
+                {
+                    path = null;
+                }
+
+                if (path == null)
+                {
+                    return null;
+                }
+
+                string ext;
+                if (!configOptions.GlobalOptions.TryGetValue("build_property.MemoryPackGenerator_TypeScriptImportExtension",
+                        out ext!))
+                {
+                    ext = ".js";
+                }
+
+                string convertProp;
+                if (!configOptions.GlobalOptions.TryGetValue("build_property.MemoryPackGenerator_TypeScriptConvertPropertyName",
+                        out convertProp!))
+                {
+                    convertProp = "true";
+                }
+
+                if (!configOptions.GlobalOptions.TryGetValue("build_property.MemoryPackGenerator_TypeScriptEnableNullableTypes",
+                        out var enableNullableTypes))
+                {
+                    enableNullableTypes = "false";
+                }
+
+                if (!bool.TryParse(convertProp, out var convert))
+                {
+                    convert = true;
+                }
+
+                var allowNullableTypes = bool.TryParse(enableNullableTypes, out var enabledNullableTypesParsed) &&
+                                         enabledNullableTypesParsed
+                    ;
+                return new TsOptions()
+                {
+                    OutputDirectory = path,
+                    ImportExtension = ext,
+                    ConvertPropertyName = convert,
+                    EnableNullableTypes = allowNullableTypes,
+
+                    GetTsType = o =>
+                    {
+
+                        if (Enum.TryParse($"{o.@namespace}_{o.typeNameOrig}", true, out MemoryPackSpecialType specialTypeParsed))
+                        {
+                            var aaa = ConvertFromSpecialType(specialTypeParsed, o.isNullable, allowNullableTypes);
+                            return new TsTypeInfo(aaa.TypeName, $"{{0}}.write{(o.isNullable ? "Nullable" : "")}{aaa.BinaryOperationMethod}({{1}})", $"{{0}}.read{(o.isNullable ? "Nullable" : "")}{aaa.BinaryOperationMethod}()", false);
+                        }
+
+                        return new TsTypeInfo(o.typeName, $"{o.typeName}.serializeCore({{0}}, {{1}})",
+                            $"{o.typeName}.deserializeCore({{0}});", true);
+
+                    }
+                };
+
+            });
+    }
+
     #region MemoryPack special types
     internal class TypeScriptTypeCore
     {

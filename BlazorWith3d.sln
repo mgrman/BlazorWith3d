@@ -18,6 +18,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_Solution Items", "_Solutio
 		LICENSE = LICENSE
 		.github\workflows\main_blazorwith3d.yml = .github\workflows\main_blazorwith3d.yml
 		README.md = README.md
+		global.json = global.json
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d.CodeGenerator", "src\BlazorWith3d\BlazorWith3d.CodeGenerator\BlazorWith3d.CodeGenerator.csproj", "{47CE0DFA-94DF-4040-ACA6-BFAA0E984677}"
