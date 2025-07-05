@@ -448,7 +448,7 @@
             Ray = screenToRayResponse.Ray
         });
         
-        if (!raycastResponse.HitBlockId.HasValue)
+        if (!raycastResponse.IsBlockHit)
         {
             return;
         }

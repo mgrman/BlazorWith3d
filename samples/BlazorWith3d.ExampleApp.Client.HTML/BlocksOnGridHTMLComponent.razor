@@ -141,7 +141,7 @@
         return ValueTask.CompletedTask;
     }
 
-    public ValueTask InvokeUpdateBlockInstance(int? blockId, PackableVector2 position,float rotationZ)
+    public ValueTask InvokeUpdateBlockInstance(int blockId, PackableVector2 position,float rotationZ)
     {
         var instance = _instances.FirstOrDefault(o => o.BlockId == blockId);
         instance.Position = position;
@@ -181,7 +181,8 @@
         
         return new RaycastResponse()
         {
-            HitBlockId = hit?.BlockId,
+            IsBlockHit= hit !=null,
+            HitBlockId = hit?.BlockId??0,
             HitWorld = new Vector3(pos.X,pos.Y, hit!=null?_templates[hit.TemplateId].Size.Z:pos.Z)
         };
     }

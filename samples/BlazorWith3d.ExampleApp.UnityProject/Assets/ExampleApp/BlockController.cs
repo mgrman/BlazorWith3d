@@ -27,7 +27,7 @@ namespace ExampleApp
             _cubePlaceholderVisuals.transform.localPosition = new Vector3(0, 0, _template.Size.Z / 2);
             _cubePlaceholderVisuals.transform.localRotation =Quaternion.Euler(0,180,0);
 
-            if (msg.VisualsUri != null)
+            if (!string.IsNullOrEmpty(msg.VisualsUri) )
             {
                 _cubePlaceholderVisuals.GetComponent<MeshRenderer>().enabled = false;
                 

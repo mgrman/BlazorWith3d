@@ -105,7 +105,7 @@ namespace ExampleApp
             var activeRenderer = Instantiate(_appPrefab);
 
             Console.WriteLine($"{Screen.width},{Screen.height}");
-            var controller = new BlocksOnGrid3DControllerOverBinaryApi(binaryApi, new MemoryPackBinaryApiSerializer(),
+            var controller = new BlocksOnGrid3DControllerOverBinaryApi(binaryApi, new UnityJsonBinaryApiSerializer(),
                 new PoolingArrayBufferWriterFactory(), activeRenderer);
             controller.OnMessageError += (o, e) =>
             {

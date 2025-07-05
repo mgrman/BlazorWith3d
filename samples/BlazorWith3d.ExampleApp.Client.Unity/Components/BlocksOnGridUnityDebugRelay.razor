@@ -1,5 +1,6 @@
 ﻿@using BlazorWith3d.ExampleApp.Client.Shared
 @using BlazorWith3d.Shared
+@using BlazorWith3d.Shared.Blazor
 @using BlazorWith3d.Unity
 @using Microsoft.Extensions.Logging
 @inject ILogger<BlocksOnGridUnityDebugRelay> Logger
@@ -54,7 +55,7 @@
                 {
                     DebugRelayUnityApi.NewFrame += UpdateFrame;
                     var mainThreadApi = new BinaryApiThreadWrapper(obj, async t => await InvokeAsync(async () => await t()));
-                    var unityAppApi = new BlocksOnGrid3DRendererOverBinaryApi(new BinaryApiOverBinaryMessageApi(mainThreadApi), new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory(),ParentApp);
+                    var unityAppApi = new BlocksOnGrid3DRendererOverBinaryApi(new BinaryApiOverBinaryMessageApi(mainThreadApi), new BlazorJsonBinaryApiSerializer(), new PoolingArrayBufferWriterFactory(),ParentApp);
                     unityAppApi.OnMessageError += (o, e) =>
                     {
                         Logger.LogError(e, $"error handling message {string.Join(",", o)}");

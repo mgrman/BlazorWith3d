@@ -3,6 +3,7 @@
     <PropertyGroup>
         <BaseIntermediateOutputPath>.obj</BaseIntermediateOutputPath>
         <TargetFrameworks>netstandard2.1;net9.0</TargetFrameworks>
+        <DefineConstants >$(DefineConstants);DOTNET</DefineConstants>
     </PropertyGroup>
   <PropertyGroup>
       <MemoryPackGenerator_TypeScriptOutputDirectory>$(MSBuildProjectDirectory)\scripts\memorypack</MemoryPackGenerator_TypeScriptOutputDirectory>

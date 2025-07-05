@@ -35,6 +35,7 @@ public class BlazorJsonBinaryApiSerializer : IBinaryApiSerializer
 
         readBytes = headerBytes + 4;
 
-        return JsonSerializer.Deserialize<T>(json, _options)!;
+        var result= JsonSerializer.Deserialize<T>(json, _options)!;
+        return result;
     }
 }

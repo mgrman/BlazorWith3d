@@ -112,9 +112,9 @@ namespace ExampleApp
             return new ValueTask();
         }
 
-        public ValueTask InvokeUpdateBlockInstance(int? blockId, PackableVector2 position, float rotationZ)
+        public ValueTask InvokeUpdateBlockInstance(int blockId, PackableVector2 position, float rotationZ)
         {
-            if (blockId == null || !_blocks.TryGetValue(blockId.Value, out var block))
+            if (!_blocks.TryGetValue(blockId, out var block))
             {
                 return new ValueTask();
             }
@@ -175,12 +175,13 @@ namespace ExampleApp
             {
                 return new ValueTask<RaycastResponse> ( new RaycastResponse()
                 {
-                    HitBlockId = null, HitWorld = obj.Ray.Origin
+                    IsBlockHit=false, HitBlockId = 0, HitWorld = obj.Ray.Origin
                 });
             }
             
             return new ValueTask<RaycastResponse> (  new RaycastResponse()
             {
+                IsBlockHit =true,
                 HitBlockId = hitController.BlockId, 
                 // convert result to blazor world coordinate system
                 HitWorld =  transform.worldToLocalMatrix.MultiplyPoint(hit.point).ToNumerics()

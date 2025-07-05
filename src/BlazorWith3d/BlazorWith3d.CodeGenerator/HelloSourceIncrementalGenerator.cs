@@ -14,7 +14,7 @@ using Microsoft.CodeAnalysis.Text;
 namespace BlazorWith3d.CodeGenerator;
 
 [Generator]
-public class EnumGenerator : IIncrementalGenerator
+public class HelloSourceIncrementalGenerator : IIncrementalGenerator
 {
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
