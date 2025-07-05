@@ -101,7 +101,7 @@ jobs:
         run: dotnet build "samples/BlazorWith3d.ExampleApp.Maui/BlazorWith3d.ExampleApp.Maui.csproj" -c Release
 
       - name: Publish MAUI with dotnet
-        run: dotnet publish "samples/BlazorWith3d.ExampleApp.Maui/BlazorWith3d.ExampleApp.Maui.csproj" -f net10.0-windows10.0.19041.0 -c Release -p:RuntimeIdentifierOverride=win-x64 -p:WindowsPackageType=None -p:WindowsAppSDKSelfContained=true --output "publish/windowsApp"
+        run: dotnet publish "samples/BlazorWith3d.ExampleApp.Maui/BlazorWith3d.ExampleApp.Maui.csproj" -f net9.0-windows10.0.19041.0 -c Release -p:RuntimeIdentifierOverride=win-x64 -p:WindowsPackageType=None -p:WindowsAppSDKSelfContained=true --output "publish/windowsApp"
 
       - name: zip app
         run: powershell Compress-Archive "publish\windowsApp" "publish\windowsApp.zip"

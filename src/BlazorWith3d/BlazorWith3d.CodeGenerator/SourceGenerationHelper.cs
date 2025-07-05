@@ -11,7 +11,7 @@ using System;
 namespace BlazorWith3d.Shared
 {
     [AttributeUsage(AttributeTargets.Class, Inherited = false)]
-    public sealed class GenerateDirectBindingAttribute : Attribute
+    internal sealed class GenerateDirectBindingAttribute : Attribute
     {
         public GenerateDirectBindingAttribute(Type methodHandlerType,Type eventHandlerType)
         {
@@ -20,7 +20,7 @@ namespace BlazorWith3d.Shared
     }
     
     [AttributeUsage(AttributeTargets.Interface, Inherited = false)]
-    public sealed class GenerateBinaryApiAttribute : Attribute
+    internal sealed class GenerateBinaryApiAttribute : Attribute
     {
         public GenerateBinaryApiAttribute(Type eventHandlerType)
         {
@@ -28,7 +28,7 @@ namespace BlazorWith3d.Shared
         }
     }
     [AttributeUsage(AttributeTargets.Interface, Inherited = false)]
-    public sealed class GenerateTSTypesWithMemoryPackAttribute : Attribute
+    internal sealed class GenerateTSTypesWithMemoryPackAttribute : Attribute
     {
         public GenerateTSTypesWithMemoryPackAttribute(Type eventHandlerType)
         {
