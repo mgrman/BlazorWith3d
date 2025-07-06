@@ -66,6 +66,16 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
 #else
 ;
 #endif
+        
+        /// <summary>
+        /// Euler angles in degrees
+        /// </summary>
+        public PackableVector3 RequestedDirectionalLightRotation 
+#if !UNITY
+        { get; set; }
+#else
+;
+#endif
     }
 
     [MemoryPackable]
@@ -126,7 +136,13 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
 #else
 ;
 #endif
-        public string VisualsUri
+        public string Visuals3dUri
+#if !UNITY
+        { get; set; }
+#else
+;
+#endif
+        public string Visuals2dUri
 #if !UNITY
         { get; set; }
 #else

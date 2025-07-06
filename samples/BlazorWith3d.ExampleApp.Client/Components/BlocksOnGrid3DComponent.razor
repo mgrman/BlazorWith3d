@@ -52,7 +52,7 @@
                 @template.Size.Z
             </td>
             <td>
-                @template.VisualsUri
+                @VisualAssets.FirstOrDefault(o=>o.url2d==template.Visuals2dUri || o.url3d == template.Visuals3dUri).name
             </td>
             <td>
                 <button @onclick="() => RemoveTemplate(template.TemplateId)">Remove</button>
@@ -76,7 +76,7 @@
         <td>
             <InputSelect @bind-Value="_newTemplateAsset">
                 <option value="">None</option>
-                @foreach (var (asset,index) in GltfAssets.Select((o,i)=>(o,i)))
+                @foreach (var (asset,index) in VisualAssets.Select((o,i)=>(o,i)))
                 {
                     <option value="@index">@asset.name</option>
                 }
@@ -206,7 +206,7 @@
     private IJSObjectReference module;
     private IJSObjectReference? _mouseEventsDispose;
 
-    private static (string name, string url )[] GltfAssets = [ ("BoomBox", "./_content/BlazorWith3d.ExampleApp.Client/gltf/BoomBox.glb")];
+    private static (string name, string url3d, string url2d )[] VisualAssets = [ ("BoomBox", "./_content/BlazorWith3d.ExampleApp.Client/gltf/BoomBox.glb", "./_content/BlazorWith3d.ExampleApp.Client/png/BoomBox.png")];
 
     private SemaphoreSlim _initializeRendererSemaphoreSlim = new (1);
 
@@ -260,6 +260,7 @@
                 BackgroundColor = Color.DarkSlateGray,
                 RequestedCameraPosition = new Vector3(0,0,10),
                 RequestedCameraRotation = new Vector3(0,0,0),
+                RequestedDirectionalLightRotation = new Vector3(30,45,0),
                 RequestedCameraFoV = 60
             });
             await ReplayState(rendererApi);
@@ -308,7 +309,9 @@
 
     private async Task AddTemplate()
     {
-        var msg = new AddBlockTemplate { TemplateId = _newIdCounter++, Size = new Vector3(_newTemplateSizeX, _newTemplateSizeY, _newTemplateSizeZ), VisualsUri = _newTemplateAsset==null?null:GltfAssets[_newTemplateAsset.Value].url};
+        var visuals = _newTemplateAsset == null ? default : VisualAssets[_newTemplateAsset.Value];
+        
+        var msg = new AddBlockTemplate { TemplateId = _newIdCounter++, Size = new Vector3(_newTemplateSizeX, _newTemplateSizeY, _newTemplateSizeZ), Visuals3dUri = visuals.url3d, Visuals2dUri = visuals.url2d};
         _templates.Add(msg);
         SaveToLocalStorage();
 

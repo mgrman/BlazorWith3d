@@ -18,6 +18,7 @@ import { RaycastResponse } from "com.blazorwith3d.exampleapp.client.shared/memor
 import { TriggerTestToBlazor } from 'com.blazorwith3d.exampleapp.client.shared/memorypack/TriggerTestToBlazor';
 import { PackableVector2 } from 'com.blazorwith3d.exampleapp.client.shared/memorypack/PackableVector2';
 import { RendererInitializationInfo } from 'com.blazorwith3d.exampleapp.client.shared/memorypack/RendererInitializationInfo';
+import {DirectionalLight, SRGBColorSpace} from "three";
 
 
 export function InitializeApp(canvas: HTMLCanvasElement, _: any, dotnetObject: any, onMessageReceivedMethodName: string, onMessageReceivedWithResponseMethodName: string) {
@@ -64,6 +65,7 @@ export class DebugApp implements IBlocksOnGrid3DRenderer {
     private canvas: HTMLCanvasElement;
     private _methodInvoker: IBlocksOnGrid3DController;
     resizeEvent: (_: any) => void;
+    private directionalLight: DirectionalLight;
 
     constructor(canvas: HTMLCanvasElement) {
 
@@ -80,13 +82,12 @@ export class DebugApp implements IBlocksOnGrid3DRenderer {
 
         this.scene = new THREE.Scene();
 
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-        directionalLight.position.set(0, 0, 0);
+        this.directionalLight = new THREE.DirectionalLight(0xffffff, 3);
+        this.directionalLight.position.set(0, 0, 0);
+        this.directionalLight.target.position.copy(new THREE.Vector3(0, 0, -1));
 
-        directionalLight.target.position.copy(new THREE.Vector3(0, 0, -1).applyEuler(new THREE.Euler(THREE.MathUtils.degToRad(-30), THREE.MathUtils.degToRad(-50), THREE.MathUtils.degToRad(0))));
-
-        this.scene.add(directionalLight);
-        this.scene.add(directionalLight.target);
+        this.scene.add(this.directionalLight);
+        this.scene.add(this.directionalLight.target);
 
         this.renderer = new THREE.WebGLRenderer({antialias: true, canvas: this.canvas});
         this.renderer.setSize(this.canvas.width, this.canvas.height);
@@ -127,13 +128,19 @@ export class DebugApp implements IBlocksOnGrid3DRenderer {
     
     public async InitializeRenderer(msg: RendererInitializationInfo): Promise<void> {
 
-        this.scene.background= new THREE.Color(msg.backgroundColor.r, msg.backgroundColor.g, msg.backgroundColor.b);
+        this.scene.background= new THREE.Color().setRGB( msg.backgroundColor.r, msg.backgroundColor.g, msg.backgroundColor.b, SRGBColorSpace );
+        
+        
         
         this.camera.position.x = msg.requestedCameraPosition.x;
         this.camera.position.y = msg.requestedCameraPosition.y;
         this.camera.position.z = msg.requestedCameraPosition.z;
         // the camera in ThreeJS is looking down negativeZ direciton, so no need to rotate
-        this.camera.setRotationFromEuler(new THREE.Euler(THREE.MathUtils.degToRad(msg.requestedCameraRotation.x), THREE.MathUtils.degToRad(msg.requestedCameraRotation.y), THREE.MathUtils.degToRad(msg.requestedCameraRotation.z)));
+        this.camera.setRotationFromEuler(new THREE.Euler(THREE.MathUtils.degToRad(msg.requestedCameraRotation.x), THREE.MathUtils.degToRad(msg.requestedCameraRotation.y), THREE.MathUtils.degToRad(-msg.requestedCameraRotation.z),"ZXY") );
+
+
+        this.directionalLight.target.position.copy(new THREE.Vector3(0, 0, -1).applyEuler(new THREE.Euler(THREE.MathUtils.degToRad(msg.requestedDirectionalLightRotation.x), THREE.MathUtils.degToRad(msg.requestedDirectionalLightRotation.y), THREE.MathUtils.degToRad(-msg.requestedDirectionalLightRotation.z),"ZXY")));
+
 
         this._methodInvoker.OnRendererInitialized(new RendererInitialized(), this).then(_ => console.log("UnityAppInitialized invoked"));
     }
@@ -144,6 +151,8 @@ export class DebugApp implements IBlocksOnGrid3DRenderer {
             var response=await this._methodInvoker.OnTestToBlazor({ id : 13  })
 
 
+            
+            
             if (response.id != 13)
             {
                 console.log("TriggerTestToBlazor is failure");
@@ -216,12 +225,12 @@ export class DebugApp implements IBlocksOnGrid3DRenderer {
         var {instance, mesh, visuals} = this.instances[blockId];
 
         mesh.position.set(instance.position.x, instance.position.y, mesh.position.z);
-        mesh.rotation.set(0, 0, THREE.MathUtils.degToRad(instance.rotationZ));
+        mesh.rotation.set(0, 0, THREE.MathUtils.degToRad(instance.rotationZ),"ZXY");
 
         if(visuals!=null) {
 
             visuals.position.set(instance.position.x, instance.position.y,0);
-            visuals.rotation.set(0, 0, THREE.MathUtils.degToRad(instance.rotationZ));
+            visuals.rotation.set(0, 0, THREE.MathUtils.degToRad(instance.rotationZ),"ZXY");
         }
     }
 
@@ -275,11 +284,11 @@ export class DebugApp implements IBlocksOnGrid3DRenderer {
         console.log("AddBlockTemplate", template);
 
         this.templates[template.templateId]={template, visuals:null};
-        if(template.visualsUri!=null) {
+        if(template.visuals3dUri!=null) {
             const loader = new GLTFLoader();
 
             loader.load(
-                template.visualsUri,
+                template.visuals3dUri,
                 (gltf) => {
                     // called when the resource is loaded
 

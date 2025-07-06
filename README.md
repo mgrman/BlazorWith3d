@@ -53,6 +53,8 @@ But for DirectInterop any other or custom TS type generator from C# types could 
     - RightHanded
     - Screen (0,0) in top left
     - World X:right, Y: up, Z: toCamera
+    - camera looks in NegativeZ
+    - directionalLight shines in NegativeZ
   - Unity
     - LeftHanded
     - Screen (0,0) is Bottom Left
@@ -70,7 +72,7 @@ But for DirectInterop any other or custom TS type generator from C# types could 
     - Screen (0,0) in center (positive in direction of top right) range: -1;1
     - World X:right, Y: up, Z : toCamera
     - camera looks in NegativeZ
-    - Rotation order X, Y, Z (when going local to world) but can be chosen
+    - Rotation order Z, X, Y (when going local to world) but can be chosen
 
 ### Unity WebGL (interop with Unity WASM via Binary Interop API)
 
@@ -144,10 +146,6 @@ add requirement that non MemoryPack TS types must be marked as sequential struct
     - generate wire connecting the instances
     - and generate cube under the gltf mesh
 
-- add more visuals control for the renderes
-    - request light position and direction
-    - show/hide background mesh
-    - 
 - And drag and drop trigger to add blocks from HTML
 
 - Add context menu to delete block instance

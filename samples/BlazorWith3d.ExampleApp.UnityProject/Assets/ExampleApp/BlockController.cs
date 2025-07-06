@@ -27,13 +27,13 @@ namespace ExampleApp
             _cubePlaceholderVisuals.transform.localPosition = new Vector3(0, 0, _template.Size.Z / 2);
             _cubePlaceholderVisuals.transform.localRotation =Quaternion.Euler(0,180,0);
 
-            if (!string.IsNullOrEmpty(msg.VisualsUri) )
+            if (!string.IsNullOrEmpty(msg.Visuals3dUri) )
             {
                 _cubePlaceholderVisuals.GetComponent<MeshRenderer>().enabled = false;
                 
                 var gltf = gameObject.AddComponent<GLTFast.GltfAsset>();
 
-                var absUrl =  new Uri(ExampleAppInitializer.HostUrl, msg.VisualsUri).AbsoluteUri;
+                var absUrl =  new Uri(ExampleAppInitializer.HostUrl, msg.Visuals3dUri).AbsoluteUri;
                 gltf.Url=absUrl;
                 gltf.Load(absUrl);
             }

@@ -25,6 +25,9 @@ namespace ExampleApp
         [SerializeField]
         private Camera _camera;
 
+        [SerializeField]
+        private Transform _light;
+
         private IBlocksOnGrid3DController _eventHandler;
 
         private async Awaitable OnDestroy()
@@ -55,11 +58,17 @@ namespace ExampleApp
         {
             Debug.Log($"BlazorControllerInitialized: ");
             _camera.transform.position = new Vector3(msg.RequestedCameraPosition.X, msg.RequestedCameraPosition.Y, -msg.RequestedCameraPosition.Z);
-            _camera.transform.localRotation = Quaternion.Euler(msg.RequestedCameraRotation.ToUnity());
+            
+            // rotation is negative, as in blazor the camera looks in negative Z, while Unity it is positiveZ
+            _camera.transform.localRotation = Quaternion.Euler(-msg.RequestedCameraRotation.ToUnity());
             
             
             _camera.backgroundColor = msg.BackgroundColor.ToUnity();
             _camera.fieldOfView = msg.RequestedCameraFoV;
+            
+            
+            // rotation is negative, as in blazor the directional light looks in negative Z, while Unity it is positiveZ
+            _light.transform.localRotation = Quaternion.Euler(-msg.RequestedDirectionalLightRotation.ToUnity());
             
             await _eventHandler.OnRendererInitialized(new RendererInitialized(), this);
         }
