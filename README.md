@@ -158,8 +158,6 @@ add requirement that non MemoryPack TS types must be marked as sequential struct
 
 - check if current GLTF instancing in Unity is working
 
-add JSON only unity version (ie memorypack would be nice to have in an optional packages)
-
 ### Prio 2 (backlog)
 
 - ensure the generator has fully optional dependence on memory pack, even for js direct interop use case

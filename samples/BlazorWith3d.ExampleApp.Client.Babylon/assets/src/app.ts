@@ -235,6 +235,7 @@ export class DebugApp implements IBlocksOnGrid3DRenderer {
 
             
             const [instance, mesh] = this.instances.find(o => o[1] === pickingInfo.pickedMesh);
+            response.isBlockHit = true;
             response.hitBlockId = instance.blockId;
             response.hitWorld = Vector3.TransformCoordinates(pickingInfo.pickedPoint, worldToBlazor) ;
         }

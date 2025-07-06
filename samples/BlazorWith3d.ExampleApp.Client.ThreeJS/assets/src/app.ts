@@ -265,6 +265,7 @@ export class DebugApp implements IBlocksOnGrid3DRenderer {
                     instance = this.instances[t].instance;
                 }
             }
+            response.isBlockHit = true;
             response.hitBlockId = instance.blockId;
             response.hitWorld = intersects[0].point;
         }
