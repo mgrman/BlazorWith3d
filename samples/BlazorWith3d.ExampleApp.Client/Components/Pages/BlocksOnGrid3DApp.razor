@@ -23,6 +23,10 @@
                 <BlocksOnGridUnityRenderer></BlocksOnGridUnityRenderer>
                 // use binary api with response
                 break;
+            case "Unity WebGPU (JSON)":
+                <BlocksOnGridUnityRenderer UseJsonSerializer="true"></BlocksOnGridUnityRenderer>
+                // use binary api with response
+                break;
             case "Html":
                 <BlocksOnGridHTMLComponent></BlocksOnGridHTMLComponent>
                 // implements the interface directly
@@ -61,7 +65,7 @@
 
     protected override void OnInitialized()
     {
-        _renderers = new []{ "Unity WebGPU", "Html", "Babylon", "ThreeJS", "ThreeJS.Interop","ThreeJS (no copy)"}.Select(o=>new Selection(o)).ToList();
+        _renderers = new []{ "Unity WebGPU","Unity WebGPU (JSON)", "Html", "Babylon", "ThreeJS", "ThreeJS.Interop","ThreeJS (no copy)"}.Select(o=>new Selection(o)).ToList();
         if (FlagProvider.IsUnityRelayEnabled)
         {
             _renderers.Add(new Selection("Unity Editor Debug Relay"));

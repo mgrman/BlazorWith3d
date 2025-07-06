@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -69,7 +70,7 @@ namespace ExampleApp
                         if (api != null)
                         {
                             var binaryApi = new BinaryApiOverBinaryMessageApi(api);
-                            await CreateControllerAndRenderer(binaryApi);
+                            await CreateControllerAndRenderer(binaryApi,new UnityJsonBinaryApiSerializer());
 
 
                             var imageCapturer = new CameraImageStreamer(api);
@@ -93,19 +94,21 @@ namespace ExampleApp
             }
 #elif UNITY_WEBGL
 
+            IBinaryApiSerializer serializer = Environment.GetCommandLineArgs().Contains("memoryPack") ? new MemoryPackBinaryApiSerializer() : new UnityJsonBinaryApiSerializer();
             HostUrl = new Uri(Application.absoluteURL);
             var binaryApi = UnityBlazorApi.Singleton;
-            await CreateControllerAndRenderer(binaryApi);
+            await CreateControllerAndRenderer(binaryApi,serializer);
             UnityBlazorApi.InitializeWebGLInterop();
 #endif
+
         }
 
-        private async ValueTask CreateControllerAndRenderer(IBinaryApi binaryApi)
+        private async ValueTask CreateControllerAndRenderer(IBinaryApi binaryApi, IBinaryApiSerializer serializer)
         {
             var activeRenderer = Instantiate(_appPrefab);
 
             Console.WriteLine($"{Screen.width},{Screen.height}");
-            var controller = new BlocksOnGrid3DControllerOverBinaryApi(binaryApi, new UnityJsonBinaryApiSerializer(),
+            var controller = new BlocksOnGrid3DControllerOverBinaryApi(binaryApi, serializer,
                 new PoolingArrayBufferWriterFactory(), activeRenderer);
             controller.OnMessageError += (o, e) =>
             {

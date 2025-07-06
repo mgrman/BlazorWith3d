@@ -15,6 +15,9 @@ namespace BlazorWith3d.Unity
         public void SerializeObject<T>(T obj, IBufferWriter<byte> bufferWriter)
         {
             var json= JsonUtility.ToJson(obj, false);
+            
+            
+            
             var bytes = Encoding.UTF8.GetBytes(json);
             
             var headerBytes= BitConverter.GetBytes(bytes.Length);

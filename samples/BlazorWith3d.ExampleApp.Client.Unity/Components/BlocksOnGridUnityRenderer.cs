@@ -1,6 +1,7 @@
 ﻿using BlazorWith3d.ExampleApp.Client.Shared;
 using BlazorWith3d.JsApp;
 using BlazorWith3d.Shared;
+using BlazorWith3d.Shared.Blazor;
 using BlazorWith3d.Unity;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
@@ -21,6 +22,9 @@ public class BlocksOnGridUnityRenderer:BaseUnityRenderer, IBlocksOnGrid3DBlazorR
     
     [Inject]
     protected ILogger<BlocksOnGridUnityRenderer> _logger { get; set; }
+    
+    [Parameter]
+    public bool UseJsonSerializer { get; set; }
 
     public string UnityBuildFilesRootPath => Assets["./_content/BlazorWith3d.ExampleApp.Client.Unity"];
 
@@ -34,8 +38,8 @@ public class BlocksOnGridUnityRenderer:BaseUnityRenderer, IBlocksOnGrid3DBlazorR
         
         _binaryApi=new JsBinaryApiWithResponseRenderer(_jsRuntime,_logger);
         
-        await _binaryApi.InitializeJsApp(this._unityInitializationJsPath, _containerElementReference,"showUnity", GetExtraArg(UnityBuildFilesRootPath, false));
-        var unityAppApi = new BlocksOnGrid3DRendererOverBinaryApi(_binaryApi, new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory(),ParentApp);
+        await _binaryApi.InitializeJsApp(this._unityInitializationJsPath, _containerElementReference,"showUnity", GetExtraArg(UnityBuildFilesRootPath, UseJsonSerializer?"json":"memoryPack"));
+        var unityAppApi = new BlocksOnGrid3DRendererOverBinaryApi(_binaryApi,UseJsonSerializer?new BlazorJsonBinaryApiSerializer(): new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory(),ParentApp);
         unityAppApi.OnMessageError += (bytes, exception) =>
         {
             _logger.LogError($"Error deserializing message {bytes}", exception);
@@ -58,4 +62,6 @@ public class BlocksOnGridUnityRenderer:BaseUnityRenderer, IBlocksOnGrid3DBlazorR
         _unityAppApi?.Dispose();
         _binaryApi?.TryDisposeAsync();
     }
+
+    public string Label => $"{nameof(BlocksOnGridUnityRenderer)}({(UseJsonSerializer ? "JSON" : "MemoryPack")})";
 }

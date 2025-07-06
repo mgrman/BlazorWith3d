@@ -12,30 +12,51 @@ public class BlazorJsonBinaryApiSerializer : IBinaryApiSerializer
 
     public void SerializeObject<T>(T obj, IBufferWriter<byte> bufferWriter)
     {
-        var json = JsonSerializer.Serialize(obj, _options);
-        var bytes = Encoding.UTF8.GetBytes(json);
-
-        var headerBytes = BitConverter.GetBytes(bytes.Length);
-
-        if (headerBytes.Length != 4)
+        if (bufferWriter is IBufferWriterWithArraySegment<byte> writerWithArraySegment)
         {
-            throw new InvalidOperationException();
+            var position = writerWithArraySegment.WrittenArray.Count;
+            bufferWriter.Advance(sizeof(int));
+
+            int length = 0;
+            using (var writer = new Utf8JsonWriter(bufferWriter, new JsonWriterOptions { Indented = false }))
+            {
+                JsonSerializer.Serialize(writer, obj, _options);
+                writer.Flush();
+                length = (int)writer.BytesCommitted;
+            }
+
+            var headerBytes = BitConverter.GetBytes(length);
+            
+            
+            headerBytes.CopyTo(writerWithArraySegment.WrittenArray.Slice(position).AsSpan());
         }
+        else
+        {
 
-        bufferWriter.Write(headerBytes);
-        bufferWriter.Write(bytes);
+            var json = JsonSerializer.Serialize(obj, _options);
+            var bytes = Encoding.UTF8.GetBytes(json);
 
+            var headerBytes = BitConverter.GetBytes(bytes.Length);
+
+            if (headerBytes.Length != 4)
+            {
+                throw new InvalidOperationException();
+            }
+
+            bufferWriter.Write(headerBytes);
+            bufferWriter.Write(bytes);
+        }
     }
 
     public T DeserializeObject<T>(ArraySegment<byte> bytes, out int readBytes)
     {
-        var headerBytes = BitConverter.ToInt32(bytes.Slice(0, 4));
+        var headerBytes = BitConverter.ToInt32(bytes.Slice(0, sizeof(int)));
 
-        var json = Encoding.UTF8.GetString(bytes.Slice(4, headerBytes));
+        var jsonBytes = bytes.Slice(sizeof(int), headerBytes);
 
-        readBytes = headerBytes + 4;
+        readBytes = headerBytes + sizeof(int);
 
-        var result= JsonSerializer.Deserialize<T>(json, _options)!;
+        var result= JsonSerializer.Deserialize<T>(jsonBytes, _options)!;
         return result;
     }
 }

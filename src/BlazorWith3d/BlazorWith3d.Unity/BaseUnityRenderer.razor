@@ -19,8 +19,8 @@
 
     protected string _unityInitializationJsPath = "./_content/BlazorWith3d.Unity/unityInitialization.js";
 
-    protected object GetExtraArg(string unityBuildFilesRootPath, bool withResponse)
+    protected object GetExtraArg(string unityBuildFilesRootPath, string serializerType)
     {
-        return new { buildUrl = unityBuildFilesRootPath, withResponse = withResponse };
+        return new { buildUrl = unityBuildFilesRootPath, serializerType = serializerType };
     }
 }
