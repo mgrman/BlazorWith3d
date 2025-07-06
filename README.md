@@ -137,6 +137,7 @@ Handle warnings in Generator
 publish generator and supporting libraries as nuget
 
 Add option to generate TS bindings for Direct Interop without MemoryPack
+- e.g. set up BabylonJS that way, to have separation
 
 add requirement that non MemoryPack TS types must be marked as sequential struct layout!
 
@@ -173,8 +174,6 @@ add requirement that non MemoryPack TS types must be marked as sequential struct
         - https://github.com/Eptagone/Vite.AspNetCore/tree/main
     - better JS isolation
         - https://www.emekaemego.com/blog/blazor-component-js/
-
-- Incremental source gen
 
 - better JS plugin via $ as in https://github.com/Made-For-Gamers/NEAR-Unity-WebGL-API/blob/main/Assets/WebGLSupport/WebGLInput/WebGLInput.jslib
 
