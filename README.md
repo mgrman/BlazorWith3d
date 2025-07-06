@@ -10,6 +10,7 @@ so source gen supports the low level binary api
 if renderer wants, it can implement this high level API only
 with potentially another source gen to generate the pure JS wrapper (as sending messages back to .NET needs some boilerplate)
 
+
 ## Findings
 
 Native Blazor interop is sufficient for most cases of JS libraries (but some binary approaches can still be faster than underling JSON) 
@@ -46,6 +47,7 @@ The TS generation is a bit intertwined with MemoryPack, since you could get rid 
 So it is kept connected for now to MemoryPack.
 But for DirectInterop any other or custom TS type generator from C# types could be used.
 
+
 ## Renderers
 
 - coordinate systems
@@ -76,13 +78,27 @@ But for DirectInterop any other or custom TS type generator from C# types could 
 
 ### Unity WebGL (interop with Unity WASM via Binary Interop API)
 
-### BabylonJS (interop with TypeScript via Binary Interop API)
+Can use both MemoryPack serializer and Unity JsonUtility based serialization.
+
+- MemoryPack has better performance and more comprehensive support for language features (e.g. Properties) but needs extra libraries to be added (in case build size is a concern)
+- JsonUtility based approach has less dependencies, but performance is slower (messages take roughly 2x the time), and has very limited feature support (no properties and no nullable fields)
+
+### JS based libraries
+
+There is `npm run watch` command to run in the  `assets` subfolder of the project, e.g. `\samples\BlazorWith3d.ExampleApp.Client.ThreeJS\assets` folder, that does live recompilation of the TS codebase. Mainly to adjust the `app.ts` as needed.
+
+The Typescript code is built when C# Project is. MemoryPack and own generator create `.ts` files as well and after build Webpack is triggered to create single JS file for the Blazor Component to load.
+
+#### BabylonJS (interop with TypeScript via Binary Interop API)
 
 Kept mainly for historical reasons, as ThreeJS seems to be more fitting for this usecase (as this is a game engine first, and threeJS is a renderer first).
 
-### ThreeJS (interop with TypeScript via Binary Interop API and Blazor interop)
+#### ThreeJS (interop with TypeScript via Binary Interop API and Blazor interop)
 
 ### Pure HTML (developed directly in Blazor)
+
+Uses 2D screenshot for visuals, to look similar.
+
 
 ## Blazor
 
@@ -97,7 +113,6 @@ https://github.com/dotnet/runtime/blob/main/src/mono/wasm/features.md
 ### Render modes
 
 All render modes, including Auto mode are supported ( render mode can be chosen on the Home page)
-
 
 ### Maui
 
@@ -131,6 +146,8 @@ CODE: 409 -> https://github.com/projectkudu/kudu/issues/3042#issuecomment-220034
 
 
 ### Prio 0 (improve generic packages)
+
+Redo benchmarks
 
 Handle warnings in Generator
 

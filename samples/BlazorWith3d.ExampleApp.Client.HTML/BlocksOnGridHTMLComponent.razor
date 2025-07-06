@@ -10,7 +10,13 @@
 @inject ILogger<BlocksOnGridHTMLComponent> Logger
 @inject IJSRuntime JsRuntime
 
-<div @ref=_rendererContainerReference class="my-component" style="width: 500px; height: 500px; position: relative; border: red 1px solid; user-select: none; background-color: @(_backgroundColor.ToCss())">
+<div @ref=_rendererContainerReference class="my-component" style="width: 500px; 
+    height: 500px; 
+    position: relative; 
+    border: red 1px solid; 
+    user-select: none; 
+    background-color: @(_backgroundColor.ToCss());
+    overflow: hidden;">
 
     @if (_instances.Count > 0)
     {
