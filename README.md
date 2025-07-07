@@ -120,17 +120,56 @@ Blazor Maui Hybrid is supported (only tested as Desktop app)
 https://learn.microsoft.com/en-us/aspnet/core/blazor/hybrid/tutorials/maui-blazor-web-app?view=aspnetcore-9.0
 
 
-## TODOs
+## Benchmarks
 
-benchmarks
-// redo numbers as these are for old PerfCheck message (without huge string)
-- Server
-  - Interop (avg 0,48 ms)
-  - MemoryPack (avg 0,56 ms)
-- WASM
-  - Interop (avg 0.50 ms)  // slower but works with more types than memorypack, so you could get rid of that dependency (the slowdown is worse when the larger the messages are)
-  - MemoryPack (avg 0.33 ms)
+Small msg is a message with a couple of numbers
+Large msg is a message with an almost 4k-character long string  
 
+Benchmarks are times for 10k messages.
+
+Specific numbers should be only used as relative comparison, as this was times only on my machine.
+
+
+### InteractiveServer RenderMode
+
+Timed on my machine with release build.
+
+But in comparison to WebAssembly version, most time is lost on sending data back and forth from server to browser, then on interop specifics.
+
+- Unity with MemoryPack serializer
+    - Small msgs took 2596,00 ms (avg 0,26 ms)
+    - Large msgs took 3223,00 ms (avg 0,32 ms)
+- Unity with JsonUtility serializer
+    - Small msgs took 2791,00 ms (avg 0,28 ms)
+    - Large msgs took 4055,00 ms (avg 0,41 ms)
+- Blazor JS interop with MemoryPack
+    - Small msgs took 2069,00 ms (avg 0,21 ms)
+    - Large msgs took 2646,00 ms (avg 0,26 ms)
+- Blazor JS interop native
+    - Small msgs took 1909,00 ms (avg 0,19 ms)
+    - Large msgs took 2734,00 ms (avg 0,27 ms)
+
+
+### InteractiveWebAssembly RenderMode
+
+Mainly for use as relative comparison, as they were timed on my machine with deployed demo app which is AOT compiled for webassembly.
+
+For Javascript based render (e.g. Three.JS or Babylon.JS), Blazor JS native interop is quicker for smaller messages, but slower on big ones. But not significantly.
+
+For Unity based renderer memory pack is faster for small messages and significantly faster for large ones, but it introduces extra dependencies making the build larger.
+
+- Unity with MemoryPack serializer
+  - Small msgs took 196.00 ms (avg 0.02 ms)
+  - Large msgs took 282.00 ms (avg 0.03 ms)
+- Unity with JsonUtility serializer
+  - Small msgs took 314.00 ms (avg 0.03 ms)
+  - Large msgs took 853.00 ms (avg 0.09 ms)
+- Blazor JS interop with MemoryPack
+  - Small msgs took 166.00 ms (avg 0.02 ms)
+  - Large msgs took 291.00 ms (avg 0.03 ms)
+- Blazor JS interop native 
+  - Small msgs took 155.00 ms (avg 0.02 ms)
+  - Large msgs took 412.00 ms (avg 0.04 ms)
 
 # Initialization order
 
@@ -146,8 +185,6 @@ CODE: 409 -> https://github.com/projectkudu/kudu/issues/3042#issuecomment-220034
 
 
 ### Prio 0 (improve generic packages)
-
-Redo benchmarks
 
 Handle warnings in Generator
 

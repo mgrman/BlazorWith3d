@@ -147,7 +147,17 @@
             <InputNumber @bind-Value="_newBlockRotationZ"></InputNumber>
         </td>
         <td>
-            <InputNumber @bind-Value="_newBlockTemplateId"></InputNumber>
+            @if (_templates.Count > 0)
+            {
+                <InputSelect @bind-Value="_newBlockTemplateId">
+                    @foreach (var template in _templates)
+                    {
+                        <option value="@template.TemplateId">
+                            Template @template.TemplateId
+                        </option>
+                    }
+                </InputSelect>
+            }
         </td>
         <td>
             <button @onclick="AddBlock" disabled="@(!_templates.Any(o => o.TemplateId == _newBlockTemplateId))">Add</button>
@@ -226,6 +236,8 @@
     {
         _templates = await LocalStorage.GetItemAsync<List<AddBlockTemplate>>("_templates") ?? new List<AddBlockTemplate>();
         _instances = await LocalStorage.GetItemAsync<List<AddBlockInstance>>("_blocks") ?? new List<AddBlockInstance>();
+
+        _instances.RemoveAll(o => _templates.All(t => t.TemplateId != o.TemplateId));
         
         _newIdCounter = _templates.Select(o => o.TemplateId).Concat(_instances.Select(o => o.BlockId)).DefaultIfEmpty(-1).Max() + 1;
         
@@ -332,14 +344,18 @@
 
     private async Task RemoveTemplate(int id)
     {
-        _templates.RemoveAll(o => o.TemplateId == id);
-        SaveToLocalStorage();
-        
-       
         foreach (var rendererApi in _renderers)
         {
+            foreach (var instanceToRemove in _instances.Where(o => o.TemplateId == id))
+            {
+                await rendererApi.RendererApi.InvokeRemoveBlockInstance(new RemoveBlockInstance() { BlockId = instanceToRemove.BlockId });
+            }
+
             await rendererApi.RendererApi.InvokeRemoveBlockTemplate(new RemoveBlockTemplate { TemplateId = id });
         }
+        _templates.RemoveAll(o => o.TemplateId == id);
+        _instances.RemoveAll(o => o.TemplateId == id);
+        SaveToLocalStorage();
     }
 
     private async Task AddBlock()
@@ -365,7 +381,7 @@
             await rendererApi.RendererApi.InvokeRemoveBlockInstance(new RemoveBlockInstance { BlockId = id });
         }
     }
-
+  
     private async Task PerfCheck(bool isLarge)
     {
         if (_renderers.Count==0)
