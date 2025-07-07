@@ -186,6 +186,8 @@ CODE: 409 -> https://github.com/projectkudu/kudu/issues/3042#issuecomment-220034
 
 ### Prio 0 (improve generic packages)
 
+Test support of System.Numerics native types
+
 Handle warnings in Generator
 
 publish generator and supporting libraries as nuget

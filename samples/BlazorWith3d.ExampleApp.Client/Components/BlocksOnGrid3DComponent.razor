@@ -3,6 +3,7 @@
 @using System.Numerics
 @using Blazored.LocalStorage
 @using BlazorWith3d.ExampleApp.Client.Shared
+@using BlazorWith3d.ExampleApp.Client.Utilities
 @using Microsoft.Extensions.Logging
 @inject ILocalStorageService LocalStorage
 @inject IServiceProvider Services
@@ -144,7 +145,20 @@
             <InputNumber @bind-Value="_newBlockPositionY"></InputNumber>
         </td>
         <td>
-            <InputNumber @bind-Value="_newBlockRotationZ"></InputNumber>
+            <InputSelect @bind-Value="_newBlockRotationZ">
+                <option value="0">
+                    0
+                </option>
+                <option value="90">
+                    90
+                </option>
+                <option value="180">
+                    180
+                </option>
+                <option value="270">
+                    270
+                </option>
+            </InputSelect>
         </td>
         <td>
             @if (_templates.Count > 0)
@@ -360,7 +374,12 @@
 
     private async Task AddBlock()
     {
-        var msg = new AddBlockInstance { BlockId = _newIdCounter++, Position = new Vector2(_newBlockPositionX,_newBlockPositionY) , RotationZ = _newBlockRotationZ, TemplateId = _newBlockTemplateId };
+
+
+        
+        var msg = new AddBlockInstance { BlockId = _newIdCounter++, Position = new Vector2(_newBlockPositionX, _newBlockPositionY) , RotationZ = _newBlockRotationZ, TemplateId = _newBlockTemplateId };
+        msg.Position = GetDesiredPosition(msg, msg.Position.ToVector2());
+        
         _instances.Add(msg);
         SaveToLocalStorage();
         
@@ -526,25 +545,64 @@
             throw new InvalidOperationException();
         }
 
-        var hit = potentialHit.Value;
-        
+        var hit = potentialHit.Value.XY();
+
         var newPositionX = hit.X - dragging.offsetX;
         var newPositionY = hit.Y - dragging.offsetY;
 
+        var newPosition = new Vector2(newPositionX, newPositionY);
 
-        newPositionY = (float)Math.Round(newPositionY, 0);
 
+        newPosition.Y = (float)Math.Round(newPositionY, 0);
 
-        dragging.instance.Position = new Vector2(newPositionX, newPositionY);
+        newPosition = GetDesiredPosition(dragging.instance, newPosition);
+
+        dragging.instance.Position = newPosition;
 
         foreach (var renderer in _renderers)
         {
-            await renderer.RendererApi.InvokeUpdateBlockInstance(dragging.instance.BlockId, new Vector2(newPositionX,newPositionY), dragging.instance.RotationZ);
+            await renderer.RendererApi.InvokeUpdateBlockInstance(dragging.instance.BlockId, newPosition, dragging.instance.RotationZ);
         }
         
         StateHasChanged();
         _isMouseMoveBeingHandled = false;
     }
+
+    Vector2 GetDesiredPosition(AddBlockInstance movedInstance, Vector2 targetPosition)
+    {
+        var blockTemplate = _templates.FirstOrDefault(t=>t.TemplateId==movedInstance.TemplateId);
+        var targetRect = Rect.FromCenterSizeAnd90DegRotation(targetPosition, blockTemplate.Size.ToVector3().XY(),movedInstance.RotationZ);
+
+        var otherBlocks = _instances
+            .Where(i => i.BlockId != movedInstance.BlockId)
+            .Select(i =>
+            {
+                var t =_templates.FirstOrDefault(t=>t.TemplateId==i.TemplateId); 
+                return Rect.FromCenterSizeAnd90DegRotation(i.Position.ToVector2(), t.Size.ToVector3().XY(), i.RotationZ);
+            })
+            .ToList();
+        
+        var corners = otherBlocks
+            .SelectMany(o => o.GetRectanglesAroundCorners(blockTemplate.Size.ToVector3().XY()));
+
+        var edgeHits = otherBlocks
+            .SelectMany(o => o.GetRectanglesClosestToPoint(targetPosition,blockTemplate.Size.ToVector3().XY()));
+
+        
+        var res=new []{targetRect}
+            .Concat(corners)
+            .Concat(edgeHits)
+            .OrderBy(r=>
+            {
+                var dist = (r.Center - targetPosition);
+                return Math.Abs(dist.X) + Math.Abs(dist.Y);
+            })
+            .First(o => !otherBlocks.Any(ob=>ob.IntersectsWith(o)));
+
+
+        return res.Center;
+    }
+    
     
     private void OnMouseUp()
     {
