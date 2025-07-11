@@ -8,12 +8,13 @@ internal static class StringUtilities
     {
         return string.Join(", ", items);
     }
-    public static string WrapWithParenthesis(this string text, bool shouldWrap)
+    
+    public static IEnumerable<T> ConcatOptional<T>(this IEnumerable<T> items, T itemToAdd, bool shouldConcat)
     {
-        if (shouldWrap)
+        if (shouldConcat)
         {
-            return $"({text})";
+            return items.Concat([itemToAdd]);
         }
-        return text;
+        return items;
     }
 }

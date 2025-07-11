@@ -6,9 +6,9 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 
-namespace BlazorWith3d.ExampleApp.Client.ThreeJS;
+namespace BlazorWith3d.ExampleApp.Client.Babylon;
 
-public class BlocksOnGridThreeJSDirectRenderer : BaseJsRenderer, IBlocksOnGrid3DBlazorRenderer, IAsyncDisposable
+public class BlocksOnGridBabylonDirectRenderer : BaseJsRenderer, IBlocksOnGrid3DBlazorRenderer, IAsyncDisposable
 {
     [CascadingParameter] 
     public required IBlocksOnGrid3DBlazorController ParentApp { get; set; }
@@ -19,9 +19,9 @@ public class BlocksOnGridThreeJSDirectRenderer : BaseJsRenderer, IBlocksOnGrid3D
     protected IJSRuntime _jsRuntime { get; set; } 
 
     [Inject] 
-    protected ILogger<BlocksOnGridThreeJSDirectRenderer> _logger { get; set; }
+    protected ILogger<BlocksOnGridBabylonDirectRenderer> _logger { get; set; }
     
-    private string JsAppPath => Assets["./_content/BlazorWith3d.ExampleApp.Client.ThreeJS/clientassets/blazorwith3d-exampleapp-client-threejs-bundle.js"];
+    private string JsAppPath => Assets["./_content/BlazorWith3d.ExampleApp.Client.Babylon/clientassets/blazorwith3d-exampleapp-client-babylon-bundle.js"];
 
     private string InitializeMethodName => "InitializeApp_DirectInterop";
     

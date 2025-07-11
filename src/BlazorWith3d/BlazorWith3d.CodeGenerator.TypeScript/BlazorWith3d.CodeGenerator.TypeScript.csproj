@@ -5,15 +5,15 @@
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
         <IsRoslynComponent>true</IsRoslynComponent>
-        <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+        <!--        <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>-->
 
-        <OutputPath>..\BlazorWith3d.Unity.UnityPackage\Generator\</OutputPath>
-        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+
         <RootNamespace>BlazorWith3d.CodeGenerator</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.3.1" PrivateAssets="all"/>
     </ItemGroup>
+
 
 </Project>

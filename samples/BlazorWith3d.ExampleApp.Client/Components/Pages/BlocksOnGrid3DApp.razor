@@ -1,7 +1,9 @@
 ﻿@page "/app"
+@using BlazorWith3d.ExampleApp.Client.Babylon
 @using BlazorWith3d.ExampleApp.Client.Components
 @using BlazorWith3d.ExampleApp.Client.Unity.Components
 @using BlazorWith3d.ExampleApp.Client.HTML
+@using BlazorWith3d.ExampleApp.Client.ThreeJS
 @inject IFlagProvider  FlagProvider
 
 <PageTitle>WebGL instance</PageTitle>
@@ -15,45 +17,46 @@
 
     <BlocksOnGrid3DComponent>
         
-        @foreach(var renderer in _renderers.Where(o=>o.IsSelected).Select(o=>o.Label))
-        
-        @switch (renderer)
+        @foreach (var renderer in _renderers.Where(o => o.IsSelected).Select(o => o.Label))
         {
-            case "Unity WebGPU":
-                <BlocksOnGridUnityRenderer></BlocksOnGridUnityRenderer>
-                // use binary api with response
-                break;
-            case "Unity WebGPU (JSON)":
-                <BlocksOnGridUnityRenderer UseJsonSerializer="true"></BlocksOnGridUnityRenderer>
-                // use binary api with response
-                break;
-            case "Html":
-                <BlocksOnGridHTMLComponent></BlocksOnGridHTMLComponent>
-                // implements the interface directly
-                break;
-            case "Babylon":
-                <BlazorWith3d.ExampleApp.Client.Babylon.BlocksOnGridBabylonRenderer></BlazorWith3d.ExampleApp.Client.Babylon.BlocksOnGridBabylonRenderer>
-                // uses binary TS interface with response
-                break;
-            case "ThreeJS":
-                <BlazorWith3d.ExampleApp.Client.ThreeJS.BlocksOnGridThreeJSRenderer></BlazorWith3d.ExampleApp.Client.ThreeJS.BlocksOnGridThreeJSRenderer>
-                // uses binary TS interface with response
-                break;
-            case "ThreeJS (no copy)":
-                <BlazorWith3d.ExampleApp.Client.ThreeJS.BlocksOnGridThreeJSRenderer CopyArrays="false"></BlazorWith3d.ExampleApp.Client.ThreeJS.BlocksOnGridThreeJSRenderer>
-                // uses binary TS interface with response
-                break;
-            case "ThreeJS.Interop":
-                <BlazorWith3d.ExampleApp.Client.ThreeJS.BlocksOnGridThreeJSDirectRenderer></BlazorWith3d.ExampleApp.Client.ThreeJS.BlocksOnGridThreeJSDirectRenderer>
-                // uses generated interop code 
-                break;
-            case "Unity Editor Debug Relay":
-                <BlocksOnGridUnityDebugRelay ></BlocksOnGridUnityDebugRelay>
-                // uses generated interop code 
-                break;
-            default:
-                <text> Unsupported renderer type @renderer</text>
-                break;
+            @switch (renderer)
+            {
+                case "Unity WebGPU":
+                    <BlocksOnGridUnityRenderer></BlocksOnGridUnityRenderer>
+                    // use binary api with response
+                    break;
+                case "Unity WebGPU (JSON)":
+                    if (_renderers.Where(o => o.IsSelected).Select(o => o.Label).Contains("Unity WebGPU"))
+                    {
+                        <text> Unity WebGPU (JSON) cannot be used while Unity WebGPU is active</text>
+                    }
+                    else
+                    {
+                        <BlocksOnGridUnityRenderer UseJsonSerializer="true"></BlocksOnGridUnityRenderer>
+                    }
+
+                    // use binary api with response
+                    break;
+                case "Html":
+                    <BlocksOnGridHTMLComponent></BlocksOnGridHTMLComponent>
+                    // implements the interface directly
+                    break;
+                case "Babylon (using native JSON interop)":
+                    <BlocksOnGridBabylonDirectRenderer></BlocksOnGridBabylonDirectRenderer>
+                    // uses binary TS interface with response
+                    break;
+                case "ThreeJS (using MemoryPack over BinaryAPI)":
+                    <BlocksOnGridThreeJSRenderer></BlocksOnGridThreeJSRenderer>
+                    // uses binary TS interface with response
+                    break;
+                case "Unity Editor Debug Relay":
+                    <BlocksOnGridUnityDebugRelay ></BlocksOnGridUnityDebugRelay>
+                    // uses generated interop code 
+                    break;
+                default:
+                    <text> Unsupported renderer type @renderer</text>
+                    break;
+            }
         }
 
     </BlocksOnGrid3DComponent>
@@ -65,7 +68,7 @@
 
     protected override void OnInitialized()
     {
-        _renderers = new []{ "Unity WebGPU","Unity WebGPU (JSON)", "Html", "Babylon", "ThreeJS", "ThreeJS.Interop","ThreeJS (no copy)"}.Select(o=>new Selection(o)).ToList();
+        _renderers = new []{ "Unity WebGPU","Unity WebGPU (JSON)", "Html", "Babylon (using native JSON interop)", "ThreeJS (using MemoryPack over BinaryAPI)"}.Select(o=>new Selection(o)).ToList();
         if (FlagProvider.IsUnityRelayEnabled)
         {
             _renderers.Add(new Selection("Unity Editor Debug Relay"));

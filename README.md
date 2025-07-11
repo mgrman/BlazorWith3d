@@ -186,14 +186,14 @@ CODE: 409 -> https://github.com/projectkudu/kudu/issues/3042#issuecomment-220034
 
 ### Prio 0 (improve generic packages)
 
+Update visuals of BabylonJS to match the rest
+
 Test support of System.Numerics native types
+- sadly the support might be limited due to harded to control serialization of built in types
 
 Handle warnings in Generator
 
 publish generator and supporting libraries as nuget
-
-Add option to generate TS bindings for Direct Interop without MemoryPack
-- e.g. set up BabylonJS that way, to have separation
 
 add requirement that non MemoryPack TS types must be marked as sequential struct layout!
 

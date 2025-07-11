@@ -7,7 +7,7 @@ using Microsoft.CodeAnalysis;
 
 namespace BlazorWith3d.CodeGenerator;
 
-internal static class HelloSourceGenerator_TypeScript
+internal static class HelloSourceGenerator_MemoryPackTypeScriptForStructs
 {
     internal record TsOptions
     {
@@ -23,14 +23,14 @@ internal static class HelloSourceGenerator_TypeScript
     {
     }
 
-    internal static IEnumerable<(string text, string path)> GenerateTypeScriptClass(GeneratorExecutionContext context, TwoWayAppInfo info)
+    internal static IEnumerable<(string text, string path)> GenerateTypeScriptClasses(GeneratorExecutionContext context, TwoWayAppInfo info)
     {
         var options = GetTsOptions(context);
 
-        return GenerateTypeScriptClass(options, info);
+        return GenerateTypeScriptClasses(options, info);
     }
 
-    internal static IEnumerable<(string text, string path)> GenerateTypeScriptClass(TsOptions? options, TwoWayAppInfo info)
+    internal static IEnumerable<(string text, string path)> GenerateTypeScriptClasses(TsOptions? options, TwoWayAppInfo info)
     {
         if (options == null)
         {

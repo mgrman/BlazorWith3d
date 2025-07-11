@@ -21,12 +21,7 @@ public class BlocksOnGridThreeJSRenderer: BaseJsRenderer, IBlocksOnGrid3DBlazorR
     [Inject] 
     protected ILogger<BlocksOnGridThreeJSRenderer> _logger { get; set; }
     
-    [Parameter]
-    public bool CopyArrays { get; set; } = true;
-    
     private string JsAppPath => Assets["./_content/BlazorWith3d.ExampleApp.Client.ThreeJS/clientassets/blazorwith3d-exampleapp-client-threejs-bundle.js"];
-
-    public string Label => $"{this.GetType().Name}{(CopyArrays?"(CopyArrays)":"")}";
     
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -36,14 +31,7 @@ public class BlocksOnGridThreeJSRenderer: BaseJsRenderer, IBlocksOnGrid3DBlazorR
             return;
         }
 
-        if (CopyArrays)
-        {
-            _binaryApi = new JsBinaryApiWithResponseRenderer(_jsRuntime, _logger);
-        }
-        else
-        {
-            _binaryApi = new JsBinaryApiWithResponseRendererWithoutCopy(_jsRuntime, _logger);
-        }
+        _binaryApi = new JsBinaryApiWithResponseRenderer(_jsRuntime, _logger);
 
         await _binaryApi.InitializeJsApp(JsAppPath, _containerElementReference);
         _appApi = new BlocksOnGrid3DRendererOverBinaryApi(_binaryApi, new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory(), ParentApp);

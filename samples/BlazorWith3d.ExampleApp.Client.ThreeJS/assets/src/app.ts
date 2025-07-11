@@ -45,15 +45,6 @@ export function InitializeApp(canvas: HTMLCanvasElement, _: any, dotnetObject: a
     return appAsAny;
 }
 
-export function InitializeApp_DirectInterop(canvas: HTMLCanvasElement, dotnetObject: any) {
-    var controller = new BlocksOnGrid3DControllerOverDirectInterop(dotnetObject);
-
-    let renderer = new DebugApp(canvas);
-    renderer.Initialize(controller);
-
-    return renderer;
-}
-
 export class DebugApp implements IBlocksOnGrid3DRenderer {
     private templates: { [id: number]: any } = {};
     private instances: { [id: number]: { instance: AddBlockInstance, mesh: THREE.Mesh, visuals: THREE.Group } } = {};

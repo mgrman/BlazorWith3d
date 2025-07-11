@@ -16,43 +16,31 @@ import {
     Ray,
     Quaternion
 } from "@babylonjs/core";
-import {AddBlockInstance} from "com.blazorwith3d.exampleapp.client.shared/memorypack/AddBlockInstance";
-import {PerfCheck} from "com.blazorwith3d.exampleapp.client.shared/memorypack/PerfCheck";
-import {AddBlockTemplate} from "com.blazorwith3d.exampleapp.client.shared/memorypack/AddBlockTemplate";
-import {RemoveBlockInstance} from "com.blazorwith3d.exampleapp.client.shared/memorypack/RemoveBlockInstance";
-import {RemoveBlockTemplate} from "com.blazorwith3d.exampleapp.client.shared/memorypack/RemoveBlockTemplate";
-import { RendererInitialized } from "com.blazorwith3d.exampleapp.client.shared/memorypack/RendererInitialized";
+
+import {AddBlockInstance} from "com.blazorwith3d.exampleapp.client.shared/BlocksOnGrid/AddBlockInstance";
+import {PerfCheck} from "com.blazorwith3d.exampleapp.client.shared/BlocksOnGrid/PerfCheck";
+import {AddBlockTemplate} from "com.blazorwith3d.exampleapp.client.shared/BlocksOnGrid/AddBlockTemplate";
+import {RemoveBlockInstance} from "com.blazorwith3d.exampleapp.client.shared/BlocksOnGrid/RemoveBlockInstance";
+import {RemoveBlockTemplate} from "com.blazorwith3d.exampleapp.client.shared/BlocksOnGrid/RemoveBlockTemplate";
+import { RendererInitialized } from "com.blazorwith3d.exampleapp.client.shared/BlocksOnGrid/RendererInitialized";
 import {
-    BlocksOnGrid3DControllerOverBinaryApi, IBlocksOnGrid3DController, IBlocksOnGrid3DRenderer
-} from "com.blazorwith3d.exampleapp.client.shared/memorypack/IBlocksOnGrid3DController";
-import {BlazorBinaryApiWithResponse} from "com.blazorwith3d.exampleapp.client.shared/BlazorBinaryApiWithResponse";
-import { RequestRaycast } from "com.blazorwith3d.exampleapp.client.shared/memorypack/RequestRaycast";
-import { RequestScreenToWorldRay } from "com.blazorwith3d.exampleapp.client.shared/memorypack/RequestScreenToWorldRay";
-import { ScreenToWorldRayResponse } from "com.blazorwith3d.exampleapp.client.shared/memorypack/ScreenToWorldRayResponse";
-import { RaycastResponse } from "com.blazorwith3d.exampleapp.client.shared/memorypack/RaycastResponse";
-import { TriggerTestToBlazor } from "com.blazorwith3d.exampleapp.client.shared/memorypack/TriggerTestToBlazor";
-import { PackableVector2 } from "com.blazorwith3d.exampleapp.client.shared/memorypack/PackableVector2";
-import { RendererInitializationInfo } from "com.blazorwith3d.exampleapp.client.shared/memorypack/RendererInitializationInfo";
+    BlocksOnGrid3DControllerOverDirectInterop, IBlocksOnGrid3DController, IBlocksOnGrid3DRenderer
+} from "com.blazorwith3d.exampleapp.client.shared/BlocksOnGrid/IBlocksOnGrid3DController";
+import { RequestRaycast } from "com.blazorwith3d.exampleapp.client.shared/BlocksOnGrid/RequestRaycast";
+import { RequestScreenToWorldRay } from "com.blazorwith3d.exampleapp.client.shared/BlocksOnGrid/RequestScreenToWorldRay";
+import { ScreenToWorldRayResponse } from "com.blazorwith3d.exampleapp.client.shared/BlocksOnGrid/ScreenToWorldRayResponse";
+import { RaycastResponse } from "com.blazorwith3d.exampleapp.client.shared/BlocksOnGrid/RaycastResponse";
+import { TriggerTestToBlazor } from "com.blazorwith3d.exampleapp.client.shared/BlocksOnGrid/TriggerTestToBlazor";
+import { PackableVector2 } from "com.blazorwith3d.exampleapp.client.shared/BlocksOnGrid/PackableVector2";
+import { RendererInitializationInfo } from "com.blazorwith3d.exampleapp.client.shared/BlocksOnGrid/RendererInitializationInfo";
 
-export function InitializeApp(canvas: HTMLCanvasElement, _: any, dotnetObject: any, onMessageReceivedMethodName: string, onMessageReceivedWithResponseMethodName: string) {
-    let sendMessageCallback: (msgBytes: Uint8Array) => Promise<any> = msgBytes => dotnetObject.invokeMethodAsync(onMessageReceivedMethodName, msgBytes);
-    let sendMessageWithResponseCallback: (msgBytes: Uint8Array) => Promise<Uint8Array> = msgBytes => dotnetObject.invokeMethodAsync(onMessageReceivedWithResponseMethodName, msgBytes);
-
+export function InitializeApp_DirectInterop(canvas: HTMLCanvasElement, dotnetObject: any) {
+    var controller = new BlocksOnGrid3DControllerOverDirectInterop(dotnetObject);
 
     let renderer = new DebugApp(canvas);
-    let binaryApi = new BlazorBinaryApiWithResponse(sendMessageCallback, sendMessageWithResponseCallback);
-    let controller = new BlocksOnGrid3DControllerOverBinaryApi(binaryApi,renderer);
-
-
     renderer.Initialize(controller);
-    let appAsAny: any = renderer;
-    appAsAny.ProcessMessage = msg => {
-        return binaryApi.mainMessageHandler(msg);
-    }
-    appAsAny.ProcessMessageWithResponse = msg => {
-        return binaryApi.mainMessageWithResponseHandler(msg);
-    }
-    return appAsAny;
+
+    return renderer;
 }
 
 export class DebugApp implements IBlocksOnGrid3DRenderer {
@@ -237,7 +225,9 @@ export class DebugApp implements IBlocksOnGrid3DRenderer {
             const [instance, mesh] = this.instances.find(o => o[1] === pickingInfo.pickedMesh);
             response.isBlockHit = true;
             response.hitBlockId = instance.blockId;
-            response.hitWorld = Vector3.TransformCoordinates(pickingInfo.pickedPoint, worldToBlazor) ;
+            
+            var hitVector=Vector3.TransformCoordinates(pickingInfo.pickedPoint, worldToBlazor);
+            response.hitWorld = {x: hitVector.x, y: hitVector.y, z: hitVector.z} ;
         }
          return response;
     }
