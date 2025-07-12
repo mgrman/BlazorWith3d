@@ -120,9 +120,10 @@ export class DebugApp implements IBlocksOnGrid3DRenderer {
     public async InitializeRenderer(msg: RendererInitializationInfo): Promise<void> {
 
         this.scene.background= new THREE.Color().setRGB( msg.backgroundColor.r, msg.backgroundColor.g, msg.backgroundColor.b, SRGBColorSpace );
-        
-        
-        
+
+
+
+        this.camera.fov = msg.requestedCameraFoV;
         this.camera.position.x = msg.requestedCameraPosition.x;
         this.camera.position.y = msg.requestedCameraPosition.y;
         this.camera.position.z = msg.requestedCameraPosition.z;

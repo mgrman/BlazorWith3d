@@ -1,9 +1,12 @@
 import "@babylonjs/core/Debug/debugLayer";
 import "@babylonjs/inspector";
+import "@babylonjs/loaders/glTF";
 import {
     Engine,
     Scene,
     Vector3,
+    Color3,
+    Color4,
     Mesh,
     MeshBuilder,
     PointerDragBehavior,
@@ -14,7 +17,8 @@ import {
     DirectionalLight,
     PhysicsRaycastResult,
     Ray,
-    Quaternion
+    Quaternion,
+    SceneLoader, AbstractMesh, Material
 } from "@babylonjs/core";
 
 import {AddBlockInstance} from "com.blazorwith3d.exampleapp.client.shared/BlocksOnGrid/AddBlockInstance";
@@ -33,6 +37,7 @@ import { RaycastResponse } from "com.blazorwith3d.exampleapp.client.shared/Block
 import { TriggerTestToBlazor } from "com.blazorwith3d.exampleapp.client.shared/BlocksOnGrid/TriggerTestToBlazor";
 import { PackableVector2 } from "com.blazorwith3d.exampleapp.client.shared/BlocksOnGrid/PackableVector2";
 import { RendererInitializationInfo } from "com.blazorwith3d.exampleapp.client.shared/BlocksOnGrid/RendererInitializationInfo";
+import {TransformNode} from "@babylonjs/core/Meshes/transformNode";
 
 export function InitializeApp_DirectInterop(canvas: HTMLCanvasElement, dotnetObject: any) {
     var controller = new BlocksOnGrid3DControllerOverDirectInterop(dotnetObject);
@@ -45,11 +50,13 @@ export function InitializeApp_DirectInterop(canvas: HTMLCanvasElement, dotnetObj
 
 export class DebugApp implements IBlocksOnGrid3DRenderer {
     private templates: Array<AddBlockTemplate> = new Array<AddBlockTemplate>();
-    private instances: Array<[instance: AddBlockInstance, mesh: Mesh]> = new Array<[instance: AddBlockInstance, mesh: Mesh]>();
+    private instances: Array<[instance: AddBlockInstance, mesh: AbstractMesh, visuals: TransformNode]> = new Array<[instance: AddBlockInstance, mesh: AbstractMesh, visuals: TransformNode]>();
 
     private canvas: HTMLCanvasElement;
     private scene: Scene;
     private plane: Mesh;
+    private camera: FreeCamera;
+    private light: DirectionalLight;
     private _methodInvoker: IBlocksOnGrid3DController;
 
     constructor(canvas: HTMLCanvasElement) {
@@ -73,19 +80,19 @@ export class DebugApp implements IBlocksOnGrid3DRenderer {
         this.plane.rotation = new Vector3(Tools.ToRadians(0), Tools.ToRadians(0), Tools.ToRadians(0));
 
 
-        var camera = new FreeCamera("Camera", new Vector3(0, 0, -10), this.scene);
+        this.camera = new FreeCamera("Camera", new Vector3(0, 0, -10), this.scene);
         // camera.rotation.x = Tools.ToRadians(0);
         // camera.rotation.y = Tools.ToRadians(180);
         // camera.rotation.y = Tools.ToRadians(90);
 
-        camera.parent = this.plane;
+        this.camera.parent = this.plane;
 
-        camera.target = new Vector3(0, 0, 0)
-        camera.upVector = new Vector3(0, 1, 0)
+        this.camera.target = new Vector3(0, 0, 0)
+        this.camera.upVector = new Vector3(0, 1, 0)
 
 
-        var light1 = new DirectionalLight("light1", new Vector3(0, 0, 1).applyRotationQuaternion(Quaternion.FromEulerAngles(Tools.ToRadians(53), Tools.ToRadians(-18), Tools.ToRadians(0))), this.scene);
-        light1.parent = this.plane;
+        this.light = new DirectionalLight("light1", new Vector3(0, 0, 1).applyRotationQuaternion(Quaternion.FromEulerAngles(Tools.ToRadians(53), Tools.ToRadians(-18), Tools.ToRadians(0))), this.scene);
+        this.light.parent = this.plane;
 
 
         // hide/show the Inspector
@@ -111,7 +118,17 @@ export class DebugApp implements IBlocksOnGrid3DRenderer {
         this._methodInvoker = methodInvoker;
     }
 
-    public async InitializeRenderer(_: RendererInitializationInfo): Promise<void> {
+    public async InitializeRenderer(info: RendererInitializationInfo): Promise<void> {
+
+        this.scene.clearColor = new Color4(info.backgroundColor.r, info.backgroundColor.g, info.backgroundColor.b, 1);
+
+        this.camera.fov = Tools.ToRadians(info.requestedCameraFoV);
+
+        this.camera.position = new Vector3(info.requestedCameraPosition.x, info.requestedCameraPosition.y, -info.requestedCameraPosition.z);
+        this.camera.rotationQuaternion = Quaternion.FromEulerAngles(Tools.ToRadians(-info.requestedCameraRotation.x), Tools.ToRadians(-info.requestedCameraRotation.y), Tools.ToRadians(-info.requestedCameraRotation.z));
+
+        this.light.direction = new Vector3(0, 0, 1).applyRotationQuaternion(Quaternion.FromEulerAngles(Tools.ToRadians(-info.requestedDirectionalLightRotation.x), Tools.ToRadians(-info.requestedDirectionalLightRotation.y), Tools.ToRadians(-info.requestedDirectionalLightRotation.z)))
+
         console.log("InitializeRenderer called");
         this._methodInvoker.OnRendererInitialized(new RendererInitialized(), this).then(_ => console.log("UnityAppInitialized invoked"));
     }
@@ -122,36 +139,34 @@ export class DebugApp implements IBlocksOnGrid3DRenderer {
 
     public async InvokeTriggerTestToBlazor(_: TriggerTestToBlazor): Promise<void> {
 
-        setTimeout(async ()=> {
-            var response=await this._methodInvoker.OnTestToBlazor({ id : 13  })
+        setTimeout(async () => {
+            var response = await this._methodInvoker.OnTestToBlazor({id: 13})
 
 
-            if (response.id != 13)
-            {
+            if (response.id != 13) {
                 console.log("TriggerTestToBlazor is failure");
             }
             console.log("TriggerTestToBlazor is done");
-        } ,1000)
+        }, 1000)
     }
 
-    public async InvokeUpdateBlockInstance(blockId: number| null, position: PackableVector2, rotationZ: number) : Promise<any> {
+    public async InvokeUpdateBlockInstance(blockId: number | null, position: PackableVector2, rotationZ: number): Promise<any> {
         console.log("OnUpdateBlockInstance", blockId, position, rotationZ);
 
 
-        const [instance, mesh] = this.instances.find(o => o[0].blockId === blockId);
+        const [instance, mesh, visuals] = this.instances.find(o => o[0].blockId === blockId);
 
         instance.position = position;
         instance.rotationZ = rotationZ;
-        this.UpdateMeshPosition(mesh, instance);
+        this.UpdateMeshPosition(mesh, visuals, instance);
     }
 
-
-    public async InvokeRemoveBlockTemplate(obj: RemoveBlockTemplate): Promise<any>  {
+    public async InvokeRemoveBlockTemplate(obj: RemoveBlockTemplate): Promise<any> {
         console.log("RemoveBlockTemplate", obj);
         this.templates = this.templates.filter(o => o.templateId !== obj.templateId);
     }
 
-    public async InvokeRemoveBlockInstance(obj: RemoveBlockInstance): Promise<any>  {
+    public async InvokeRemoveBlockInstance(obj: RemoveBlockInstance): Promise<any> {
         console.log("RemoveBlockInstance", obj);
 
         const [instance, mesh] = this.instances.find(o => o[0].blockId === obj.blockId);
@@ -160,46 +175,66 @@ export class DebugApp implements IBlocksOnGrid3DRenderer {
         this.scene.removeMesh(mesh);
     }
 
-    public async InvokeAddBlockInstance(obj: AddBlockInstance): Promise<any>  {
+    public async InvokeAddBlockInstance(obj: AddBlockInstance): Promise<any> {
         console.log("AddBlockInstance", obj);
 
         var template = this.templates.find(o => o.templateId === obj.templateId);
 
-        var mesh: Mesh = MeshBuilder.CreateBox("box" + obj.blockId, {
+        var mesh:AbstractMesh;
+        mesh = MeshBuilder.CreateBox("box" + obj.blockId, {
             width: template.size.x,
             height: template.size.y,
             depth: template.size.z
         }, this.scene);
         mesh.parent = this.plane;
         mesh.position = new Vector3(0, 0, -template.size.z / 2);
-        this.UpdateMeshPosition(mesh, obj);
 
-        this.instances.push([obj, mesh,]);
+        var visuals:TransformNode|null;
+        if(template.visuals3dUri!=null && template.visuals3dUri.length>0) {
+            
+            mesh.isVisible=false;
+            
+            visuals=new TransformNode("Root"+template.visuals3dUri);
+            this.scene.addTransformNode(visuals);
+            
+            var gltfScene=await SceneLoader.ImportMeshAsync("","",template.visuals3dUri, this.scene );
+            for (const node of gltfScene.meshes) {
+             node.isPickable=false;
+             node.isNearPickable=false;
+             node.isNearGrabbable=false;
+             node.setParent(visuals, true, true );
+                node.rotation=  new Vector3(0, 0, Tools.ToRadians(180));
+            }
+        }
+        
+        this.UpdateMeshPosition(mesh,visuals, obj);
+
+        this.instances.push([obj, mesh,visuals]);
     }
 
-    private UpdateMeshPosition = (mesh: Mesh, obj: AddBlockInstance) => {
-
+    private UpdateMeshPosition(mesh: TransformNode,visuals: TransformNode|null, obj: AddBlockInstance): void {
         mesh.position = new Vector3(obj.position.x, obj.position.y, mesh.position.z);
-        mesh.rotation = new Vector3(0, 0, obj.rotationZ);
+        mesh.rotation = new Vector3(0, 0, Tools.ToRadians(obj.rotationZ));
+        
+        if(visuals!=null){
+            visuals.position = new Vector3(obj.position.x, obj.position.y, mesh.position.z);
+            visuals.rotation = new Vector3(0, 0, Tools.ToRadians(obj.rotationZ));
+        }
     }
-
 
     public async InvokeRequestScreenToWorldRay(msg: RequestScreenToWorldRay): Promise<ScreenToWorldRayResponse> {
 
-
-        var ray = this.scene.createPickingRay(msg.screen.x, msg.screen.y, Matrix.Identity(), this.scene.activeCamera);	
+        var ray = this.scene.createPickingRay(msg.screen.x, msg.screen.y, Matrix.Identity(), this.scene.activeCamera);
 
         var worldToBlazor = Matrix.Invert(this.plane.computeWorldMatrix(true));
 
         // convert ray to expected blazor world coordinate system
         ray = new Ray(Vector3.TransformCoordinates(ray.origin, worldToBlazor), Vector3.TransformNormal(ray.direction, worldToBlazor), ray.length, ray.epsilon);
 
-
-
         return {
             ray: {
-                origin: { x: ray.origin.x, y: ray.origin.y, z: ray.origin.z },
-                direction: { x: ray.direction.x, y: ray.direction.y, z: ray.direction.z }
+                origin: {x: ray.origin.x, y: ray.origin.y, z: ray.origin.z},
+                direction: {x: ray.direction.x, y: ray.direction.y, z: ray.direction.z}
             }
         };
     }
@@ -214,32 +249,29 @@ export class DebugApp implements IBlocksOnGrid3DRenderer {
 
         var ray = new Ray(Vector3.TransformCoordinates(start, blazorToWorld), Vector3.TransformNormal(dir, blazorToWorld));
 
-        var pickingInfo = this.scene.pickWithRay(ray);
+        var pickingInfo = this.scene.pickWithRay(ray,o=> o.isEnabled(true) && o.isPickable);
 
         var response = new RaycastResponse();
         response.hitWorld = start;
 
-        if (pickingInfo.hit ) {
+        if (pickingInfo.hit) {
 
-            
-            const [instance, mesh] = this.instances.find(o => o[1] === pickingInfo.pickedMesh);
+            const [instance, mesh, visuals] = this.instances.find(o => o[1] === pickingInfo.pickedMesh);
             response.isBlockHit = true;
             response.hitBlockId = instance.blockId;
-            
-            var hitVector=Vector3.TransformCoordinates(pickingInfo.pickedPoint, worldToBlazor);
-            response.hitWorld = {x: hitVector.x, y: hitVector.y, z: hitVector.z} ;
+
+            var hitVector = Vector3.TransformCoordinates(pickingInfo.pickedPoint, worldToBlazor);
+            response.hitWorld = {x: hitVector.x, y: hitVector.y, z: hitVector.z};
         }
-         return response;
+        return response;
     }
 
-    public async InvokeAddBlockTemplate(template: AddBlockTemplate):Promise<any>  {
+    public async InvokeAddBlockTemplate(template: AddBlockTemplate): Promise<any> {
         console.log("AddBlockTemplate", template);
         this.templates.push(template);
     }
 
-    public async InvokePerfCheck(obj: PerfCheck) :Promise<PerfCheck>
-    {
-        return  obj;
+    public async InvokePerfCheck(obj: PerfCheck): Promise<PerfCheck> {
+        return obj;
     }
-
 }

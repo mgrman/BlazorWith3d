@@ -186,11 +186,6 @@ CODE: 409 -> https://github.com/projectkudu/kudu/issues/3042#issuecomment-220034
 
 ### Prio 0 (improve generic packages)
 
-Update visuals of BabylonJS to match the rest
-
-Test support of System.Numerics native types
-- sadly the support might be limited due to harded to control serialization of built in types
-
 Handle warnings in Generator
 
 publish generator and supporting libraries as nuget
@@ -214,6 +209,9 @@ add requirement that non MemoryPack TS types must be marked as sequential struct
 - check if current GLTF instancing in Unity is working
 
 ### Prio 2 (backlog)
+
+Support of System.Numerics native types
+- sadly the support might be limited due to harded to control serialization of built in types
 
 - ensure the generator has fully optional dependence on memory pack, even for js direct interop use case
   - if turned on via csproj config, generate typescript types intended for direct interop
