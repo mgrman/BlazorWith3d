@@ -46,36 +46,6 @@ public class HelloSourceIncrementalGenerator : IIncrementalGenerator
         return InterfaceTypeToTwoWayAppInfo(context.SemanticModel, interfaceDeclarationSyntax, eventHandlerType);
     }
 
-    static TwoWayAppInfoWithOwner? ConvertTypeWithAttribute(GeneratorSyntaxContext context, string attributeName)
-    {
-
-        var typeDeclarationSyntax = (TypeDeclarationSyntax)context.Node;
-
-        if (!typeDeclarationSyntax.AttributeLists.SelectMany(e => e.Attributes)
-            .TryGet(e => e.Name.NormalizeWhitespace().ToFullString() == attributeName,
-                out var generateDirectBindingAttr))
-        {
-
-            return null;
-        }
-
-        var methodHandlerType = (generateDirectBindingAttr.ArgumentList.Arguments[0].Expression as TypeOfExpressionSyntax).Type;
-        var eventHandlerType = (generateDirectBindingAttr.ArgumentList.Arguments[1].Expression as TypeOfExpressionSyntax).Type;
-        return ConcreteTypeToTwoWayAppInfoWithOwner(context.SemanticModel, typeDeclarationSyntax, methodHandlerType, eventHandlerType);
-    }
-
-   static TwoWayAppInfoWithOwner ConcreteTypeToTwoWayAppInfoWithOwner(SemanticModel context, TypeDeclarationSyntax mainType, TypeSyntax methodHandlerType, TypeSyntax eventHandlerType)
-    {
-        var bindingType = GetTypeInfo(mainType);
-        var eventHandlerTypeSymbol = context.Compilation.GetSemanticModel(eventHandlerType.SyntaxTree).GetTypeInfo(eventHandlerType).Type as INamedTypeSymbol;
-        var methodHandlerTypeSymbol = context.Compilation.GetSemanticModel(methodHandlerType.SyntaxTree).GetTypeInfo(methodHandlerType).Type as INamedTypeSymbol;
-
-        var events = GetMethodInfos(context, methodHandlerTypeSymbol);
-
-        var methods = GetMethodInfos(context, eventHandlerTypeSymbol);
-        return new TwoWayAppInfoWithOwner(bindingType, GetTypeInfo(eventHandlerTypeSymbol, context.Compilation), GetTypeInfo(methodHandlerTypeSymbol, context.Compilation), methods, events);
-    }
-
     static TwoWayAppInfo InterfaceTypeToTwoWayAppInfo(SemanticModel context, InterfaceDeclarationSyntax mainType, TypeSyntax eventHandlerType)
     {
         var methodHandlerTypeInfo = GetTypeInfo(mainType);
