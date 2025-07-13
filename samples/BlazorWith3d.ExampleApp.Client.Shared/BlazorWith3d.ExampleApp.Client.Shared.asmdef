@@ -1,20 +1,19 @@
 {
-  "name": "BlazorWith3d.ExampleApp.Client.Shared",
-  "rootNamespace": "BlazorWith3d.ExampleApp.Client.Shared",
-  "references": [
-    "GUID:f163fe17560e40a8ba1f360c16bd7561",
-    "GUID:756335c0388f7114790e504ed368ae1d",
-    "GUID:47e250f1480496540813d898e0eec33a"
-  ],
-  "includePlatforms": [],
-  "excludePlatforms": [],
-  "allowUnsafeCode": false,
-  "overrideReferences": true,
-  "precompiledReferences": [
-    "MemoryPack.Core.dll"
-  ],
-  "autoReferenced": true,
-  "defineConstraints": [],
-  "versionDefines": [],
-  "noEngineReferences": true
+    "name": "BlazorWith3d.ExampleApp.Client.Shared",
+    "rootNamespace": "BlazorWith3d.ExampleApp.Client.Shared",
+    "references": [
+        "GUID:f163fe17560e40a8ba1f360c16bd7561",
+        "GUID:47e250f1480496540813d898e0eec33a"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "MemoryPack.Core.dll"
+    ],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
 }
