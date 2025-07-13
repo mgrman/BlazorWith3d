@@ -11,13 +11,8 @@ internal static class HelloSourceGenerator_TypeScript
 {
     internal static IEnumerable<(string text, string path)> GenerateTypeScriptClasses(string? localPath, TwoWayAppInfo info)
     {
-        var allTypes = info.methods.Concat(info.events)
-            .SelectMany(o => o.arguments.Select(o => o.argType).Concat(o.returnType!=null ? [o.returnType] : Enumerable.Empty<TypeInfo>()))
-            .SelectMany(o => o.FlattenProperties())
+        var typesToGenerate = info.AllTypesNonDistinct()
             .GroupBy(o => (o.typeName, o.@namespace)).Select(o => o.First())
-            .ToList();
-        
-        var typesToGenerate = allTypes
             .Where(o=>o.typeName!=  info.eventHandler.typeName && o.typeName!=  info.app.typeName && o.specialType==null )
             .ToList();
 

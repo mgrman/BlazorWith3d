@@ -186,11 +186,11 @@ CODE: 409 -> https://github.com/projectkudu/kudu/issues/3042#issuecomment-220034
 
 ### Prio 0 (improve generic packages)
 
+Share code between generators.
+
 Handle warnings in Generator
 
 publish generator and supporting libraries as nuget
-
-add requirement that non MemoryPack TS types must be marked as sequential struct layout!
 
 ### Prio 1 (improve sample app)
 
@@ -202,11 +202,7 @@ add requirement that non MemoryPack TS types must be marked as sequential struct
 
 - Add context menu to delete block instance
 
-- add Visuals Transform setting so it can be customized and reused 
-
-- implement GLB loading for babylon
-
-- check if current GLTF instancing in Unity is working
+- check if GLTF instancing is working
 
 ### Prio 2 (backlog)
 

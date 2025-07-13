@@ -24,8 +24,8 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
         ValueTask<PerfCheck> InvokePerfCheck(PerfCheck msg);
         ValueTask<ScreenToWorldRayResponse> InvokeRequestScreenToWorldRay(RequestScreenToWorldRay msg);
     }
-    
-    
+
+
     [GenerateTSTypes(typeof(IBlocksOnGrid3DRenderer), "scripts/BlocksOnGrid")]
     [GenerateTSTypesWithMemoryPack(typeof(IBlocksOnGrid3DRenderer))]
     [GenerateBinaryApi(typeof(IBlocksOnGrid3DRenderer))]

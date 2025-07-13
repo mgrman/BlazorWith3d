@@ -15,13 +15,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_Solution Items", "_Solutio
 	ProjectSection(SolutionItems) = preProject
 		.gitattributes = .gitattributes
 		.gitignore = .gitignore
+		global.json = global.json
 		LICENSE = LICENSE
 		.github\workflows\main_blazorwith3d.yml = .github\workflows\main_blazorwith3d.yml
 		README.md = README.md
-		global.json = global.json
 	EndProjectSection
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d.CodeGenerator", "src\BlazorWith3d\BlazorWith3d.CodeGenerator\BlazorWith3d.CodeGenerator.csproj", "{47CE0DFA-94DF-4040-ACA6-BFAA0E984677}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d.ExampleApp.Client.Unity", "samples\BlazorWith3d.ExampleApp.Client.Unity\BlazorWith3d.ExampleApp.Client.Unity.csproj", "{E773FCE7-BF7A-461B-BC7A-64E804D0C30D}"
 EndProject
@@ -51,6 +49,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d.CodeGenerator.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d.CodeGenerator.TypeScript", "src\BlazorWith3d\BlazorWith3d.CodeGenerator.TypeScript\BlazorWith3d.CodeGenerator.TypeScript.csproj", "{97BF2AB0-7C49-4C15-947B-7E5666896C9A}"
 EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "BlazorWith3d.CodeGenerator.SharedCode", "src\BlazorWith3d\BlazorWith3d.CodeGenerator.SharedCode\BlazorWith3d.CodeGenerator.SharedCode.shproj", "{6DE1CF6E-98CA-4D23-88C2-ABD1BFCADE57}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d.CodeGenerator.BlazorBinding", "src\BlazorWith3d\BlazorWith3d.CodeGenerator.BlazorBinding\BlazorWith3d.CodeGenerator.BlazorBinding.csproj", "{3D99ABC1-5633-4B12-A74A-DB765519C9D6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d.CodeGenerator.DotnetBinaryApiBinding", "src\BlazorWith3d\BlazorWith3d.CodeGenerator.DotnetBinaryApiBinding\BlazorWith3d.CodeGenerator.DotnetBinaryApiBinding.csproj", "{5012F6C0-7F95-4EAC-A526-0DCCBD8FA02E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -73,10 +77,6 @@ Global
 		{5DE1CF85-C4B0-4B38-8804-3DC41F6355B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5DE1CF85-C4B0-4B38-8804-3DC41F6355B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5DE1CF85-C4B0-4B38-8804-3DC41F6355B4}.Release|Any CPU.Build.0 = Release|Any CPU
-		{47CE0DFA-94DF-4040-ACA6-BFAA0E984677}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{47CE0DFA-94DF-4040-ACA6-BFAA0E984677}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{47CE0DFA-94DF-4040-ACA6-BFAA0E984677}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{47CE0DFA-94DF-4040-ACA6-BFAA0E984677}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E773FCE7-BF7A-461B-BC7A-64E804D0C30D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E773FCE7-BF7A-461B-BC7A-64E804D0C30D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E773FCE7-BF7A-461B-BC7A-64E804D0C30D}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -95,6 +95,7 @@ Global
 		{1E1C9549-D095-42B2-84DC-EF2717775578}.Release|Any CPU.Build.0 = Release|Any CPU
 		{6CC87DAA-38F3-264B-C400-5531A5FC776A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{6CC87DAA-38F3-264B-C400-5531A5FC776A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6CC87DAA-38F3-264B-C400-5531A5FC776A}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
 		{6CC87DAA-38F3-264B-C400-5531A5FC776A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6CC87DAA-38F3-264B-C400-5531A5FC776A}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D53BA66F-0AF8-E4D4-3F3F-A7F8869707C2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -125,6 +126,14 @@ Global
 		{97BF2AB0-7C49-4C15-947B-7E5666896C9A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{97BF2AB0-7C49-4C15-947B-7E5666896C9A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{97BF2AB0-7C49-4C15-947B-7E5666896C9A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3D99ABC1-5633-4B12-A74A-DB765519C9D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3D99ABC1-5633-4B12-A74A-DB765519C9D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3D99ABC1-5633-4B12-A74A-DB765519C9D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3D99ABC1-5633-4B12-A74A-DB765519C9D6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5012F6C0-7F95-4EAC-A526-0DCCBD8FA02E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5012F6C0-7F95-4EAC-A526-0DCCBD8FA02E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5012F6C0-7F95-4EAC-A526-0DCCBD8FA02E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5012F6C0-7F95-4EAC-A526-0DCCBD8FA02E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -134,7 +143,6 @@ Global
 		{386015FC-3AD7-4D4B-99B5-590B111D82BF} = {44CB5B1C-A284-45E6-BFB7-C58D73AE7037}
 		{E881D744-002F-40ED-8DFD-C839300890B5} = {8D75F5F4-2A1B-4C7D-9217-10A5BCFF61EB}
 		{5DE1CF85-C4B0-4B38-8804-3DC41F6355B4} = {8D75F5F4-2A1B-4C7D-9217-10A5BCFF61EB}
-		{47CE0DFA-94DF-4040-ACA6-BFAA0E984677} = {8D75F5F4-2A1B-4C7D-9217-10A5BCFF61EB}
 		{E773FCE7-BF7A-461B-BC7A-64E804D0C30D} = {44CB5B1C-A284-45E6-BFB7-C58D73AE7037}
 		{25A15756-1FE5-4E77-AA27-1B271E323E5E} = {44CB5B1C-A284-45E6-BFB7-C58D73AE7037}
 		{1AE985E3-DB1E-4D0D-ABFA-6E7EA9B2269E} = {44CB5B1C-A284-45E6-BFB7-C58D73AE7037}
@@ -147,8 +155,18 @@ Global
 		{E0FDC06F-C321-4923-8FCB-D38BD098D42E} = {8D75F5F4-2A1B-4C7D-9217-10A5BCFF61EB}
 		{C508FB0C-8DE3-4A9E-8AA8-B0E998FA34BE} = {8D75F5F4-2A1B-4C7D-9217-10A5BCFF61EB}
 		{97BF2AB0-7C49-4C15-947B-7E5666896C9A} = {8D75F5F4-2A1B-4C7D-9217-10A5BCFF61EB}
+		{6DE1CF6E-98CA-4D23-88C2-ABD1BFCADE57} = {8D75F5F4-2A1B-4C7D-9217-10A5BCFF61EB}
+		{3D99ABC1-5633-4B12-A74A-DB765519C9D6} = {8D75F5F4-2A1B-4C7D-9217-10A5BCFF61EB}
+		{5012F6C0-7F95-4EAC-A526-0DCCBD8FA02E} = {8D75F5F4-2A1B-4C7D-9217-10A5BCFF61EB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {66A8D527-8D61-4D7B-AAFB-AE9DEF0B3757}
+	EndGlobalSection
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		src\BlazorWith3d\BlazorWith3d.CodeGenerator.SharedCode\BlazorWith3d.CodeGenerator.SharedCode.projitems*{3d99abc1-5633-4b12-a74a-db765519c9d6}*SharedItemsImports = 5
+		src\BlazorWith3d\BlazorWith3d.CodeGenerator.SharedCode\BlazorWith3d.CodeGenerator.SharedCode.projitems*{5012f6c0-7f95-4eac-a526-0dccbd8fa02e}*SharedItemsImports = 5
+		src\BlazorWith3d\BlazorWith3d.CodeGenerator.SharedCode\BlazorWith3d.CodeGenerator.SharedCode.projitems*{6de1cf6e-98ca-4d23-88c2-abd1bfcade57}*SharedItemsImports = 13
+		src\BlazorWith3d\BlazorWith3d.CodeGenerator.SharedCode\BlazorWith3d.CodeGenerator.SharedCode.projitems*{97bf2ab0-7c49-4c15-947b-7e5666896c9a}*SharedItemsImports = 5
+		src\BlazorWith3d\BlazorWith3d.CodeGenerator.SharedCode\BlazorWith3d.CodeGenerator.SharedCode.projitems*{c508fb0c-8de3-4a9e-8aa8-b0e998fa34be}*SharedItemsImports = 5
 	EndGlobalSection
 EndGlobal

@@ -32,7 +32,7 @@
         <Content Remove="*.meta"/>
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="..\..\src\BlazorWith3d\BlazorWith3d.CodeGenerator\BlazorWith3d.CodeGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+        <ProjectReference Include="..\..\src\BlazorWith3d\BlazorWith3d.CodeGenerator.DotnetBinaryApiBinding\BlazorWith3d.CodeGenerator.DotnetBinaryApiBinding.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
         <ProjectReference Include="..\..\src\BlazorWith3d\BlazorWith3d.CodeGenerator.MemoryPack\BlazorWith3d.CodeGenerator.MemoryPack.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
         <ProjectReference Include="..\..\src\BlazorWith3d\BlazorWith3d.CodeGenerator.TypeScript\BlazorWith3d.CodeGenerator.TypeScript.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
         <ProjectReference Include="..\..\src\BlazorWith3d\BlazorWith3d.Shared\BlazorWith3d.Shared.csproj" />

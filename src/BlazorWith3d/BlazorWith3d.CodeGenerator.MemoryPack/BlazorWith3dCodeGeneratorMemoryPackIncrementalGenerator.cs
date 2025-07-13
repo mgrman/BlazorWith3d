@@ -9,9 +9,53 @@ using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 
 namespace BlazorWith3d.CodeGenerator;
+
+[DiagnosticAnalyzer(LanguageNames.CSharp)]
+public class MakeConstAnalyzer : DiagnosticAnalyzer
+{
+    private static DiagnosticDescriptor Rule = new DiagnosticDescriptor( "BlazorWith3dCodeGeneratorMemoryPack1", "Test Title", "Test MessageFormat", "Test Category", DiagnosticSeverity.Error, isEnabledByDefault: true, description: "Test Description");
+
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get { return ImmutableArray.Create(Rule); } }
+
+    public override void Initialize(AnalysisContext context)
+    {
+         // See https://github.com/dotnet/roslyn/blob/main/docs/analyzers/Analyzer%20Actions%20Semantics.md for more information
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
+        context.EnableConcurrentExecution();
+        context.RegisterSyntaxNodeAction(AnalyzeNode, SyntaxKind.InterfaceDeclaration);
+    }
+
+    private void AnalyzeNode(SyntaxNodeAnalysisContext context)
+    {
+        var ids = (InterfaceDeclarationSyntax)context.Node;
+
+        // make sure the declaration isn't already const:
+        if (!ids.HasAttribute("GenerateTSTypesWithMemoryPack"))
+        {
+            return;
+        }
+
+        var appInfo = BlazorWith3dCodeGeneratorMemoryPackIncrementalGenerator.ConvertInterfaceWithAttribute(ids, context.SemanticModel, "GenerateTSTypesWithMemoryPack");
+
+        var nonSequentialStructs = appInfo.AllTypesNonDistinct()
+            .Where(o => o.isNonSequentialStruct)
+            .Select(o => o.typeName)
+            .Distinct()
+            .ToList();
+
+        if (nonSequentialStructs.Count == 0)
+        {
+            return;
+        }
+
+        var ruleInstance = new DiagnosticDescriptor("BlazorWith3dCodeGeneratorMemoryPack1", $"Non-sequential structs referenced in [GenerateTSTypesWithMemoryPack] interface", $"Please mark the types: {nonSequentialStructs.JoinStringWithComma()} with [StructLayout(LayoutKind.Sequential)]", "BlazorWith3dCodeGeneratorMemoryPack", DiagnosticSeverity.Error, isEnabledByDefault: true, description: "Non-sequential structs in any child type cannot be used with [GenerateTSTypesWithMemoryPack] marked types");
+        context.ReportDiagnostic(Diagnostic.Create(ruleInstance, context.Node.GetLocation()));
+    }
+}
 
 [Generator]
 public class BlazorWith3dCodeGeneratorMemoryPackIncrementalGenerator : IIncrementalGenerator
@@ -21,7 +65,7 @@ public class BlazorWith3dCodeGeneratorMemoryPackIncrementalGenerator : IIncremen
         IncrementalValuesProvider<TwoWayAppInfo?> memoryPackTsInteropTypesToGenerate = context.SyntaxProvider
             .CreateSyntaxProvider(
                 predicate: static (s, _) => s is InterfaceDeclarationSyntax ids && ids.HasAttribute("GenerateTSTypesWithMemoryPack"),
-                transform: static (ctx, _) => ConvertInterfaceWithAttribute(ctx, "GenerateTSTypesWithMemoryPack"))
+                transform: static (ctx, _) => ConvertInterfaceWithAttribute(ctx.Node as InterfaceDeclarationSyntax, ctx.SemanticModel ,"GenerateTSTypesWithMemoryPack"))
             .Where(static m => m is not null);
         var tsOptions=HelloSourceGenerator_MemoryPackTypeScriptForStructs.GetTsOptions(context);
         context.RegisterSourceOutput(memoryPackTsInteropTypesToGenerate.Combine(tsOptions),
@@ -48,10 +92,8 @@ public class BlazorWith3dCodeGeneratorMemoryPackIncrementalGenerator : IIncremen
             });
     }
 
-    static TwoWayAppInfo? ConvertInterfaceWithAttribute(GeneratorSyntaxContext context, string attributeName)
+    internal static TwoWayAppInfo? ConvertInterfaceWithAttribute(InterfaceDeclarationSyntax interfaceDeclarationSyntax, SemanticModel model, string attributeName)
     {
-        var interfaceDeclarationSyntax = (InterfaceDeclarationSyntax)context.Node;
-
         if (!interfaceDeclarationSyntax.AttributeLists.SelectMany(e => e.Attributes)
             .TryGet(e => e.Name.NormalizeWhitespace().ToFullString() == attributeName, out var attr))
         {
@@ -59,10 +101,10 @@ public class BlazorWith3dCodeGeneratorMemoryPackIncrementalGenerator : IIncremen
         }
 
         var eventHandlerType = (attr.ArgumentList.Arguments[0].Expression as TypeOfExpressionSyntax).Type;
-        return InterfaceTypeToTwoWayAppInfo(context.SemanticModel, interfaceDeclarationSyntax, eventHandlerType);
+        return InterfaceTypeToTwoWayAppInfo(model, interfaceDeclarationSyntax, eventHandlerType);
     }
 
-    static TwoWayAppInfo InterfaceTypeToTwoWayAppInfo(SemanticModel context, InterfaceDeclarationSyntax mainType, TypeSyntax eventHandlerType)
+    internal static TwoWayAppInfo InterfaceTypeToTwoWayAppInfo(SemanticModel context, InterfaceDeclarationSyntax mainType, TypeSyntax eventHandlerType)
     {
         var methodHandlerTypeInfo = GetTypeInfo(mainType);
         var eventHandlerTypeInfo = GetTypeInfo(eventHandlerType, context.Compilation);
@@ -75,7 +117,7 @@ public class BlazorWith3dCodeGeneratorMemoryPackIncrementalGenerator : IIncremen
         return new TwoWayAppInfo(methodHandlerTypeInfo, eventHandlerTypeInfo, methods, events);
     }
 
-    static List<MethodInfo> GetMethodInfosFromDeclaration(SemanticModel context, InterfaceDeclarationSyntax o)
+    internal static List<MethodInfo> GetMethodInfosFromDeclaration(SemanticModel context, InterfaceDeclarationSyntax o)
     {
         var methods = o.Members.OfType<MethodDeclarationSyntax>()
             .Select(m => GetMethodInfo(m, context.Compilation))
@@ -83,7 +125,7 @@ public class BlazorWith3dCodeGeneratorMemoryPackIncrementalGenerator : IIncremen
             .ToList();
         return methods;
     }
-    static List<MethodInfo> GetMethodInfos(SemanticModel context, INamedTypeSymbol? o)
+    internal static List<MethodInfo> GetMethodInfos(SemanticModel context, INamedTypeSymbol? o)
     {
         var methods = o.GetMembers()
             .OfType<IMethodSymbol>()
@@ -94,7 +136,7 @@ public class BlazorWith3dCodeGeneratorMemoryPackIncrementalGenerator : IIncremen
     }
 
 
-    private static TypeInfo GetTypeInfo(TypeDeclarationSyntax typeDeclaration)
+    internal static TypeInfo GetTypeInfo(TypeDeclarationSyntax typeDeclaration)
     {
         var typeName = typeDeclaration.Identifier.ToString();
 
@@ -113,11 +155,38 @@ public class BlazorWith3dCodeGeneratorMemoryPackIncrementalGenerator : IIncremen
         {
             throw new InvalidOperationException();
         }
-        
-        return new TypeInfo(typeName, namespaceName, false, typeDeclaration.AttributeLists.SelectMany(a => a.Attributes).Any(a => a.Name.NormalizeWhitespace().ToFullString().StartsWith("GenerateTypeScript")), null,null);
+
+        var isNonSequentialStruct = typeDeclaration is StructDeclarationSyntax structDeclaration && !IsSequentialStruct(structDeclaration);
+
+        return new TypeInfo(typeName, namespaceName, false, typeDeclaration.AttributeLists.SelectMany(a => a.Attributes).Any(a => a.Name.NormalizeWhitespace().ToFullString().StartsWith("GenerateTypeScript")), null,null,isNonSequentialStruct);
     }
 
-    private static TypeInfo GetTypeInfo(INamedTypeSymbol typeSymbol, Compilation compilation)
+    private static bool IsSequentialStruct(StructDeclarationSyntax structDeclarationSyntax)
+    {
+        if (!structDeclarationSyntax.AttributeLists.SelectMany(e => e.Attributes)
+                .TryGet(e => e.Name.NormalizeWhitespace().ToFullString() == "StructLayout", out var attr))
+        {
+            return false;
+        }
+
+        var firstArgument = attr.ArgumentList.Arguments[0].Expression;
+        var literalExpressionSyntax = (firstArgument as MemberAccessExpressionSyntax);
+        return literalExpressionSyntax.Name.Identifier.Value == "Sequential";
+    }
+
+    private static bool IsSequentialStruct(INamedTypeSymbol typeSymbol)
+    {
+        var attr = typeSymbol.GetAttributes().FirstOrDefault(a => a.AttributeClass.Name.StartsWith("StructLayout"));
+
+        if (attr == null)
+        {
+            return false;
+        }
+
+        return (int)attr.ConstructorArguments.FirstOrDefault().Value==0;
+    }
+
+    internal static TypeInfo GetTypeInfo(INamedTypeSymbol typeSymbol, Compilation compilation)
     {
         var typeName = typeSymbol.Name;
         bool isNullable = typeSymbol.NullableAnnotation == NullableAnnotation.Annotated;
@@ -129,7 +198,7 @@ public class BlazorWith3dCodeGeneratorMemoryPackIncrementalGenerator : IIncremen
 
         if (HelloSourceGenerator_MemoryPackTypeScriptForStructs.TryGetSpecialType(typeSymbol, out var specialType))
         {
-            return new TypeInfo(typeName, typeSymbol.ContainingNamespace.ToDisplayString(), isNullable, false, specialType, null!);
+            return new TypeInfo(typeName, typeSymbol.ContainingNamespace.ToDisplayString(), isNullable, false, specialType, null!,false);
         }
 
 
@@ -141,10 +210,12 @@ public class BlazorWith3dCodeGeneratorMemoryPackIncrementalGenerator : IIncremen
             })
             .ToList();
 
-        return new TypeInfo(typeName, typeSymbol.ContainingNamespace.ToDisplayString(), isNullable, typeSymbol.GetAttributes().Any(a=>a.AttributeClass.Name.StartsWith("GenerateTypeScript")), null, properties);
+        var isNonSequentialStruct = typeSymbol.IsValueType && !IsSequentialStruct(typeSymbol);
+
+        return new TypeInfo(typeName, typeSymbol.ContainingNamespace.ToDisplayString(), isNullable, typeSymbol.GetAttributes().Any(a=>a.AttributeClass.Name.StartsWith("GenerateTypeScript")), null, properties, isNonSequentialStruct);
     }
 
-    private static TypeInfo GetTypeInfo(TypeSyntax typeSyntax, Compilation compilation)
+    internal static TypeInfo GetTypeInfo(TypeSyntax typeSyntax, Compilation compilation)
     {
         var semanticModel = compilation.GetSemanticModel(typeSyntax.SyntaxTree);
 
@@ -153,7 +224,7 @@ public class BlazorWith3dCodeGeneratorMemoryPackIncrementalGenerator : IIncremen
         return GetTypeInfo(typeInfo, compilation);
     }
 
-    private static MethodInfo GetMethodInfo(IMethodSymbol method, Compilation compilation)
+    internal static MethodInfo GetMethodInfo(IMethodSymbol method, Compilation compilation)
     {
         var name = method.Name;
 
@@ -189,7 +260,7 @@ public class BlazorWith3dCodeGeneratorMemoryPackIncrementalGenerator : IIncremen
         return new MethodInfo(name, returnType==null?null:GetTypeInfo(returnType , compilation), arguments.ToArray());
     }
 
-    private static MethodInfo GetMethodInfo(MethodDeclarationSyntax method, Compilation compilation)
+    internal static MethodInfo GetMethodInfo(MethodDeclarationSyntax method, Compilation compilation)
     {
         var name = method.Identifier.Text;
 

@@ -5,7 +5,6 @@ namespace BlazorWith3d.CodeGenerator;
 
 internal static class HelloSourceGenerator_BlazorBinding
 {
-    
     internal static IEnumerable<(string text, string path)> GenerateBindingClass(TwoWayAppInfoWithOwner info)
     {
         var sb = new IndentedStringBuilder();

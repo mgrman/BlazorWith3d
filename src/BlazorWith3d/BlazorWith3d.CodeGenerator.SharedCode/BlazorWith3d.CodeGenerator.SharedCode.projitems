@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects Condition="'$(MSBuildVersion)' == '' Or '$(MSBuildVersion)' &lt; '16.0'">$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>6de1cf6e-98ca-4d23-88c2-abd1bfcade57</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>BlazorWith3d.CodeGenerator.SharedCode</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)ContextUtilities.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Dummy.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)IndentedStringBuilder.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LinqUtilities.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)StringUtilities.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Types.cs" />
+  </ItemGroup>
+</Project>

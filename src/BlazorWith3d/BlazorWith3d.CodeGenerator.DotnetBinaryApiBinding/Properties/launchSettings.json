@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "Debug Client.Shared": {
+      "commandName": "DebugRoslynComponent",
+      "targetProject": "..\\..\\..\\samples\\BlazorWith3d.ExampleApp.Client.Shared\\BlazorWith3d.ExampleApp.Client.Shared.csproj"
+    },
+    "Debug Client.Shared.Blazor": {
+      "commandName": "DebugRoslynComponent",
+      "targetProject": "..\\..\\..\\samples\\BlazorWith3d.ExampleApp.Client.Shared.Blazor\\BlazorWith3d.ExampleApp.Client.Shared.Blazor.csproj"
+    }
+  }
+}

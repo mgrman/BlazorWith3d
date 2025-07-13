@@ -7,6 +7,7 @@ using Microsoft.CodeAnalysis;
 
 namespace BlazorWith3d.CodeGenerator;
 
+
 internal static class HelloSourceGenerator_MemoryPackTypeScriptForStructs
 {
     internal record TsOptions
@@ -37,10 +38,8 @@ internal static class HelloSourceGenerator_MemoryPackTypeScriptForStructs
             yield break;
         }
 
-        var allTypes = info.methods.Concat(info.events).SelectMany(o => o.arguments).Select(o => o.argType).SelectMany(o => o.FlattenProperties())
+        var typesToGenerate = info.AllTypesNonDistinct()
             .GroupBy(o => (o.typeName, o.@namespace)).Select(o => o.First())
-            .ToList();
-        var typesToGenerate = allTypes
             .Where(o => o.specialType == null && !o.isMemoryPackTypescriptGenerated)
             .Where(o=>o.typeName!=  info.eventHandler.typeName && o.typeName!=  info.app.typeName )
             .ToList();

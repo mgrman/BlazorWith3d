@@ -18,18 +18,6 @@ public class HelloSourceIncrementalGenerator : IIncrementalGenerator
 {
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        IncrementalValuesProvider<TwoWayAppInfo?> binaryApiTypesToGenerate = context.SyntaxProvider
-            .CreateSyntaxProvider(
-                predicate: static (s, _) => s is InterfaceDeclarationSyntax ids && ids.HasAttribute("GenerateBinaryApi"),
-                transform: static (ctx, _) => ConvertInterfaceWithAttribute(ctx, "GenerateBinaryApi")) 
-            .Where(static m => m is not null); 
-        context.RegisterSourceOutput(binaryApiTypesToGenerate,
-            static (context, appInfo) =>
-            {
-                var files = HelloSourceGenerator_DotnetApis.GenerateClass(appInfo!);
-                context.AddSourceFiles(files);
-            });
-
         IncrementalValuesProvider<TwoWayAppInfoWithOwner?> blazorBindingTypesToGenerate = context.SyntaxProvider
             .CreateSyntaxProvider(
                 predicate: static (s, _) => s is TypeDeclarationSyntax ids && ids.HasAttribute("GenerateDirectBinding"),
