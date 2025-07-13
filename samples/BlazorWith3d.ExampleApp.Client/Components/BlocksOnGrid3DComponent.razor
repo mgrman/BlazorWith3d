@@ -581,24 +581,27 @@
                 return Rect.FromCenterSizeAnd90DegRotation(i.Position.ToVector2(), t.Size.ToVector3().XY(), i.RotationZ);
             })
             .ToList();
-        
-        var corners = otherBlocks
-            .SelectMany(o => o.GetRectanglesAroundCorners(blockTemplate.Size.ToVector3().XY()));
+
+        var corners = //Array.Empty<Rect>();
+        otherBlocks.SelectMany(o => o.GetRectanglesAroundCorners(targetRect.Size));
 
         var edgeHits = otherBlocks
-            .SelectMany(o => o.GetRectanglesClosestToPoint(targetPosition,blockTemplate.Size.ToVector3().XY()));
+            .SelectMany(o => o.GetRectanglesClosestToPoint(targetRect));
+        
+        var edgeHits2 = otherBlocks
+            .SelectMany(a => corners.SelectMany(b=>a.GetRectanglesClosestToPoint(b)));
 
         
         var res=new []{targetRect}
             .Concat(corners)
             .Concat(edgeHits)
+            .Concat(edgeHits2)
             .OrderBy(r=>
             {
                 var dist = (r.Center - targetPosition);
-                return Math.Abs(dist.X) + Math.Abs(dist.Y);
+                return Math.Sqrt(dist.X*dist.X+dist.Y*dist.Y);
             })
             .First(o => !otherBlocks.Any(ob=>ob.IntersectsWith(o)));
-
 
         return res.Center;
     }

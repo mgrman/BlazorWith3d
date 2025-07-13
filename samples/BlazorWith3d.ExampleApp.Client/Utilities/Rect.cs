@@ -2,8 +2,33 @@
 
 namespace BlazorWith3d.ExampleApp.Client.Utilities;
 
-public readonly struct Rect
+public readonly struct Rect : IEquatable<Rect>
 {
+    public bool Equals(Rect other)
+    {
+        return Center.Equals(other.Center) && Size.Equals(other.Size);
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is Rect other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Center, Size);
+    }
+
+    public static bool operator ==(Rect left, Rect right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(Rect left, Rect right)
+    {
+        return !left.Equals(right);
+    }
+
     public readonly Vector2 Center;
     public readonly Vector2 Size;
     public readonly Vector2 Extents => Size / 2;
@@ -67,17 +92,15 @@ public readonly struct Rect
       return  MinX <= point.X && point.X < MaxX && MinY <= point.Y && point.Y < MaxY;
     }
 
-    public IEnumerable<Rect> GetRectanglesClosestToPoint(Vector2 point, Vector2 size)
+    public IEnumerable<Rect> GetRectanglesClosestToPoint(Rect targetRect)
     {
-        if (!this.Contains(point))
-        {
-            yield break; 
-        }
+        var center = targetRect.Center;
+        var size = targetRect.Size;
         
-        yield return new Rect(new Vector2(point.X,MinY-size.Y/2), size);
-        yield return new Rect(new Vector2(point.X,MaxY+size.Y/2), size);
-        yield return new Rect(new Vector2(MinX-size.X/2,point.Y), size);
-        yield return new Rect(new Vector2(MaxX+size.X/2,point.Y), size);
+        yield return new Rect(new Vector2(center.X,MinY-size.Y/2), size);
+        yield return new Rect(new Vector2(center.X,MaxY+size.Y/2), size);
+        yield return new Rect(new Vector2(MinX-size.X/2,center.Y), size);
+        yield return new Rect(new Vector2(MaxX+size.X/2,center.Y), size);
     }
     
     

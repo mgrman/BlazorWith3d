@@ -57,6 +57,7 @@ But for DirectInterop any other or custom TS type generator from C# types could 
     - World X:right, Y: up, Z: toCamera
     - camera looks in NegativeZ
     - directionalLight shines in NegativeZ
+    - Rotation is in Clockwise direction
   - Unity
     - LeftHanded
     - Screen (0,0) is Bottom Left
@@ -69,12 +70,14 @@ But for DirectInterop any other or custom TS type generator from C# types could 
     - World X:right, Y: up, Z : fromCamera
     - camera looks in PositiveZ
     - Rotation order Y, X, Z (when going local to world)
+    - rotation is in Counterclockwise direction
   - ThreeJS
     - RightHanded
     - Screen (0,0) in center (positive in direction of top right) range: -1;1
     - World X:right, Y: up, Z : toCamera
     - camera looks in NegativeZ
     - Rotation order Z, X, Y (when going local to world) but can be chosen
+    - rotation is in Counterclockwise direction
 
 ### Unity WebGL (interop with Unity WASM via Binary Interop API)
 
@@ -189,8 +192,6 @@ CODE: 409 -> https://github.com/projectkudu/kudu/issues/3042#issuecomment-220034
 Handle warnings in Generator
 
 publish generator and supporting libraries as nuget
-
-fix the rotation not being consistent across renderers
 
 ### Prio 1 (improve sample app)
 

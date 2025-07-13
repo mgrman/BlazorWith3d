@@ -181,8 +181,12 @@ export class DebugApp implements IBlocksOnGrid3DRenderer {
         console.log("RemoveBlockInstance", obj);
 
 
-        const {instance, mesh} = this.instances[obj.blockId];
+        const {instance, mesh, visuals} = this.instances[obj.blockId];
         this.scene.remove(mesh);
+        if(visuals)
+        {
+            this.scene.remove(visuals);
+        }
         delete this.instances[obj.blockId];
     }
 
@@ -217,12 +221,13 @@ export class DebugApp implements IBlocksOnGrid3DRenderer {
         var {instance, mesh, visuals} = this.instances[blockId];
 
         mesh.position.set(instance.position.x, instance.position.y, mesh.position.z);
-        mesh.rotation.set(0, 0, THREE.MathUtils.degToRad(instance.rotationZ),"ZXY");
+        // rotation is negative as ThreeJS rotates CCW and we want CW direction
+        mesh.rotation.set(0, 0, -THREE.MathUtils.degToRad(instance.rotationZ),"ZXY");
 
         if(visuals!=null) {
 
             visuals.position.set(instance.position.x, instance.position.y,0);
-            visuals.rotation.set(0, 0, THREE.MathUtils.degToRad(instance.rotationZ),"ZXY");
+            visuals.rotation.set(0, 0, -THREE.MathUtils.degToRad(instance.rotationZ),"ZXY");
         }
     }
 

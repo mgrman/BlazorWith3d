@@ -169,10 +169,18 @@ export class DebugApp implements IBlocksOnGrid3DRenderer {
     public async InvokeRemoveBlockInstance(obj: RemoveBlockInstance): Promise<any> {
         console.log("RemoveBlockInstance", obj);
 
-        const [instance, mesh] = this.instances.find(o => o[0].blockId === obj.blockId);
+        const [instance, mesh, visuals] = this.instances.find(o => o[0].blockId === obj.blockId);
         this.instances = this.instances.filter(o => o[0].blockId !== obj.blockId);
 
         this.scene.removeMesh(mesh);
+        if(visuals)
+        {
+            for (const mesh of visuals.getChildMeshes(true)) {
+                this.scene.removeMesh(mesh);
+            }
+            
+            this.scene.removeTransformNode(visuals);
+        }
     }
 
     public async InvokeAddBlockInstance(obj: AddBlockInstance): Promise<any> {
@@ -214,11 +222,13 @@ export class DebugApp implements IBlocksOnGrid3DRenderer {
 
     private UpdateMeshPosition(mesh: TransformNode,visuals: TransformNode|null, obj: AddBlockInstance): void {
         mesh.position = new Vector3(obj.position.x, obj.position.y, mesh.position.z);
-        mesh.rotation = new Vector3(0, 0, Tools.ToRadians(obj.rotationZ));
+        
+        // rotation is negative as Babylon rotates CCW and we want CW direction
+        mesh.rotation = new Vector3(0, 0, Tools.ToRadians(-obj.rotationZ));
         
         if(visuals!=null){
             visuals.position = new Vector3(obj.position.x, obj.position.y, mesh.position.z);
-            visuals.rotation = new Vector3(0, 0, Tools.ToRadians(obj.rotationZ));
+            visuals.rotation = new Vector3(0, 0, Tools.ToRadians(-obj.rotationZ));
         }
     }
 
