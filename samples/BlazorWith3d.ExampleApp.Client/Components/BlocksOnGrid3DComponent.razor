@@ -553,8 +553,6 @@
         var newPosition = new Vector2(newPositionX, newPositionY);
 
 
-        newPosition.Y = (float)Math.Round(newPositionY, 0);
-
         newPosition = GetDesiredPosition(dragging.instance, newPosition);
 
         dragging.instance.Position = newPosition;
