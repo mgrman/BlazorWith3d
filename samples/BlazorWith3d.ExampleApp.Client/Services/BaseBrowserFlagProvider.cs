@@ -35,8 +35,8 @@ public abstract class BaseBrowserFlagProvider : IFlagProvider
          await _cookieStorageAccessor.SetValueAsync<string>(RenderModeCookieName, renderMode?.GetType().Name ?? "");
     }
 
-    public static IComponentRenderMode? GetRenderModeForRequest(string? cookieValue)
+    public static IComponentRenderMode GetRenderModeForRequest(string? cookieValue)
     {
-        return SupportedRenderModes.FirstOrDefault(o => o.GetType().Name == cookieValue);
+        return SupportedRenderModes.FirstOrDefault(o => o.GetType().Name == cookieValue) ?? BaseBrowserFlagProvider.SupportedRenderModes.First();
     }
 }

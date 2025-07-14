@@ -8,58 +8,63 @@
 
 <PageTitle>WebGL instance</PageTitle>
 
-    @foreach (var renderer in _renderers)
+@if (!RendererInfo.IsInteractive)
+{
+    <text> Loading ...</text>
+    <br/>
+}
+@foreach (var renderer in _renderers)
+{
+    <InputCheckbox @bind-Value="renderer.IsSelected" DisplayName="@renderer.Label" disabled="@(!RendererInfo.IsInteractive)"/>
+    @renderer.Label
+    <br/>
+}
+
+<BlocksOnGrid3DComponent>
+
+    @foreach (var renderer in _renderers.Where(o => o.IsSelected).Select(o => o.Label))
     {
-        <InputCheckbox @bind-Value="renderer.IsSelected" DisplayName="@renderer.Label"/>
-        @renderer.Label
-        <br/>
+        @switch (renderer)
+        {
+            case "Unity WebGPU":
+                <BlocksOnGridUnityRenderer></BlocksOnGridUnityRenderer>
+                // use binary api with response
+                break;
+            case "Unity WebGPU (JSON)":
+                if (_renderers.Where(o => o.IsSelected).Select(o => o.Label).Contains("Unity WebGPU"))
+                {
+                    <text> Unity WebGPU (JSON) cannot be used while Unity WebGPU is active</text>
+                }
+                else
+                {
+                    <BlocksOnGridUnityRenderer UseJsonSerializer="true"></BlocksOnGridUnityRenderer>
+                }
+
+                // use binary api with response
+                break;
+            case "Html":
+                <BlocksOnGridHTMLComponent></BlocksOnGridHTMLComponent>
+                // implements the interface directly
+                break;
+            case "Babylon (using native JSON interop)":
+                <BlocksOnGridBabylonDirectRenderer></BlocksOnGridBabylonDirectRenderer>
+                // uses binary TS interface with response
+                break;
+            case "ThreeJS (using MemoryPack over BinaryAPI)":
+                <BlocksOnGridThreeJSRenderer></BlocksOnGridThreeJSRenderer>
+                // uses binary TS interface with response
+                break;
+            case "Unity Editor Debug Relay":
+                <BlocksOnGridUnityDebugRelay ></BlocksOnGridUnityDebugRelay>
+                // uses generated interop code 
+                break;
+            default:
+                <text> Unsupported renderer type @renderer</text>
+                break;
+        }
     }
 
-    <BlocksOnGrid3DComponent>
-        
-        @foreach (var renderer in _renderers.Where(o => o.IsSelected).Select(o => o.Label))
-        {
-            @switch (renderer)
-            {
-                case "Unity WebGPU":
-                    <BlocksOnGridUnityRenderer></BlocksOnGridUnityRenderer>
-                    // use binary api with response
-                    break;
-                case "Unity WebGPU (JSON)":
-                    if (_renderers.Where(o => o.IsSelected).Select(o => o.Label).Contains("Unity WebGPU"))
-                    {
-                        <text> Unity WebGPU (JSON) cannot be used while Unity WebGPU is active</text>
-                    }
-                    else
-                    {
-                        <BlocksOnGridUnityRenderer UseJsonSerializer="true"></BlocksOnGridUnityRenderer>
-                    }
-
-                    // use binary api with response
-                    break;
-                case "Html":
-                    <BlocksOnGridHTMLComponent></BlocksOnGridHTMLComponent>
-                    // implements the interface directly
-                    break;
-                case "Babylon (using native JSON interop)":
-                    <BlocksOnGridBabylonDirectRenderer></BlocksOnGridBabylonDirectRenderer>
-                    // uses binary TS interface with response
-                    break;
-                case "ThreeJS (using MemoryPack over BinaryAPI)":
-                    <BlocksOnGridThreeJSRenderer></BlocksOnGridThreeJSRenderer>
-                    // uses binary TS interface with response
-                    break;
-                case "Unity Editor Debug Relay":
-                    <BlocksOnGridUnityDebugRelay ></BlocksOnGridUnityDebugRelay>
-                    // uses generated interop code 
-                    break;
-                default:
-                    <text> Unsupported renderer type @renderer</text>
-                    break;
-            }
-        }
-
-    </BlocksOnGrid3DComponent>
+</BlocksOnGrid3DComponent>
 
 
 @code{

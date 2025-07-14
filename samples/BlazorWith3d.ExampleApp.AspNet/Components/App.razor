@@ -28,7 +28,7 @@
     {
         var renderModeName = HttpContextAccessor?.HttpContext?.Request.Cookies[BaseBrowserFlagProvider.RenderModeCookieName];
 
-        return BaseBrowserFlagProvider.GetRenderModeForRequest(renderModeName) ?? BaseBrowserFlagProvider.SupportedRenderModes.First();
+        return BaseBrowserFlagProvider.GetRenderModeForRequest(renderModeName);
     }
 
 }

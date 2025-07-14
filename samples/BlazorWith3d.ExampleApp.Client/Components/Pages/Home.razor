@@ -1,5 +1,6 @@
 ﻿@page "/"
 @inject IFlagProvider FlagProvider
+@inject NavigationManager NavigationManager
 
 <PageTitle>Home</PageTitle>
 
@@ -15,13 +16,20 @@ Welcome to your BlazorWith3d app.
 
 @if (FlagProvider.SupportedRenderModes.Length > 1)
 {
-    <InputSelect @bind-Value="_renderModeName">
-        @foreach (var renderMode in FlagProvider.SupportedRenderModes)
-        {
-            <option value="@renderMode.GetType().Name">@(renderMode.GetType().Name)</option>
-        }
-    </InputSelect>
-    <text>// refresh the page after value change!</text>
+    @if (!RendererInfo.IsInteractive)
+    {
+        <text> Loading ...</text>
+        <br/>
+    }
+    else
+    {
+        <InputSelect @bind-Value="_renderModeName">
+            @foreach (var renderMode in FlagProvider.SupportedRenderModes)
+            {
+                <option value="@renderMode.GetType().Name">@(renderMode.GetType().Name)</option>
+            }
+        </InputSelect>
+    }
 }
 
 
@@ -37,6 +45,8 @@ Welcome to your BlazorWith3d app.
         {
             _renderMode = FlagProvider.SupportedRenderModes.FirstOrDefault(o => o.GetType().Name == value);
             FlagProvider.SetRenderMode(_renderMode);
+            
+            NavigationManager.Refresh(true);
         }
 
     }
