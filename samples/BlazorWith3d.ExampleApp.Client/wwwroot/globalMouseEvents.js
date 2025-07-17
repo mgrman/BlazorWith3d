@@ -1,4 +1,4 @@
-export function InitializeGlobalMouseEvents(elementTarget, dotnetObject, onMouseMoveMethodName, onMouseUpMethodName) {
+export function InitializeGlobalMouseEvents(elementTarget, dotnetObject, onMouseMoveMethodName, onPointerUpMethodName) {
     var onMoveCallback= function (o) {
        
         var res=ConvertPageToOffset(elementTarget, o.clientX, o.clientY);
@@ -6,7 +6,7 @@ export function InitializeGlobalMouseEvents(elementTarget, dotnetObject, onMouse
         dotnetObject.invokeMethodAsync(onMouseMoveMethodName,res.x, res.y);
     } 
     var onUpCallback= function (o) {
-        dotnetObject.invokeMethodAsync(onMouseUpMethodName)
+        dotnetObject.invokeMethodAsync(onPointerUpMethodName)
     }
 
     window.addEventListener("mousemove", onMoveCallback);
@@ -19,6 +19,33 @@ export function InitializeGlobalMouseEvents(elementTarget, dotnetObject, onMouse
         window.removeEventListener("mouseup", onUpCallback);
     }
     
+    return disposeTracker;
+}
+
+export function InitializeGlobalTouchEvents(elementTarget, dotnetObject, onMouseMoveMethodName, onPointerUpMethodName) {
+    var onMoveCallback= function (o) {
+
+        var res=ConvertPageToOffset(elementTarget, o.touches[0].clientX, o.touches[0].clientY);
+
+        dotnetObject.invokeMethodAsync(onMouseMoveMethodName,res.x, res.y);
+    }
+    var onUpCallback= function (o) {
+        
+        if(o.touches.length==0) {
+        dotnetObject.invokeMethodAsync(onPointerUpMethodName)
+        }
+    }
+
+    window.addEventListener("touchmove", onMoveCallback);
+    window.addEventListener("touchend", onUpCallback);
+
+    let disposeTracker = {}
+    disposeTracker.Dispose=function (){
+
+        window.removeEventListener("touchmove", onMoveCallback);
+        window.removeEventListener("touchend", onUpCallback);
+    }
+
     return disposeTracker;
 }
 

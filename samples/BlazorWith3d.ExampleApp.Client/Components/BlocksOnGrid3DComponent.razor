@@ -6,16 +6,16 @@
 @using BlazorWith3d.ExampleApp.Client.Utilities
 @using Microsoft.Extensions.Logging
 @inject ILocalStorageService LocalStorage
-@inject IServiceProvider Services
 @inject ILogger<BlocksOnGrid3DComponent> Logger
 @inject IJSRuntime JsRuntime
 @implements IAsyncDisposable
 @implements IBlocksOnGrid3DBlazorController
+@using BlazorContextMenu
 
 <text>@(RendererInfo.Name) @(RendererInfo.IsInteractive?"Interactive":"Static")</text>
 
 
-<table>
+<table class="table">
     <thead>
     <tr>
         <td>
@@ -56,7 +56,7 @@
                 @VisualAssets.FirstOrDefault(o=>o.url2d==template.Visuals2dUri || o.url3d == template.Visuals3dUri).name
             </td>
             <td>
-                <button @onclick="() => RemoveTemplate(template.TemplateId)" disabled="@(!RendererInfo.IsInteractive)">Remove</button>
+                <button type="button" class="btn btn-outline-danger" @onclick="() => RemoveTemplate(template.TemplateId)" disabled="@(!RendererInfo.IsInteractive)">Remove</button>
             </td>
         </tr>
     }
@@ -66,16 +66,16 @@
 
         </td>
         <td>
-            <InputNumber @bind-Value="_newTemplateSizeX"></InputNumber>
+            <InputNumber @bind-Value="_newTemplateSizeX" class="form-control" ></InputNumber>
         </td>
         <td>
-            <InputNumber @bind-Value="_newTemplateSizeY"></InputNumber>
+            <InputNumber @bind-Value="_newTemplateSizeY" class="form-control" ></InputNumber>
         </td>
         <td>
-            <InputNumber @bind-Value="_newTemplateSizeZ"></InputNumber>
+            <InputNumber @bind-Value="_newTemplateSizeZ" class="form-control" ></InputNumber>
         </td>
         <td>
-            <InputSelect @bind-Value="_newTemplateAsset">
+            <InputSelect @bind-Value="_newTemplateAsset" class="form-select">
                 <option value="">None</option>
                 @foreach (var (asset,index) in VisualAssets.Select((o,i)=>(o,i)))
                 {
@@ -84,13 +84,13 @@
             </InputSelect>
         </td>
         <td>
-            <button disabled="@(!RendererInfo.IsInteractive)" @onclick="AddTemplate">Add</button>
+            <button type="button" class="btn btn-outline-primary" disabled="@(!RendererInfo.IsInteractive)" @onclick="AddTemplate">Add</button>
         </td>
     </tr>
 </table>
 
 
-<table>
+<table class="table ">
     <tr>
         <td>
             Block id
@@ -129,7 +129,7 @@
                 @block.TemplateId
             </td>
             <td>
-                <button disabled="@(!RendererInfo.IsInteractive)" @onclick="() => RemoveBlock(block.BlockId)">Remove</button>
+                <button type="button" class="btn btn-outline-danger" disabled="@(!RendererInfo.IsInteractive)" @onclick="() => RemoveBlock(block.BlockId)">Remove</button>
             </td>
         </tr>
     }
@@ -139,13 +139,13 @@
 
         </td>
         <td>
-            <InputNumber @bind-Value="_newBlockPositionX"></InputNumber>
+            <InputNumber @bind-Value="_newBlockPositionX" class="form-control" ></InputNumber>
         </td>
         <td>
-            <InputNumber @bind-Value="_newBlockPositionY"></InputNumber>
+            <InputNumber @bind-Value="_newBlockPositionY" class="form-control" ></InputNumber>
         </td>
         <td>
-            <InputSelect @bind-Value="_newBlockRotationZ">
+            <InputSelect @bind-Value="_newBlockRotationZ" class="form-select">
                 <option value="0">
                     0
                 </option>
@@ -163,7 +163,7 @@
         <td>
             @if (_templates.Count > 0)
             {
-                <InputSelect @bind-Value="_newBlockTemplateId">
+                <InputSelect @bind-Value="_newBlockTemplateId" class="form-select">
                     @foreach (var template in _templates)
                     {
                         <option value="@template.TemplateId">
@@ -174,15 +174,15 @@
             }
         </td>
         <td>
-            <button @onclick="AddBlock" disabled="@(!RendererInfo.IsInteractive || !_templates.Any(o => o.TemplateId == _newBlockTemplateId))">Add</button>
+            <button type="button" class="btn btn-outline-primary" @onclick="AddBlock" disabled="@(!RendererInfo.IsInteractive || !_templates.Any(o => o.TemplateId == _newBlockTemplateId))">Add</button>
         </td>
     </tr>
 </table>
 
-<button disabled="@(!RendererInfo.IsInteractive)" @onclick="@(() => PerfCheck(true))">Perf Check Large</button>
-<button disabled="@(!RendererInfo.IsInteractive)" @onclick="@(() => PerfCheck(false))">Perf Check Small</button>
+<button type="button" class="btn btn-outline-info" disabled="@(!RendererInfo.IsInteractive)" @onclick="@(() => PerfCheck(true))">Perf Check Large</button>
+<button type="button" class="btn btn-outline-info" disabled="@(!RendererInfo.IsInteractive)" @onclick="@(() => PerfCheck(false))">Perf Check Small</button>
 
-<InputNumber @bind-Value="_perfTestCount"></InputNumber>
+<InputNumber class="form-control"  @bind-Value="_perfTestCount"></InputNumber>
 @if (!string.IsNullOrEmpty(_perfResponse))
 {
     <div class="alert alert-warning alert-dismissible fade show" role="alert">
@@ -191,16 +191,23 @@
         </pre>
     </div>
 }
-<button disabled="@(!RendererInfo.IsInteractive)" @onclick="TriggerTestToBlazor">TriggerTestToBlazor</button>
+<button type="button" class="btn btn-outline-info" disabled="@(!RendererInfo.IsInteractive)" @onclick="TriggerTestToBlazor">TriggerTestToBlazor</button>
 
-<div @onmousedown="OnMouseDown" draggable="false">
+<ContextMenu Id="myMenu" OnAppearing="OnContextMenuAppearing" OnHiding="OnContextMenuDisappearing">
+    <Item OnClick="@RemoveBlockEvent">Remove Block</Item>
+</ContextMenu>
 
-    <CascadingValue Value="this" IsFixed="true">
-        @ChildContent
-    </CascadingValue>
+<div @onmousedown="OnMouseDown" @ontouchstart="OnTouchStart" draggable="false" style="touch-action: none;">
+    
+    <ContextMenuTrigger MenuId="myMenu">
+        <CascadingValue Value="this" IsFixed="true">
+            @ChildContent
+        </CascadingValue>
+    </ContextMenuTrigger>
 </div>
 
 @code {
+
 
     [Parameter]
     public RenderFragment? ChildContent { get; set; }
@@ -234,6 +241,7 @@
 
     private SemaphoreSlim _initializeRendererSemaphoreSlim = new (1);
 
+    private int? _contextMenuBlockId;
 
     protected override async Task OnInitializedAsync()
     {
@@ -242,7 +250,7 @@
             await LoadInitialState();
         }
 
-         _jsProxyReference = DotNetObjectReference.Create(new JsProxy(OnMouseMove, OnMouseUp));
+         _jsProxyReference = DotNetObjectReference.Create(new JsProxy(OnPointerMove, OnPointerUp));
         await base.OnInitializedAsync();
     }
 
@@ -442,6 +450,37 @@
         
     }
 
+    async Task RemoveBlockEvent(ItemClickEventArgs e)
+    {
+        if (_contextMenuBlockId == null)
+        {
+            return;
+        }
+
+        await RemoveBlock(_contextMenuBlockId.Value);
+    }
+
+    private async Task OnContextMenuAppearing(MenuAppearingEventArgs obj)
+    {
+        var clientX = double.Parse(obj.X);
+        var clientY = double.Parse(obj.Y);
+        var (renderer, raycastResponse) = await RaycastHit(clientX, clientY);
+        if (renderer == null || raycastResponse == null)
+        {
+            obj.PreventShow = true;
+            return;
+        }
+
+        
+        _contextMenuBlockId = raycastResponse.HitBlockId;
+    }
+
+    private void OnContextMenuDisappearing()
+    {
+        _contextMenuBlockId = null;
+    }
+    
+    
     private class JSVector2
     {
         public float X { get; set; }
@@ -449,18 +488,57 @@
         public float Y{ get; set; }
     }
 
-    private async Task OnMouseDown(MouseEventArgs e)
+    private async Task OnTouchStart(TouchEventArgs e1)
     {
-        if (_renderers.Count == 0)
+        var renderer = await OnPointerDown(e1.Touches[0].ClientX,e1.Touches[0].ClientY);
+        if (renderer != null)
+        {
+            _mouseEventsDispose = await module.InvokeAsync<IJSObjectReference>("InitializeGlobalTouchEvents", renderer.RendererContainer, _jsProxyReference, nameof(JsProxy.OnPointerMove), nameof(JsProxy.OnPointerUp));
+        }
+    }
+
+    private async Task OnMouseDown(MouseEventArgs e1)
+    {
+        if (e1.Button != 0)
         {
             return;
         }
+        
+        var renderer=await OnPointerDown(e1.ClientX,e1.ClientY);
 
+        if (renderer != null)
+        {
+            _mouseEventsDispose = await module.InvokeAsync<IJSObjectReference>("InitializeGlobalMouseEvents", renderer.RendererContainer, _jsProxyReference, nameof(JsProxy.OnPointerMove), nameof(JsProxy.OnPointerUp));
+        }
+    }
+
+    private async Task<IBlocksOnGrid3DBlazorRenderer?> OnPointerDown(double clientX, double clientY)
+    {
+        if (_renderers.Count == 0)
+        {
+            return null;
+        }
+
+        var (renderer, raycastResponse) = await RaycastHit(clientX, clientY);
+        if (renderer == null || raycastResponse == null)
+        {
+            return null;
+        }
+        var instance = _instances.FirstOrDefault(o => o.BlockId == raycastResponse.HitBlockId);
+
+        var offsetX = raycastResponse.HitWorld.X - instance.Position.X;
+        var offsetY = raycastResponse.HitWorld.Y - instance.Position.Y;
+        _dragging = (renderer,instance, offsetX, offsetY, raycastResponse.HitWorld.Z);
+        return renderer;
+    }
+
+    private async Task<(IBlocksOnGrid3DBlazorRenderer? renderer, RaycastResponse? raycastResponse)> RaycastHit(double clientX, double clientY)
+    {
         IBlocksOnGrid3DBlazorRenderer? renderer = null;
         JSVector2 offset = null;
         foreach (var potentialRenderer in _renderers)
         {
-            var potentialOffset = await module.InvokeAsync<JSVector2?>("ConvertPageToOffsetIfInside", potentialRenderer.RendererContainer, e.ClientX, e.ClientY);
+            var potentialOffset = await module.InvokeAsync<JSVector2?>("ConvertPageToOffsetIfInside", potentialRenderer.RendererContainer, clientX, clientY);
 
             if (potentialOffset != null)
             {
@@ -472,7 +550,7 @@
 
         if (renderer == null || offset==null)
         {
-            return;
+            return (null,null);
         }
 
         var screenToRayResponse = await renderer.RendererApi.InvokeRequestScreenToWorldRay(new RequestScreenToWorldRay()
@@ -488,19 +566,13 @@
         
         if (!raycastResponse.IsBlockHit)
         {
-            return;
+            return (null,null);
         }
 
-        var instance = _instances.FirstOrDefault(o => o.BlockId == raycastResponse.HitBlockId);
-
-        var offsetX = raycastResponse.HitWorld.X - instance.Position.X;
-        var offsetY = raycastResponse.HitWorld.Y - instance.Position.Y;
-        _dragging = (renderer,instance, offsetX, offsetY, raycastResponse.HitWorld.Z);
-
-        _mouseEventsDispose = await module.InvokeAsync<IJSObjectReference>("InitializeGlobalMouseEvents", renderer.RendererContainer, _jsProxyReference, nameof(JsProxy.OnMouseMove), nameof(JsProxy.OnMouseUp));
+        return (renderer, raycastResponse);
     }
 
-    private async void OnMouseMove(float offsetX, float offsetY)
+    private async void OnPointerMove(float offsetX, float offsetY)
     {
         if (!_dragging.HasValue)
         {
@@ -509,7 +581,7 @@
         if (!_renderers.Contains(_dragging.Value.renderer))
         {
             // force end drag in case the renderer is removed while dragging
-            OnMouseUp();
+            OnPointerUp();
             return;
         }
 
@@ -605,7 +677,7 @@
     }
     
     
-    private void OnMouseUp()
+    private void OnPointerUp()
     {
         if (!_dragging.HasValue)
         {
@@ -617,17 +689,17 @@
         _mouseEventsDispose?.InvokeVoidAsync("Dispose");
     }
 
-    private class JsProxy(Action<float,float> onMouseMove,Action onMouseUp)
+    private class JsProxy(Action<float,float> onPointerMove,Action onPointerUp)
     {
         [JSInvokable]
-        public void OnMouseMove(float screenX, float screenY)
+        public void OnPointerMove(float screenX, float screenY)
         {
-            onMouseMove(screenX,screenY);
+            onPointerMove(screenX,screenY);
         }
         [JSInvokable]
-        public void OnMouseUp()
+        public void OnPointerUp()
         {
-            onMouseUp();
+            onPointerUp();
         }
     }
 

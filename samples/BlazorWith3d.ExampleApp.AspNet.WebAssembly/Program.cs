@@ -1,6 +1,7 @@
 using Blazored.LocalStorage;
 
 using BlazorWith3d.ExampleApp.AspNet.WebAssembly;
+using BlazorWith3d.ExampleApp.Client;
 using BlazorWith3d.ExampleApp.Client.Services;
 
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
@@ -15,6 +16,8 @@ builder.Services.AddBlazoredLocalStorage(c =>
 });
 builder.Services.AddSingleton<IFlagProvider, WasmFlagProvider>();
 builder.Services.AddSingleton<CookieStorageAccessor>();
+
+builder.Services.InitializeClientServices();
 
 await builder.Build().RunAsync();
 

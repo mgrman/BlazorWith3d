@@ -2,6 +2,7 @@ using System.Buffers;
 
 using Blazored.LocalStorage;
 using BlazorWith3d.Components;
+using BlazorWith3d.ExampleApp.Client;
 using BlazorWith3d.ExampleApp.Client.Services;
 using BlazorWith3d.Unity;
 
@@ -28,6 +29,7 @@ builder.Services.AddSingleton<DebugRelayUnityApi>();
 builder.Services.AddScoped<IFlagProvider,ServerFlagProvider>();
 builder.Services.AddScoped<CookieStorageAccessor>();
 builder.Services.AddHttpContextAccessor();
+builder.Services.InitializeClientServices();
 
 var app = builder.Build();
 

@@ -11,19 +11,20 @@ Welcome to your BlazorWith3d app.
 
 @if (FlagProvider.IsWindowsBuildLinkEnabled)
 {
+    <br/>
     <a href="/windowsApp.zip"> Download Windows MAUI build</a>
 }
 
 @if (FlagProvider.SupportedRenderModes.Length > 1)
 {
+    <br/>
     @if (!RendererInfo.IsInteractive)
     {
         <text> Loading ...</text>
-        <br/>
     }
     else
     {
-        <InputSelect @bind-Value="_renderModeName">
+        <InputSelect @bind-Value="_renderModeName" class="form-select">
             @foreach (var renderMode in FlagProvider.SupportedRenderModes)
             {
                 <option value="@renderMode.GetType().Name">@(renderMode.GetType().Name)</option>

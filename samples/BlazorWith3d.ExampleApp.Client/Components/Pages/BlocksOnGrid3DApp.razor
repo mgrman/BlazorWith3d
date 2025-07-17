@@ -15,9 +15,10 @@
 }
 @foreach (var renderer in _renderers)
 {
-    <InputCheckbox @bind-Value="renderer.IsSelected" DisplayName="@renderer.Label" disabled="@(!RendererInfo.IsInteractive)"/>
-    @renderer.Label
-    <br/>
+    <div class="form-check form-switch">
+        <input class="form-check-input" type="checkbox"  checked="@renderer.IsSelected" @oninput="@(e=>renderer.IsSelected=!renderer.IsSelected)" disabled="@(!RendererInfo.IsInteractive)">
+        <label class="form-check-label" >@renderer.Label</label>
+    </div>
 }
 
 <BlocksOnGrid3DComponent>
