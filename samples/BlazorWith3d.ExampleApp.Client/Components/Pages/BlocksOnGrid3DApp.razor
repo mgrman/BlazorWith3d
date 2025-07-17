@@ -6,13 +6,32 @@
 @using BlazorWith3d.ExampleApp.Client.ThreeJS
 @inject IFlagProvider  FlagProvider
 
-<PageTitle>WebGL instance</PageTitle>
+<PageTitle>BlazorWith3D - Blocks on grid sample app</PageTitle>
 
-@if (!RendererInfo.IsInteractive)
-{
-    <text> Loading ...</text>
-    <br/>
-}
+<h1>Blocks on grid sample app</h1>
+
+<div class="alert alert-light" role="alert">
+    @switch (RendererInfo.Name)
+    {
+        case "WebView":
+            <text> Running in Webview, using webview JS interop for communication. Expected good Blazor performance. </text>
+            break;
+        case "Server":
+            <text> Running on the server and communicating with browser via Websocket. Expected slower Blazor performance due to network delays and slow VM the demo app is running on. </text>
+            break;
+        case "WebAssembly":
+            <text> Running in WebAssembly, using WASM interop with JS. Expected good Blazor performance but slower cold loading times. </text>
+            break;
+        case "Static":
+            <text> Loading ...</text>
+            break;
+        default:
+            <text> Running in @RendererInfo.Name mode</text>
+            break;
+    }
+</div>
+
+
 @foreach (var renderer in _renderers)
 {
     <div class="form-check form-switch">
@@ -27,14 +46,14 @@
     {
         @switch (renderer)
         {
-            case "Unity WebGPU":
+            case "Unity WebGPU (using MemoryPack over BinaryAPI)":
                 <BlocksOnGridUnityRenderer></BlocksOnGridUnityRenderer>
                 // use binary api with response
                 break;
-            case "Unity WebGPU (JSON)":
+            case "Unity WebGPU (using JSON over BinaryAPI)":
                 if (_renderers.Where(o => o.IsSelected).Select(o => o.Label).Contains("Unity WebGPU"))
                 {
-                    <text> Unity WebGPU (JSON) cannot be used while Unity WebGPU is active</text>
+                    <text> Unity WebGPU (JSON) cannot be used while another Unity WebGPU is active</text>
                 }
                 else
                 {
@@ -74,7 +93,7 @@
 
     protected override void OnInitialized()
     {
-        _renderers = new []{ "Unity WebGPU","Unity WebGPU (JSON)", "Html", "Babylon (using native JSON interop)", "ThreeJS (using MemoryPack over BinaryAPI)"}.Select(o=>new Selection(o)).ToList();
+        _renderers = new []{ "Unity WebGPU (using MemoryPack over BinaryAPI)","Unity WebGPU (using JSON over BinaryAPI)", "Html", "Babylon (using native JSON interop)", "ThreeJS (using MemoryPack over BinaryAPI)"}.Select(o=>new Selection(o)).ToList();
         if (FlagProvider.IsUnityRelayEnabled)
         {
             _renderers.Add(new Selection("Unity Editor Debug Relay"));

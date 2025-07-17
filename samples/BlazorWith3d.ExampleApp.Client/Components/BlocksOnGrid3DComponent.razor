@@ -12,9 +12,6 @@
 @implements IBlocksOnGrid3DBlazorController
 @using BlazorContextMenu
 
-<text>@(RendererInfo.Name) @(RendererInfo.IsInteractive?"Interactive":"Static")</text>
-
-
 <table class="table">
     <thead>
     <tr>
@@ -56,7 +53,7 @@
                 @VisualAssets.FirstOrDefault(o=>o.url2d==template.Visuals2dUri || o.url3d == template.Visuals3dUri).name
             </td>
             <td>
-                <button type="button" class="btn btn-outline-danger" @onclick="() => RemoveTemplate(template.TemplateId)" disabled="@(!RendererInfo.IsInteractive)">Remove</button>
+                <button type="button" class="btn btn-outline-danger btn-sm" @onclick="() => RemoveTemplate(template.TemplateId)" disabled="@(!RendererInfo.IsInteractive)">Remove</button>
             </td>
         </tr>
     }
@@ -84,11 +81,10 @@
             </InputSelect>
         </td>
         <td>
-            <button type="button" class="btn btn-outline-primary" disabled="@(!RendererInfo.IsInteractive)" @onclick="AddTemplate">Add</button>
+            <button type="button" class="btn btn-outline-primary btn-sm" disabled="@(!RendererInfo.IsInteractive)" @onclick="AddTemplate">Add</button>
         </td>
     </tr>
 </table>
-
 
 <table class="table ">
     <tr>
@@ -129,7 +125,7 @@
                 @block.TemplateId
             </td>
             <td>
-                <button type="button" class="btn btn-outline-danger" disabled="@(!RendererInfo.IsInteractive)" @onclick="() => RemoveBlock(block.BlockId)">Remove</button>
+                <button type="button" class="btn btn-outline-danger btn-sm" disabled="@(!RendererInfo.IsInteractive)" @onclick="() => RemoveBlock(block.BlockId)">Remove</button>
             </td>
         </tr>
     }
@@ -174,7 +170,7 @@
             }
         </td>
         <td>
-            <button type="button" class="btn btn-outline-primary" @onclick="AddBlock" disabled="@(!RendererInfo.IsInteractive || !_templates.Any(o => o.TemplateId == _newBlockTemplateId))">Add</button>
+            <button type="button" class="btn btn-outline-primary btn-sm" @onclick="AddBlock" disabled="@(!RendererInfo.IsInteractive || !_templates.Any(o => o.TemplateId == _newBlockTemplateId))">Add</button>
         </td>
     </tr>
 </table>
