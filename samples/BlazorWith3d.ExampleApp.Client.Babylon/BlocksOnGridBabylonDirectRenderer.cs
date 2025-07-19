@@ -1,6 +1,6 @@
 ﻿using BlazorWith3d.ExampleApp.Client.Shared;
 using BlazorWith3d.ExampleApp.Client.Shared.Blazor;
-using BlazorWith3d.JsApp;
+using BlazorWith3d.JsRenderer;
 
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;

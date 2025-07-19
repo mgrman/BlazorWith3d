@@ -7,7 +7,6 @@ import {RemoveBlockInstance} from "com.blazorwith3d.exampleapp.client.shared/mem
 import {RemoveBlockTemplate} from "com.blazorwith3d.exampleapp.client.shared/memorypack/RemoveBlockTemplate";
 import { RendererInitialized } from "com.blazorwith3d.exampleapp.client.shared/memorypack/RendererInitialized";
 import {
-    BlocksOnGrid3DControllerOverDirectInterop,
     BlocksOnGrid3DControllerOverBinaryApi, IBlocksOnGrid3DController, IBlocksOnGrid3DRenderer
 } from "com.blazorwith3d.exampleapp.client.shared/memorypack/IBlocksOnGrid3DController";
 import {BlazorBinaryApiWithResponse} from "com.blazorwith3d.exampleapp.client.shared/BlazorBinaryApiWithResponse";

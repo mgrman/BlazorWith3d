@@ -1,5 +1,5 @@
 ﻿
-using BlazorWith3d.JsApp;
+using BlazorWith3d.JsRenderer;
 using BlazorWith3d.Shared;
 
 namespace BlazorWith3d.ExampleApp.Client.Shared.Blazor;

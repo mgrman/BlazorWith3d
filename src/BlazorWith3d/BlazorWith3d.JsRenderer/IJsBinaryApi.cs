@@ -2,7 +2,7 @@
 
 using Microsoft.AspNetCore.Components;
 
-namespace BlazorWith3d.JsApp;
+namespace BlazorWith3d.JsRenderer;
 
 public interface IJsBinaryApi:IBinaryApi, IAsyncDisposable
 {

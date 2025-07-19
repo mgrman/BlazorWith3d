@@ -37,7 +37,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "BlazorWith3d", "BlazorWith3
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ExampleApp", "ExampleApp", "{44CB5B1C-A284-45E6-BFB7-C58D73AE7037}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d.JsApp", "src\BlazorWith3d\BlazorWith3d.JsApp\BlazorWith3d.JsApp.csproj", "{C3CDE7A6-8733-4DCD-8928-800073E33565}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d.JsRenderer", "src\BlazorWith3d\BlazorWith3d.JsRenderer\BlazorWith3d.JsRenderer.csproj", "{C3CDE7A6-8733-4DCD-8928-800073E33565}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorWith3d.ExampleApp.Client.ThreeJS", "samples\BlazorWith3d.ExampleApp.Client.ThreeJS\BlazorWith3d.ExampleApp.Client.ThreeJS.csproj", "{0BF99FAE-100B-4A82-816F-7E5C9BD96FFF}"
 EndProject

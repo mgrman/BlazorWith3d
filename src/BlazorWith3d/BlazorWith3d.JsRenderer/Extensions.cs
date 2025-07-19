@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 
-namespace BlazorWith3d.JsApp;
+namespace BlazorWith3d.JsRenderer;
 
 public static class Extensions
 {

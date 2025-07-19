@@ -1,6 +1,5 @@
 ﻿using BlazorWith3d.ExampleApp.Client.Shared;
-using BlazorWith3d.JsApp;
-using BlazorWith3d.Shared;
+using BlazorWith3d.JsRenderer;
 using BlazorWith3d.Shared.Blazor;
 using BlazorWith3d.Unity;
 using Microsoft.AspNetCore.Components;

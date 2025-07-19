@@ -170,27 +170,6 @@ internal static class HelloSourceGenerator_MemoryPackTypeScriptForStructs
                 }
             }
 
-            sb.AppendLine($"export class {info.app.TypeNameWithoutIPrefix}OverDirectInterop implements {info.app.typeName}");
-            using (sb.IndentWithCurlyBrackets())
-            {
-                sb.AppendLine($"private _dotnetObject: any;");
-
-                sb.AppendLine($"constructor( dotnetObject: any)");
-                using (sb.IndentWithCurlyBrackets())
-                {
-                    sb.AppendLine($"this._dotnetObject = dotnetObject;");
-                }
-
-                foreach (var m in info.methods)
-                {
-                    sb.AppendLine($"public {m.name}({m.arguments.Select(a => $"{(a.argType.typeName == info.eventHandler.typeName?"_":a.argName)}: {TsType(a.argType)}").JoinStringWithComma()}): Promise<{TsType(m.returnType)}>");
-                    using (sb.IndentWithCurlyBrackets())
-                    {
-                        sb.AppendLine($"return this._dotnetObject.invokeMethodAsync(\"{m.name}\", {m.arguments.Where(a=>a.argType.typeName != info.eventHandler.typeName).Select(a => $"{a.argName}").JoinStringWithComma()});");
-                    }
-                }
-            }
-
             sb.AppendLine($"export class {info.app.TypeNameWithoutIPrefix}OverBinaryApi implements {info.app.typeName}");
             using (sb.IndentWithCurlyBrackets())
             {
