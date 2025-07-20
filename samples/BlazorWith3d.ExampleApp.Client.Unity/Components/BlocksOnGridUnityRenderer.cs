@@ -47,6 +47,8 @@ public class BlocksOnGridUnityRenderer:BaseUnityRenderer, IBlocksOnGrid3DBlazorR
         
         await ParentApp.AddRenderer(this);
         
+        
+        
         await base.OnAfterRenderAsync(firstRender);
     }
     IBlocksOnGrid3DRenderer IBlocksOnGrid3DBlazorRenderer.RendererApi => _unityAppApi;

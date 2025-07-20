@@ -198,7 +198,6 @@ internal static class HelloSourceGenerator_MemoryPackTypeScriptForStructs
                         if (m.returnType == null)
                         {
                             sb.AppendLine($"const writer = MemoryPackWriter.getSharedInstance();");
-                            sb.AppendLine($"writer.writeInt8({i});");
                             foreach (var a in m.arguments)
                             {
                                 if (a.argType.typeName == info.eventHandler.typeName)
@@ -206,19 +205,19 @@ internal static class HelloSourceGenerator_MemoryPackTypeScriptForStructs
                                     continue;
                                 }
                                 sb.AppendLine(string.Format(options.GetTsType(a.argType).serializationFormat, "writer", a.argName));
-
                             }
+                            sb.AppendLine($"writer.writeInt8({i});");
                             sb.AppendLine($"const encodedMessage = writer.toArray();");
                             sb.AppendLine($"await this._binaryApi.sendMessage(encodedMessage);");
                         }
                         else
                         {
                             sb.AppendLine($"const writer = MemoryPackWriter.getSharedInstance();");
-                            sb.AppendLine($"writer.writeInt8({i});");
                             foreach (var a in m.arguments)
                             {
                                 sb.AppendLine(string.Format(options.GetTsType(a.argType).serializationFormat, "writer", a.argName));
                             }
+                            sb.AppendLine($"writer.writeInt8({i});");
                             sb.AppendLine($"const encodedMessage = writer.toArray();");
                             sb.AppendLine($"var responseMessage=await  this._binaryApi.sendMessageWithResponse(encodedMessage);");
 

@@ -134,6 +134,12 @@ namespace ExampleApp
 
         public async ValueTask InvokeTriggerTestToBlazor(TriggerTestToBlazor msg)
         {
+            // intentionally async void to have execution disconnected as triggering messages while in a message handler break things
+            TriggerTestToBlazor();
+        }
+
+        private async void TriggerTestToBlazor()
+        {
             await Awaitable.WaitForSecondsAsync(1);
 
             var id = Random.Range(0, 1000);

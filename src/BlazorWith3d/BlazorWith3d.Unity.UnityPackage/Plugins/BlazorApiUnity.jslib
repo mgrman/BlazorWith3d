@@ -1,17 +1,10 @@
 var BlazorApiUnity = {
-    _InitializeApi: async function (readMessageCallback,readMessageWithResponseCallback,readResponseCallback, onConnectedToControllerCallback) {
+    _InitializeApi: async function (readMessageCallback,readMessageWithResponseCallback,readResponseCallback) {
 
 
         Module["BlazorApi_ReadMessageBuffer"] = {};
         Module["BlazorApi_IdCounter"] = 0;
         Module["BlazorApi_ReadResponseCallback"] = readResponseCallback;
-
-        // void BlazorApi_OnConnectedToController()
-        Module["BlazorApi_OnConnectedToController"] = function () {
-
-            {{{ makeDynCall('vii', 'onConnectedToControllerCallback') }}}();
-        };
-
         
         // void BlazorApi_SendMessageToUnity(byte[] message)
         Module["BlazorApi_SendMessageToUnity"] = function (bytes) {

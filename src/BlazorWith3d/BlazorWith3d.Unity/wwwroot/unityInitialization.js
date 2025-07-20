@@ -54,7 +54,6 @@ export function InitializeUnityApi(unityInstance, onMessageReceivedCallback, onM
 
     }
 
-
     return unityApi;
 }
 
@@ -145,7 +144,7 @@ export function showUnity(container,args, dotnetObject, onMessageReceivedMethodN
                 // ie Unity is ready to listen to messages and will start sending messages only after the promise is resolved, 
                 // it is expected that blazor app is ready to receive
                 if(unityInstance.Module["BlazorApi_SendMessageToUnity"]==null) {
-                    unityInstance.Module["BlazorApi_InitPromiseResolve"] = ()=>resolve(unityApi);
+                    unityInstance.Module["BlazorApi_InitPromiseResolve"] = ()=> resolve(unityApi);
                 }
                 else{
                     resolve(unityApi);

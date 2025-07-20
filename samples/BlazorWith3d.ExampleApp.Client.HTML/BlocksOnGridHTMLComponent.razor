@@ -232,7 +232,8 @@
         {
             throw new InvalidOperationException();
         }
-        Logger.LogCritical("TriggerTestToBlazor is done");
+        
+        await this.JsRuntime.InvokeVoidAsync("console.log", "TriggerTestToBlazor is done");
     }
 
 }

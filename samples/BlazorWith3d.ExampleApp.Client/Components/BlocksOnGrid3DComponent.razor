@@ -317,7 +317,7 @@
 
     public async ValueTask OnRendererInitialized(RendererInitialized msg, IBlocksOnGrid3DRenderer renderer)
     {
-        Logger.LogInformation($"Renderer {renderer.GetType().Name} is Initialized");
+        await this.JsRuntime.InvokeVoidAsync("console.log", $"Renderer {renderer.GetType().Name} is Initialized");
     }
 
     private async ValueTask ReplayState(IBlocksOnGrid3DBlazorRenderer? rendererApi)

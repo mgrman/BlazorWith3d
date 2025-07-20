@@ -51,7 +51,7 @@
                 // use binary api with response
                 break;
             case "Unity WebGPU (using JSON over BinaryAPI)":
-                if (_renderers.Where(o => o.IsSelected).Select(o => o.Label).Contains("Unity WebGPU"))
+                if (_renderers.Where(o => o.IsSelected).Select(o => o.Label).Contains("Unity WebGPU (using MemoryPack over BinaryAPI)"))
                 {
                     <text> Unity WebGPU (JSON) cannot be used while another Unity WebGPU is active</text>
                 }
