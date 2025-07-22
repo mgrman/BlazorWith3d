@@ -175,19 +175,26 @@
     </tr>
 </table>
 
-<button type="button" class="btn btn-outline-info" disabled="@(!RendererInfo.IsInteractive)" @onclick="@(() => PerfCheck(true))">Perf Check Large</button>
-<button type="button" class="btn btn-outline-info" disabled="@(!RendererInfo.IsInteractive)" @onclick="@(() => PerfCheck(false))">Perf Check Small</button>
+<button type="button" class="btn btn-outline-info" disabled="@(!RendererInfo.IsInteractive)" @onclick="@(() => PerfCheck())">Test interop performance, by sending message to renderers and getting the same back</button>
 
-<InputNumber class="form-control"  @bind-Value="_perfTestCount"></InputNumber>
+<div class="form-check form-switch">
+    <label class="form-check-label" >Use messages with large string for performance test</label>
+    <input class="form-check-input" type="checkbox"  checked="@_useLargeMessages" @oninput="@(e=>_useLargeMessages=!_useLargeMessages)" disabled="@(!RendererInfo.IsInteractive)">
+</div>
+
+
+<div class="input-group mb-3">
+    <span class="input-group-text" id="basic-addon3">Iteration count for the performance test</span>
+    <InputNumber class="form-control"  @bind-Value="_perfTestCount"></InputNumber>
+</div>
+
 @if (!string.IsNullOrEmpty(_perfResponse))
 {
-    <div class="alert alert-warning alert-dismissible fade show" role="alert">
-        <pre>
+    <div class="alert alert-warning alert-dismissible fade show" role="alert" style="white-space: pre-wrap;">
             @_perfResponse
-        </pre>
     </div>
 }
-<button type="button" class="btn btn-outline-info" disabled="@(!RendererInfo.IsInteractive)" @onclick="TriggerTestToBlazor">TriggerTestToBlazor</button>
+<button type="button" class="btn btn-outline-info" disabled="@(!RendererInfo.IsInteractive)" @onclick="TriggerTestToBlazor">Tell renderers to wait a second and test sending message to Blazor and getting a response back (see browser console for result)</button>
 
 <ContextMenu Id="myMenu" OnAppearing="OnContextMenuAppearing" OnHiding="OnContextMenuDisappearing">
     <Item OnClick="@RemoveBlockEvent">Remove Block</Item>
@@ -222,6 +229,8 @@
 
     string? _perfResponse;
     int _perfTestCount=100;
+
+    bool _useLargeMessages;
 
     private List<AddBlockTemplate> _templates = new();
     private List<AddBlockInstance> _instances = new();
@@ -405,7 +414,7 @@
         }
     }
   
-    private async Task PerfCheck(bool isLarge)
+    private async Task PerfCheck()
     {
         if (_renderers.Count==0)
         {
@@ -414,7 +423,7 @@
         } 
         var testCount = _perfTestCount;
 
-        var testString =isLarge? string.Join(",", Enumerable.Range(0, 1000)) : string.Empty;
+        var testString =_useLargeMessages? string.Join(",", Enumerable.Range(0, 1000)) : string.Empty;
         _perfResponse = "";
         foreach (var rendererApi in _renderers)
         {
