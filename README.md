@@ -315,7 +315,7 @@ Add serializer concept to Typescript as MemoryPack generator needs to be split i
 
 Handle warnings in Generator
 
-publish generator and supporting libraries as nuget
+extract the generators into own projects (as this repo is too 3D specific) and publish them and supporting libraries as nuget
 
 ### Prio 1 (improve sample app)
 
