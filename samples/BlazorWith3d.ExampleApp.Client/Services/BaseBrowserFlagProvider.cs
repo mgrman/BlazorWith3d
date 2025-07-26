@@ -8,7 +8,7 @@ public abstract class BaseBrowserFlagProvider : IFlagProvider
 {
     public const string RenderModeCookieName = "renderMode";
 
-    public static IComponentRenderMode[] SupportedRenderModes { get; }= [Microsoft.AspNetCore.Components.Web.RenderMode.InteractiveServer, Microsoft.AspNetCore.Components.Web.RenderMode.InteractiveWebAssembly, Microsoft.AspNetCore.Components.Web.RenderMode.InteractiveAuto];
+    public static IComponentRenderMode[] SupportedRenderModes { get; }= [Microsoft.AspNetCore.Components.Web.RenderMode.InteractiveAuto, Microsoft.AspNetCore.Components.Web.RenderMode.InteractiveServer, Microsoft.AspNetCore.Components.Web.RenderMode.InteractiveWebAssembly];
 
     private readonly CookieStorageAccessor _cookieStorageAccessor;
 
@@ -37,6 +37,7 @@ public abstract class BaseBrowserFlagProvider : IFlagProvider
 
     public static IComponentRenderMode GetRenderModeForRequest(string? cookieValue)
     {
-        return SupportedRenderModes.FirstOrDefault(o => o.GetType().Name == cookieValue) ?? BaseBrowserFlagProvider.SupportedRenderModes.First();
+        var renderMode = SupportedRenderModes.FirstOrDefault(o => o.GetType().Name == cookieValue);
+        return  renderMode ?? BaseBrowserFlagProvider.SupportedRenderModes.First();
     }
 }

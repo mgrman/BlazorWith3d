@@ -6,7 +6,6 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <LangVersion>preview</LangVersion>
         <RootNamespace>BlazorWith3d</RootNamespace>
-        <BlazorCacheBootResources>false</BlazorCacheBootResources>
     </PropertyGroup>
 
     <ItemGroup>
