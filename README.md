@@ -17,77 +17,134 @@ Building upon similar ideas as my [CodeFirstApi repo](https://github.com/mgrman/
 ## Examples
 
 ### Blazor to ThreeJS/BabylonJS
-Instead of:
+**Instead of:**
 - creating the TypeScript types manually that need to match the C# types
 - Marking each method in C# that should be callable from JS with attribute
 - Manually ensuring the TypeScript methods that the C# code expects are there and implemented
 
-You can:
-- define one or many interfaces in a shared library
-- Generated TS representation of the interface and all referenced types
-- Either (depending on type of message being passed, see below): 
-  - the generator uses prepared methods for generic Binary API from TypeScript to Blazor (that can send binary array there and back)
-      - the generator creates wrapper for each method of the interface using this Binary channel
-      - and using MemoryPack as (for now hard coded) serialization method optimizes serialization of messages
-  - and ensuring that any changes in the interfaces have to be taken into account in both Unity and Blazor codebases
-- Or:
-  - Generating wrapper so that each method in C# that can be callable from JS using Blazor native JS interop
-  - and that each interface method maps to a JS method in the generated interface
-
-```csharp
-// needs to be initialized, but then interface implementations are directly callable, and TS code is generated to match the C# code
-IBlocksOnGrid3DController _eventHandler;// ...
-
-_binaryApi = new JsBinaryApiWithResponseRenderer(_jsRuntime, _logger);
-await _binaryApi.InitializeJsApp("./_content/BlazorWith3d.ExampleApp.Client.ThreeJS/clientassets/blazorwith3d-exampleapp-client-threejs-bundle.js", _containerElementReference);
-_appApi = new BlocksOnGrid3DRendererOverBinaryApi(_binaryApi, new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory(), _eventHandler);
-
-_appApi.InitializeRenderer(new());
-```
-
-instead of 
-
 ```csharp
 // Might be less initial boiler plate but then needs manual definition for each method and synchronizing the C# code and TS code
 
-var module = await _jsRuntime.LoadModuleAsync("./_content/BlazorWith3d.ExampleApp.Client.ThreeJS/clientassets/blazorwith3d-exampleapp-client-threejs-bundle.js");
+var module = await _jsRuntime.LoadModuleAsync("module.js");
 _messageReceiverProxyReference = DotNetObjectReference.Create(new MessageProxy(OnRendererInitialized, ...));
 _typescriptApp = await module.InvokeAsync<IJSObjectReference>(initMethod, _containerElementReference,_messageReceiverProxyReference,nameof(BinaryApiJsMessageReceiverProxy.OnRendererInitialized), ...);
-
-await _binaryApi.InitializeJsApp(, _containerElementReference);
 
 public ValueTask InitializeRenderer(RendererInitializationInfo msg)
 {
     return _typescriptApp.InvokeVoidAsync("InitializeRenderer", msg);
 }
+...
 
 [JSInvokable]
 public ValueTask OnRendererInitialized(RendererInitialized msg)
 {
     return _eventHandler.OnRendererInitialized(msg, this);
 }
+...
 ```
 
+**You can:**
+- define one or many interfaces in a shared library
+- Generated TS representation of the interface and all referenced types
+- Either (see [BlocksOnGridThreeJSRenderer.cs](./samples/BlazorWith3d.ExampleApp.Client.ThreeJS/BlocksOnGridThreeJSRenderer.cs)):
+  - the generator uses prepared methods for generic Binary API from TypeScript to Blazor (that can send binary array there and back)
+      - the generator creates wrapper for each method of the interface using this Binary channel
+      - and using MemoryPack as (for now hard coded) serialization method optimizes serialization of messages
+  - and ensuring that any changes in the interfaces have to be taken into account in both Unity and Blazor codebases
+- Or (see [BlocksOnGridBabylonDirectRenderer.cs](./samples/BlazorWith3d.ExampleApp.Client.Babylon/BlocksOnGridBabylonDirectRenderer.cs)):
+  - Generating wrapper so that each method in C# that can be callable from JS using Blazor native JS interop
+  - and that each interface method maps to a JS method in the generated interface
+
+```csharp
+// needs to be initialized, but then interface implementations are directly callable, and TypeScript code is generated to match the C# code
+IBlocksOnGrid3DController _eventHandler; // initialized to handler you want to handle any events
+
+var binaryApi = new JsBinaryApiWithResponseRenderer(_jsRuntime, _logger); // prepare binaryAPI communication channel
+await binaryApi.InitializeJsApp("module.js", _containerElementReference); // connect the binaryAPI to JS 
+appApi = new BlocksOnGrid3DRendererOverBinaryApi(binaryApi, new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory(), _eventHandler); // initialize app specific code
+appApi.InitializeRenderer(new()); // invoke methods that are mapped to events on TypeScript side
+```
+
+
 ### Unity to Blazor interop
-Instead of:
+**Instead of:**
 - manually adding each method as Unity to JS method and JS to Blazor method
 - with added need for manually serializing the data as only primitive types are supported (due to WASM layer between Unity C# code and the JS world)
 - maintaining any change to these method signatures
 - Compiling Unity project into WebAssembly on each change of the Unity codebase
-You can:
+```csharp
+// Might be less initial boiler plate but then needs manual definition for each method and synchronizing the C# code and TS code
+
+var module = await _jsRuntime.LoadModuleAsync("module.js");
+_messageReceiverProxyReference = DotNetObjectReference.Create(new MessageProxy(OnRendererInitialized, ...));
+_typescriptApp = await module.InvokeAsync<IJSObjectReference>(_initMethod, _containerElementReference,_messageReceiverProxyReference,nameof(BinaryApiJsMessageReceiverProxy.OnRendererInitialized), ...);
+
+public ValueTask InitializeRenderer(RendererInitializationInfo msg)
+{
+    return _typescriptApp.InvokeVoidAsync("InitializeRenderer", msg);
+}
+...
+
+[JSInvokable]
+public ValueTask OnRendererInitialized(RendererInitialized msg)
+{
+    return _eventHandler.OnRendererInitialized(msg, this);
+}
+
+// JS code to connect Unity instance to Blazor and pass each message along to the right interop method 
+
+// And on Unity side (for each method):
+[DllImport("__Internal")]
+private static extern string _InitializeEventHandlers(Action<int, int>? initializeRenderer, ...);
+ 
+
+[MonoPInvokeCallback(typeof(Action<int, int>))]
+private static void _InitializeRenderer(int size, int id)
+{
+}
+...
+    
+[DllImport("__Internal")]
+private static extern int _OnRendererInitialized();
+...
+```
+
+**You can:**
 - define one or many interfaces in a shared library
 - the generator uses prepared methods for generic Binary API (that can send binary array there and back between Blazor and Unity)
     - the generator creates wrapper for each method of the interface using this Binary channel
     - and using defined serialization methods (e.g. MemoryPack being faster that JSON)
 - and ensuring that any changes in the interfaces have to be taken into account in both Unity and Blazor codebases
+  - See [BlocksOnGridUnityRenderer.cs](./samples/BlazorWith3d.ExampleApp.Client.Unity/Components/BlocksOnGridUnityRenderer.cs) and [ExampleAppInitializer.cs](./samples/BlazorWith3d.ExampleApp.UnityProject/Assets/ExampleApp/ExampleAppInitializer.cs)
 - with added benefit of using Websockets as BinaryAPI and connecting to Unity Editor in dev builds (to have faster iteration time)
+  - See [BlocksOnGridUnityDebugRelay.razor](samples/BlazorWith3d.ExampleApp.Client.Unity/Components/BlocksOnGridUnityDebugRelay.razor) and [BlazorWebSocketRelay.cs](src/BlazorWith3d/BlazorWith3d.Unity.UnityPackage/BlazorWebSocketRelay.cs)
+
+```csharp
+IBlocksOnGrid3DController eventHandler;// initialized to handler you want to handle any events
+
+binaryApi = new JsBinaryApiWithResponseRenderer(_jsRuntime, _logger); // prepare binaryAPI communication channel
+await _binaryApi.InitializeJsApp("module.js", _containerElementReference); // connect the binaryAPI to JS 
+appApi = new BlocksOnGrid3DRendererOverBinaryApi(binaryApi, new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory(), eventHandler); // initialize app specific code
+appApi.InitializeRenderer(new()); // invoke methods that are mapped to events on Unity side
+
+// a generic binary two way channel is prepared in included JS files. 
+
+// and Unity side (the methods and events are enforced by the interfaces and generators):
+
+var eventHandler =...; // initialized to handler you want to handle any events
+
+var binaryApi = UnityBlazorApi.Singleton; //  prepares binaryAPI communication channel and connects it to JS 
+var controller = new BlocksOnGrid3DControllerOverBinaryApi(binaryApi, new MemoryPackBinaryApiSerializer(), new PoolingArrayBufferWriterFactory(), eventHandler); // initialize app specific code
+await controller.OnRendererInitialized(new()); // invoke methods that are mapped to events on Blazor side
+
+```
 
 ### Blazor to Blazor
 - By creating abstraction via an Interface
 - And automatically handling all specifics
 - you can then easily create other implementaions of the interface using other approaches or Blazor itself
   - e.g. to create HTML only fallback mode in case GPU is not available on the client machine for performant 3D rendering
-
+- See [BlocksOnGridHTMLComponent.razor](./samples/BlazorWith3d.ExampleApp.Client.HTML/BlocksOnGridHTMLComponent.razor)
 
 ## Projects
 
@@ -222,7 +279,6 @@ Kept mainly for historical reasons, as ThreeJS seems to be more fitting for this
 ### Pure HTML (developed directly in Blazor)
 
 Uses 2D screenshot for visuals, to look similar.
-
 
 ## Blazor
 
