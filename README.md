@@ -182,6 +182,8 @@ await controller.OnRendererInitialized(new()); // invoke methods that are mapped
 
 Simple app for placing and moving blocks on grid. To test renderers and interop capabilities.
 
+[Demo](https://blazorwith3d-a3avcthnbbf3edf4.westeurope-01.azurewebsites.net/)
+
 Supports using multiple renderers at the same time.
 
 Main projects:
