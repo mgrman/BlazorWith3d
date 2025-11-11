@@ -19,9 +19,6 @@ namespace ExampleApp
         private readonly Dictionary<int, BlockController> _templates = new();
         private GameObject _templateRoot;
 
-        private readonly List<IDisposable> _disposables=new ();
-        private readonly List<IAsyncDisposable> _asyncDisposables=new ();
-
         [SerializeField]
         private Camera _camera;
 
@@ -29,19 +26,6 @@ namespace ExampleApp
         private Transform _light;
 
         private IBlocksOnGrid3DController _eventHandler;
-
-        private async Awaitable OnDestroy()
-        {
-            foreach (var disposable in _disposables)
-            {
-                disposable.Dispose();
-            }
-
-            foreach (var disposable in _asyncDisposables)
-            {
-                await disposable.DisposeAsync();
-            }
-        }
 
         // called by the controller signifying it can accept messages
         public ValueTask Initialize(IBlocksOnGrid3DController controller)
@@ -132,10 +116,12 @@ namespace ExampleApp
             return new ValueTask();
         }
 
-        public async ValueTask InvokeTriggerTestToBlazor(TriggerTestToBlazor msg)
+        public ValueTask InvokeTriggerTestToBlazor(TriggerTestToBlazor msg)
         {
             // intentionally async void to have execution disconnected as triggering messages while in a message handler break things
             TriggerTestToBlazor();
+
+            return new ValueTask();
         }
 
         private async void TriggerTestToBlazor()
@@ -162,7 +148,7 @@ namespace ExampleApp
             // convert to Unity screen coordinates
             var unityScreenPoint = new Vector3(obj.Screen.X, Screen.height - obj.Screen.Y, 0);
             
-            var ray = Camera.main.ScreenPointToRay(unityScreenPoint);
+            var ray = _camera.ScreenPointToRay(unityScreenPoint);
 
             // convert ray to expected blazor world coordinate system
             ray = new UnityEngine.Ray(transform.worldToLocalMatrix.MultiplyPoint(ray.origin),

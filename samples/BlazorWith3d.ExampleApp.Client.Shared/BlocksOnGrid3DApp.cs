@@ -102,7 +102,7 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
 #else
 ;
 #endif
-        public string Ddd
+        public string? Ddd
 #if !UNITY
         { get; set; }
 #else
@@ -138,13 +138,13 @@ namespace BlazorWith3d.ExampleApp.Client.Shared
 #else
 ;
 #endif
-        public string Visuals3dUri
+        public string? Visuals3dUri
 #if !UNITY
         { get; set; }
 #else
 ;
 #endif
-        public string Visuals2dUri
+        public string? Visuals2dUri
 #if !UNITY
         { get; set; }
 #else

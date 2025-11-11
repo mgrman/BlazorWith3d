@@ -24,8 +24,8 @@ namespace ExampleApp
 
         public static Uri HostUrl = null;
 
-        [SerializeField] private UnityRenderer _appPrefab;
-        
+        [SerializeField] 
+        private UnityRenderer _appPrefab;
 
         [Tooltip("If none is set, will use simulator")] 
         [SerializeField]

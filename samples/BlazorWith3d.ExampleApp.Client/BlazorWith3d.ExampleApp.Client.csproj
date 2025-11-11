@@ -9,7 +9,7 @@
     <ItemGroup>
         <PackageReference Include="Blazor.ContextMenu" Version="2.1.0" />
         <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
-      <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.0-rc.1.25451.107" />
+      <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.0" />
     </ItemGroup>
 
     <ItemGroup>

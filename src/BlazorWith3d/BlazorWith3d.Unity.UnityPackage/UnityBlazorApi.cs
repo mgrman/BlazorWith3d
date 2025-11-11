@@ -79,7 +79,7 @@ namespace BlazorWith3d.Unity
 
         public static UnityBlazorApi Singleton { get; } = new UnityBlazorApi();
 
-        public async ValueTask SendMessage(IBufferWriterWithArraySegment<byte> bytes)
+        public ValueTask SendMessage(IBufferWriterWithArraySegment<byte> bytes)
         {
 #if !(UNITY_WEBGL && !UNITY_EDITOR)
             if (Application.isEditor|| Application.platform != RuntimePlatform.WebGLPlayer)
@@ -91,6 +91,8 @@ namespace BlazorWith3d.Unity
             var msg = bytes.WrittenArray;
             _SendMessageFromUnity(msg.Array,msg.Offset, msg.Count);
             bytes.Dispose();
+            
+            return new ValueTask();
         }
         
         public async ValueTask<ArraySegment<byte>> SendMessageWithResponse(IBufferWriterWithArraySegment<byte> bytes)
