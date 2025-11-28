@@ -50,6 +50,11 @@ jobs:
       - name: dotnet tool build BlazorWith3d.CodeGenerator.DotnetBinaryApiBinding
         run: dotnet build "src/BlazorWith3d/BlazorWith3d.CodeGenerator.DotnetBinaryApiBinding/BlazorWith3d.CodeGenerator.DotnetBinaryApiBinding.csproj" -c Release
 
+      - name: Set up .NET Core for nugetforunity
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
       - name: dotnet tool restore
         run: dotnet tool restore
 
